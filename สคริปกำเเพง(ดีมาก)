@@ -1,0 +1,27 @@
+-- 🧗 WALL CLIMB (MOBILE)
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+UIS.JumpRequest:Connect(function()
+    local char = player.Character
+    if not char then return end
+    
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local hum = char:FindFirstChild("Humanoid")
+    if not hrp or not hum then return end
+
+    -- ต้องกำลังเดินอยู่
+    if hum.MoveDirection.Magnitude > 0 then
+        
+        -- ตรวจผนังข้างหน้า
+        local ray = Ray.new(hrp.Position, hrp.CFrame.LookVector * 3)
+        local hit = workspace:FindPartOnRay(ray, char)
+
+        if hit then
+            -- พุ่งขึ้น + ดันเข้ากำแพง
+            hrp.Velocity = Vector3.new(0, 60, 0) + hrp.CFrame.LookVector * 20
+        end
+    end
+end)
