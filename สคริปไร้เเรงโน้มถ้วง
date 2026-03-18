@@ -1,0 +1,194 @@
+-- Zero Gravity Space Mode (Respawn Fix + Mobile Drag)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+
+local char
+local root
+local hum
+local attach
+local force
+
+local enabled = false
+
+local accel = 8
+local maxSpeed = 150
+
+-- โหลดตัวละครใหม่
+local function setupCharacter(character)
+
+	char = character
+	root = char:WaitForChild("HumanoidRootPart")
+	hum = char:WaitForChild("Humanoid")
+
+	hum.PlatformStand = false
+
+	attach = root:FindFirstChild("RootAttachment") or Instance.new("Attachment",root)
+
+	if force then
+		force:Destroy()
+	end
+
+	force = Instance.new("VectorForce")
+	force.Attachment0 = attach
+	force.RelativeTo = Enum.ActuatorRelativeTo.World
+	force.Parent = root
+
+end
+
+-- ตอนเข้าเกม
+if player.Character then
+	setupCharacter(player.Character)
+end
+
+-- ตอนตายแล้วเกิดใหม่
+player.CharacterAdded:Connect(function(character)
+	setupCharacter(character)
+end)
+
+-- UI
+local gui = Instance.new("ScreenGui")
+gui.Parent = game.CoreGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,170,0,70)
+frame.Position = UDim2.new(0,120,0,120)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,25)
+frame.Parent = gui
+
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(1,0,0.7,0)
+btn.Text = "Zero G : OFF"
+btn.TextColor3 = Color3.new(1,1,1)
+btn.BackgroundColor3 = Color3.fromRGB(60,60,60)
+btn.Parent = frame
+
+local hide = Instance.new("TextButton")
+hide.Size = UDim2.new(1,0,0.3,0)
+hide.Position = UDim2.new(0,0,0.7,0)
+hide.Text = "Hide UI"
+hide.BackgroundColor3 = Color3.fromRGB(40,40,40)
+hide.TextColor3 = Color3.new(1,1,1)
+hide.Parent = frame
+
+local open = Instance.new("TextButton")
+open.Size = UDim2.new(0,100,0,40)
+open.Position = UDim2.new(0,20,0,200)
+open.Text = "Open ZeroG"
+open.Visible = false
+open.Parent = gui
+
+hide.MouseButton1Click:Connect(function()
+	frame.Visible = false
+	open.Visible = true
+end)
+
+open.MouseButton1Click:Connect(function()
+	frame.Visible = true
+	open.Visible = false
+end)
+
+-- Drag UI (รองรับมือถือ)
+local dragging = false
+local dragStart
+local startPos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+
+		dragging = true
+		dragStart = input.Position
+		startPos = frame.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+
+	if dragging and (
+		input.UserInputType == Enum.UserInputType.MouseMovement
+		or input.UserInputType == Enum.UserInputType.Touch) then
+
+		local delta = input.Position - dragStart
+
+		frame.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1
+	or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
+
+-- Toggle
+btn.MouseButton1Click:Connect(function()
+
+	enabled = not enabled
+
+	btn.Text = enabled and "Zero G : ON" or "Zero G : OFF"
+
+	if hum then
+		hum.PlatformStand = enabled
+	end
+
+end)
+
+-- Controls
+local keys = {}
+
+UIS.InputBegan:Connect(function(input,gp)
+	if gp then return end
+	keys[input.KeyCode] = true
+end)
+
+UIS.InputEnded:Connect(function(input)
+	keys[input.KeyCode] = false
+end)
+
+-- Loop
+RunService.Heartbeat:Connect(function()
+
+	if not root or not force then return end
+
+	if not enabled then
+		force.Force = Vector3.zero
+		return
+	end
+
+	force.Force = Vector3.new(0, root.AssemblyMass * workspace.Gravity, 0)
+
+	local cam = workspace.CurrentCamera
+
+	local forward = cam.CFrame.LookVector
+	local right = cam.CFrame.RightVector
+	local up = cam.CFrame.UpVector
+
+	local accelVec = Vector3.zero
+
+	if keys[Enum.KeyCode.W] then accelVec += forward end
+	if keys[Enum.KeyCode.S] then accelVec -= forward end
+	if keys[Enum.KeyCode.A] then accelVec -= right end
+	if keys[Enum.KeyCode.D] then accelVec += right end
+	if keys[Enum.KeyCode.Space] then accelVec += up end
+	if keys[Enum.KeyCode.LeftShift] then accelVec -= up end
+
+	if accelVec.Magnitude > 0 then
+		root.AssemblyLinearVelocity += accelVec.Unit * accel
+	end
+
+	if root.AssemblyLinearVelocity.Magnitude > maxSpeed then
+		root.AssemblyLinearVelocity =
+			root.AssemblyLinearVelocity.Unit * maxSpeed
+	end
+
+end)
