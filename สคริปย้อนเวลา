@@ -1,0 +1,81 @@
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+local positions = {}
+local isRewinding = false
+local isRecording = true
+
+-- === ฟังก์ชันอัปเดตตัวละครเมื่อเกิดใหม่ ===
+player.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    root = char:WaitForChild("HumanoidRootPart")
+    -- ล้างจุดเก่าทิ้งเพื่อป้องกันบั๊กวาร์ปกลับไปจุดที่ตาย
+    positions = {} 
+end)
+
+-- === สร้าง UI ===
+local sg = Instance.new("ScreenGui", game.CoreGui)
+sg.Name = "RewindSystem_Fixed"
+sg.ResetOnSpawn = false -- สำคัญมาก: ทำให้ UI ไม่หายเวลาตาย
+
+local function createBtn(name, text, pos, color)
+    local b = Instance.new("TextButton", sg)
+    b.Size = UDim2.new(0, 90, 0, 40)
+    b.Position = pos
+    b.BackgroundColor3 = color
+    b.Text = text
+    b.TextColor3 = Color3.new(1,1,1)
+    b.Draggable = true
+    Instance.new("UICorner", b)
+    return b
+end
+
+local rewindBtn = createBtn("Rewind", "REWIND", UDim2.new(0.5, -145, 0.15, 0), Color3.fromRGB(255, 50, 50))
+local toggleBtn = createBtn("Toggle", "REC: ON", UDim2.new(0.5, -45, 0.15, 0), Color3.fromRGB(50, 200, 50))
+local clearBtn = createBtn("Clear", "CLEAR", UDim2.new(0.5, 55, 0.15, 0), Color3.fromRGB(50, 50, 50))
+
+-- === ระบบบันทึกตำแหน่ง (Loop) ===
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        -- เช็คว่าตัวละครยังมีชีวิตอยู่และไม่ได้กดย้อนเวลา
+        if isRecording and not isRewinding and root and root.Parent then
+            table.insert(positions, root.CFrame)
+            if #positions > 200 then table.remove(positions, 1) end
+        end
+    end
+end)
+
+-- === ระบบปุ่มกด ===
+
+clearBtn.MouseButton1Click:Connect(function()
+    positions = {}
+    clearBtn.Text = "CLEARED!"
+    task.wait(0.5)
+    clearBtn.Text = "CLEAR"
+end)
+
+toggleBtn.MouseButton1Click:Connect(function()
+    isRecording = not isRecording
+    toggleBtn.Text = isRecording and "REC: ON" or "REC: OFF"
+    toggleBtn.BackgroundColor3 = isRecording and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 150, 0)
+end)
+
+rewindBtn.MouseButton1Click:Connect(function()
+    if isRewinding or #positions == 0 or not root then return end
+    isRewinding = true
+    root.Anchored = true
+    
+    -- ทำการวาร์ปย้อนกลับ
+    for i = #positions, 1, -2 do
+        if root and root.Parent then
+            root.CFrame = positions[i]
+        end
+        table.remove(positions, i)
+        task.wait(0.01)
+    end
+    
+    if root then root.Anchored = false end
+    isRewinding = false
+end)
