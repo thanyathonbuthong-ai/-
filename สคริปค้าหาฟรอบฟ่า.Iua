@@ -1,0 +1,17 @@
+--[[
+	WARNING: Heads up! This script has not been verified by ScriptBlox. Use at your own risk!
+]]
+local floppasFolder = workspace:FindFirstChild("Floppas")
+if not floppasFolder then return end
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+local function teleportTo(target)
+    if target:IsA("BasePart") then
+        hrp.CFrame = target.CFrame + Vector3.new(0, 5, 0)
+        wait(0.5)
+    end
+end
+for _, obj in ipairs(floppasFolder:GetChildren()) do
+    teleportTo(obj)
+end
