@@ -1,0 +1,717 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+
+-- === ตัวแปรระบบหลัก ===
+local isFlying = false
+local goingUp = false
+local goingDown = false
+local flySpeed = 80
+local isSprinting = false
+local sprintSpeed = 80
+local defaultWalkSpeed = 16
+local bhopEnabled = false
+local strafeEnabled = false
+local strafeDir = 1
+local speedCap = 50
+local minCap, maxCap = 20, 200
+local clickTpEnabled = false
+local isInvisible = false
+local espEnabled = false
+local profileEnabled = false
+local playerESP = {}
+
+-- === ตัวแปรระบบ Zero Gravity ===
+local zeroGEnabled = false
+local zeroGKeys = {}
+local zeroGAccel = 8
+local zeroGMaxSpeed = 150
+local zeroGForce = nil
+local zeroGAttach = nil
+
+-- === ฟังก์ชันโหลดรูปตัวละคร ===
+local function getAvatarImage(userId)
+    return "https://www.roblox.com/avatar-thumbnail/image?userId=" .. tostring(userId) .. "&width=420&height=420&format=png"
+end
+
+-- === ฟังก์ชัน Setup ระบบ Zero Gravity ===
+local function setupZeroG(character)
+    local root = character:WaitForChild("HumanoidRootPart")
+    local hum = character:WaitForChild("Humanoid")
+    hum.PlatformStand = false
+
+    zeroGAttach = root:FindFirstChild("RootAttachment") or Instance.new("Attachment", root)
+    if zeroGForce then zeroGForce:Destroy() end
+
+    zeroGForce = Instance.new("VectorForce")
+    zeroGForce.Attachment0 = zeroGAttach
+    zeroGForce.RelativeTo = Enum.ActuatorRelativeTo.World
+    zeroGForce.Parent = root
+end
+
+-- เรียกใช้ครั้งแรก
+if player.Character then setupZeroG(player.Character) end
+
+-- === สร้าง UI ===
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CoolHorizontalHub"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local menuBtn = Instance.new("TextButton")
+menuBtn.Size = UDim2.new(0, 40, 0, 40)
+menuBtn.Position = UDim2.new(1, -50, 0.5, -20)
+menuBtn.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+menuBtn.TextColor3 = Color3.fromRGB(138, 43, 226)
+menuBtn.Text = "⚙"
+menuBtn.TextSize = 22
+menuBtn.Font = Enum.Font.GothamBold
+menuBtn.Parent = screenGui
+Instance.new("UICorner", menuBtn).CornerRadius = UDim.new(0, 10)
+local menuStroke = Instance.new("UIStroke"); menuStroke.Color = Color3.fromRGB(138, 43, 226); menuStroke.Thickness = 2; menuStroke.Parent = menuBtn
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 240, 0, 170)
+mainFrame.Position = UDim2.new(1, -290, 0.5, -85)
+mainFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+mainFrame.Active = true
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+local mainStroke = Instance.new("UIStroke"); mainStroke.Color = Color3.fromRGB(50, 50, 50); mainStroke.Thickness = 1.5; mainStroke.Parent = mainFrame
+
+local dragBar = Instance.new("Frame")
+dragBar.Size = UDim2.new(1, 0, 0, 30)
+dragBar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+dragBar.BorderSizePixel = 0
+dragBar.Parent = mainFrame
+Instance.new("UICorner", dragBar).CornerRadius = UDim.new(0, 12)
+local dragTxt = Instance.new("TextLabel")
+dragTxt.Size = UDim2.new(1, 0, 1, 0); dragTxt.BackgroundTransparency = 1
+dragTxt.Text = "⬍ ลากเพื่อย้าย"; dragTxt.TextColor3 = Color3.fromRGB(100, 100, 100)
+dragTxt.TextSize = 10; dragTxt.Font = Enum.Font.GothamBold; dragTxt.Parent = dragBar
+
+-- ==========================================
+-- ระบบ Tab (7 หมวด)
+-- ==========================================
+local tabFrame = Instance.new("Frame")
+tabFrame.Size = UDim2.new(0.94, 0, 0, 25)
+tabFrame.Position = UDim2.new(0.03, 0, 0, 34)
+tabFrame.BackgroundTransparency = 1
+tabFrame.Parent = mainFrame
+
+local function createTab(text, posX)
+    local tab = Instance.new("TextButton")
+    tab.Size = UDim2.new(0.135, 0, 1, 0)
+    tab.Position = UDim2.new(posX, 0, 0, 0)
+    tab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    tab.TextColor3 = Color3.fromRGB(150, 150, 150)
+    tab.Text = text; tab.TextSize = 8; tab.Font = Enum.Font.GothamBold
+    tab.Parent = tabFrame
+    Instance.new("UICorner", tab).CornerRadius = UDim.new(0, 6)
+    return tab
+end
+
+local flyTab = createTab("✈️ บิน", 0)
+local sprintTab = createTab("🏃 วิ่ง", 0.145)
+local bhopTab = createTab("🐰 Bhop", 0.29)
+local tpTab = createTab("🎯 TP", 0.435)
+local invisTab = createTab("👻 ล่องหน", 0.58)
+local zeroGTab = createTab("🌌 ลอย", 0.725) -- เพิ่ม Tab Zero G
+local espTab = createTab("👁️ ESP", 0.87)
+
+-- ==========================================
+-- หน้าต่างหมวดต่างๆ
+-- ==========================================
+local function createPage(name)
+    local pg = Instance.new("Frame")
+    pg.Size = UDim2.new(0.9, 0, 1, -65)
+    pg.Position = UDim2.new(0.05, 0, 0, 65)
+    pg.BackgroundTransparency = 1
+    pg.Name = name
+    pg.Parent = mainFrame
+    return pg
+end
+
+local flyPage = createPage("FlyPage")
+local sprintPage = createPage("SprintPage"); sprintPage.Visible = false
+local bhopPage = createPage("BhopPage"); bhopPage.Visible = false
+local tpPage = createPage("TpPage"); tpPage.Visible = false
+local invisPage = createPage("InvisPage"); invisPage.Visible = false
+local zeroGPage = createPage("ZeroGPage"); zeroGPage.Visible = false -- เพิ่มหน้า Zero G
+local espPage = createPage("EspPage"); espPage.Visible = false
+
+-- ========== หมวดบิน ==========
+local flyToggleBtn = Instance.new("TextButton")
+flyToggleBtn.Size = UDim2.new(0.45, 0, 0, 40); flyToggleBtn.Position = UDim2.new(0, 0, 0, 0)
+flyToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); flyToggleBtn.TextColor3 = Color3.fromRGB(0, 200, 255)
+flyToggleBtn.Text = "เปิดบิน"; flyToggleBtn.TextSize = 12; flyToggleBtn.Font = Enum.Font.GothamBold
+flyToggleBtn.Parent = flyPage
+Instance.new("UICorner", flyToggleBtn).CornerRadius = UDim.new(0, 8)
+local ftStroke = Instance.new("UIStroke"); ftStroke.Color = Color3.fromRGB(0, 150, 255); ftStroke.Parent = flyToggleBtn
+
+local udFrame = Instance.new("Frame")
+udFrame.Size = UDim2.new(0.5, 0, 0, 40); udFrame.Position = UDim2.new(0.5, 0, 0, 0)
+udFrame.BackgroundTransparency = 1; udFrame.Parent = flyPage
+
+local upBtn = Instance.new("TextButton")
+upBtn.Size = UDim2.new(0.45, 0, 1, 0); upBtn.Position = UDim2.new(0, 0, 0, 0)
+upBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 215); upBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+upBtn.Text = "▲"; upBtn.TextSize = 18; upBtn.Font = Enum.Font.GothamBold; upBtn.Parent = udFrame
+Instance.new("UICorner", upBtn).CornerRadius = UDim.new(0, 8)
+
+local downBtn = Instance.new("TextButton")
+downBtn.Size = UDim2.new(0.45, 0, 1, 0); downBtn.Position = UDim2.new(0.55, 0, 0, 0)
+downBtn.BackgroundColor3 = Color3.fromRGB(215, 60, 60); downBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+downBtn.Text = "▼"; downBtn.TextSize = 18; downBtn.Font = Enum.Font.GothamBold; downBtn.Parent = udFrame
+Instance.new("UICorner", downBtn).CornerRadius = UDim.new(0, 8)
+
+local flySpeedLbl = Instance.new("TextLabel")
+flySpeedLbl.Size = UDim2.new(0.5, 0, 0, 15); flySpeedLbl.Position = UDim2.new(0, 0, 0, 45)
+flySpeedLbl.BackgroundTransparency = 1; flySpeedLbl.Text = "SPEED: 80"
+flySpeedLbl.TextColor3 = Color3.fromRGB(120, 120, 120); flySpeedLbl.TextSize = 9; flySpeedLbl.Font = Enum.Font.GothamBold
+flySpeedLbl.Parent = flyPage
+
+local flyTrack = Instance.new("Frame")
+flyTrack.Size = UDim2.new(1, 0, 0, 8); flyTrack.Position = UDim2.new(0, 0, 0, 63)
+flyTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 40); flyTrack.Parent = flyPage
+Instance.new("UICorner", flyTrack).CornerRadius = UDim.new(0, 10)
+local flyThumb = Instance.new("Frame")
+flyThumb.Size = UDim2.new(0, 14, 0, 14); flyThumb.Position = UDim2.new(0, 0, 0, -3)
+flyThumb.BackgroundColor3 = Color3.fromRGB(0, 200, 255); flyThumb.Parent = flyTrack
+Instance.new("UICorner", flyThumb).CornerRadius = UDim.new(1, 0)
+
+-- ========== หมวดวิ่ง ==========
+local sprintToggleBtn = Instance.new("TextButton")
+sprintToggleBtn.Size = UDim2.new(1, 0, 0, 40); sprintToggleBtn.Position = UDim2.new(0, 0, 0, 0)
+sprintToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); sprintToggleBtn.TextColor3 = Color3.fromRGB(255, 200, 0)
+sprintToggleBtn.Text = "เปิดวิ่งเร็ว"; sprintToggleBtn.TextSize = 12; sprintToggleBtn.Font = Enum.Font.GothamBold
+sprintToggleBtn.Parent = sprintPage
+Instance.new("UICorner", sprintToggleBtn).CornerRadius = UDim.new(0, 8)
+local spStroke = Instance.new("UIStroke"); spStroke.Color = Color3.fromRGB(255, 200, 0); spStroke.Parent = sprintToggleBtn
+
+local sprintSpeedLbl = Instance.new("TextLabel")
+sprintSpeedLbl.Size = UDim2.new(0.5, 0, 0, 15); sprintSpeedLbl.Position = UDim2.new(0, 0, 0, 45)
+sprintSpeedLbl.BackgroundTransparency = 1; sprintSpeedLbl.Text = "SPEED: 80"
+sprintSpeedLbl.TextColor3 = Color3.fromRGB(120, 120, 120); sprintSpeedLbl.TextSize = 9; sprintSpeedLbl.Font = Enum.Font.GothamBold
+sprintSpeedLbl.Parent = sprintPage
+
+local sprintTrack = Instance.new("Frame")
+sprintTrack.Size = UDim2.new(1, 0, 0, 8); sprintTrack.Position = UDim2.new(0, 0, 0, 63)
+sprintTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 40); sprintTrack.Parent = sprintPage
+Instance.new("UICorner", sprintTrack).CornerRadius = UDim.new(0, 10)
+local sprintThumb = Instance.new("Frame")
+sprintThumb.Size = UDim2.new(0, 14, 0, 14); sprintThumb.Position = UDim2.new(0, 0, 0, -3)
+sprintThumb.BackgroundColor3 = Color3.fromRGB(255, 200, 0); sprintThumb.Parent = sprintTrack
+Instance.new("UICorner", sprintThumb).CornerRadius = UDim.new(1, 0)
+
+-- ========== หมวด Bhop ==========
+local bhopToggleBtn = Instance.new("TextButton")
+bhopToggleBtn.Size = UDim2.new(0.45, 0, 0, 35); bhopToggleBtn.Position = UDim2.new(0, 0, 0, 0)
+bhopToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); bhopToggleBtn.TextColor3 = Color3.fromRGB(0, 255, 100)
+bhopToggleBtn.Text = "BHOP OFF"; bhopToggleBtn.TextSize = 11; bhopToggleBtn.Font = Enum.Font.GothamBold
+bhopToggleBtn.Parent = bhopPage
+Instance.new("UICorner", bhopToggleBtn).CornerRadius = UDim.new(0, 8)
+local bhStroke = Instance.new("UIStroke"); bhStroke.Color = Color3.fromRGB(60, 60, 60); bhStroke.Parent = bhopToggleBtn
+
+local strafeToggleBtn = Instance.new("TextButton")
+strafeToggleBtn.Size = UDim2.new(0.45, 0, 0, 35); strafeToggleBtn.Position = UDim2.new(0.55, 0, 0, 0)
+strafeToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); strafeToggleBtn.TextColor3 = Color3.fromRGB(0, 255, 100)
+strafeToggleBtn.Text = "STRAFE OFF"; strafeToggleBtn.TextSize = 11; strafeToggleBtn.Font = Enum.Font.GothamBold
+strafeToggleBtn.Parent = bhopPage
+Instance.new("UICorner", strafeToggleBtn).CornerRadius = UDim.new(0, 8)
+local stStroke = Instance.new("UIStroke"); stStroke.Color = Color3.fromRGB(60, 60, 60); stStroke.Parent = strafeToggleBtn
+
+local bhopLiveLbl = Instance.new("TextLabel")
+bhopLiveLbl.Size = UDim2.new(0.5, 0, 0, 15); bhopLiveLbl.Position = UDim2.new(0, 0, 0, 40)
+bhopLiveLbl.BackgroundTransparency = 1; bhopLiveLbl.Text = "LIVE: 000"
+bhopLiveLbl.TextColor3 = Color3.fromRGB(0, 255, 200); bhopLiveLbl.TextSize = 9; bhopLiveLbl.Font = Enum.Font.GothamBold
+bhopLiveLbl.Parent = bhopPage
+
+local bhopCapLbl = Instance.new("TextLabel")
+bhopCapLbl.Size = UDim2.new(0.5, 0, 0, 15); bhopCapLbl.Position = UDim2.new(0.5, 0, 0, 40)
+bhopCapLbl.BackgroundTransparency = 1; bhopCapLbl.Text = "CAP: 050"
+bhopCapLbl.TextColor3 = Color3.fromRGB(255, 100, 100); bhopCapLbl.TextSize = 9; bhopCapLbl.Font = Enum.Font.GothamBold
+bhopCapLbl.Parent = bhopPage
+
+local bhopTrack = Instance.new("Frame")
+bhopTrack.Size = UDim2.new(1, 0, 0, 8); bhopTrack.Position = UDim2.new(0, 0, 0, 63)
+bhopTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 40); bhopTrack.Parent = bhopPage
+Instance.new("UICorner", bhopTrack).CornerRadius = UDim.new(0, 10)
+local bhopThumb = Instance.new("Frame")
+bhopThumb.Size = UDim2.new(0, 14, 0, 14); bhopThumb.Position = UDim2.new(0, 0, 0, -3)
+bhopThumb.BackgroundColor3 = Color3.fromRGB(0, 255, 100); bhopThumb.Parent = bhopTrack
+Instance.new("UICorner", bhopThumb).CornerRadius = UDim.new(1, 0)
+
+-- ========== หมวด Click TP ==========
+local tpToggleBtn = Instance.new("TextButton")
+tpToggleBtn.Size = UDim2.new(1, 0, 0, 45); tpToggleBtn.Position = UDim2.new(0, 0, 0, 10)
+tpToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); tpToggleBtn.TextColor3 = Color3.fromRGB(255, 80, 120)
+tpToggleBtn.Text = "CLICK TP: OFF"; tpToggleBtn.TextSize = 14; tpToggleBtn.Font = Enum.Font.GothamBold
+tpToggleBtn.Parent = tpPage
+Instance.new("UICorner", tpToggleBtn).CornerRadius = UDim.new(0, 8)
+local tpStroke = Instance.new("UIStroke"); tpStroke.Color = Color3.fromRGB(60, 60, 60); tpStroke.Parent = tpToggleBtn
+
+local tpHintLbl = Instance.new("TextLabel")
+tpHintLbl.Size = UDim2.new(1, 0, 0, 20); tpHintLbl.Position = UDim2.new(0, 0, 0, 60)
+tpHintLbl.BackgroundTransparency = 1; tpHintLbl.Text = "แตะที่พื้นเพื่อวาป"
+tpHintLbl.TextColor3 = Color3.fromRGB(80, 80, 80); tpHintLbl.TextSize = 9; tpHintLbl.Font = Enum.Font.GothamBold
+tpHintLbl.Parent = tpPage
+
+-- ========== หมวดล่องหน ==========
+local invisToggleBtn = Instance.new("TextButton")
+invisToggleBtn.Size = UDim2.new(1, 0, 0, 45); invisToggleBtn.Position = UDim2.new(0, 0, 0, 10)
+invisToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); invisToggleBtn.TextColor3 = Color3.fromRGB(180, 100, 255)
+invisToggleBtn.Text = "INVISIBLE: OFF"; invisToggleBtn.TextSize = 14; invisToggleBtn.Font = Enum.Font.GothamBold
+invisToggleBtn.Parent = invisPage
+Instance.new("UICorner", invisToggleBtn).CornerRadius = UDim.new(0, 8)
+local invStroke = Instance.new("UIStroke"); invStroke.Color = Color3.fromRGB(60, 60, 60); invStroke.Parent = invisToggleBtn
+
+local invisHintLbl = Instance.new("TextLabel")
+invisHintLbl.Size = UDim2.new(1, 0, 0, 20); invisHintLbl.Position = UDim2.new(0, 0, 0, 60)
+invisHintLbl.BackgroundTransparency = 1; invisHintLbl.Text = "ตัวละครจะโปร่งแสง"
+invisHintLbl.TextColor3 = Color3.fromRGB(80, 80, 80); invisHintLbl.TextSize = 9; invisHintLbl.Font = Enum.Font.GothamBold
+invisHintLbl.Parent = invisPage
+
+-- ========== หมวด Zero Gravity (เพิ่มใหม่) ==========
+local zeroGToggleBtn = Instance.new("TextButton")
+zeroGToggleBtn.Size = UDim2.new(1, 0, 0, 45); zeroGToggleBtn.Position = UDim2.new(0, 0, 0, 10)
+zeroGToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); zeroGToggleBtn.TextColor3 = Color3.fromRGB(150, 150, 255)
+zeroGToggleBtn.Text = "ZERO G: OFF"; zeroGToggleBtn.TextSize = 14; zeroGToggleBtn.Font = Enum.Font.GothamBold
+zeroGToggleBtn.Parent = zeroGPage
+Instance.new("UICorner", zeroGToggleBtn).CornerRadius = UDim.new(0, 8)
+local zGStroke = Instance.new("UIStroke"); zGStroke.Color = Color3.fromRGB(60, 60, 60); zGStroke.Parent = zeroGToggleBtn
+
+local zeroGHintLbl = Instance.new("TextLabel")
+zeroGHintLbl.Size = UDim2.new(1, 0, 0, 20); zeroGHintLbl.Position = UDim2.new(0, 0, 0, 60)
+zeroGHintLbl.BackgroundTransparency = 1; zeroGHintLbl.Text = "WASD/Space/Shift บังคับทิศทาง"
+zeroGHintLbl.TextColor3 = Color3.fromRGB(80, 80, 80); zeroGHintLbl.TextSize = 9; zeroGHintLbl.Font = Enum.Font.GothamBold
+zeroGHintLbl.Parent = zeroGPage
+
+-- ========== หมวด ESP ==========
+local espToggleBtn = Instance.new("TextButton")
+espToggleBtn.Size = UDim2.new(0.45, 0, 0, 40); espToggleBtn.Position = UDim2.new(0, 0, 0, 10)
+espToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); espToggleBtn.TextColor3 = Color3.fromRGB(255, 80, 120)
+espToggleBtn.Text = "ESP: OFF"; espToggleBtn.TextSize = 12; espToggleBtn.Font = Enum.Font.GothamBold
+espToggleBtn.Parent = espPage
+Instance.new("UICorner", espToggleBtn).CornerRadius = UDim.new(0, 8)
+local espStroke = Instance.new("UIStroke"); espStroke.Color = Color3.fromRGB(60, 60, 60); espStroke.Parent = espToggleBtn
+
+local profToggleBtn = Instance.new("TextButton")
+profToggleBtn.Size = UDim2.new(0.45, 0, 0, 40); profToggleBtn.Position = UDim2.new(0.55, 0, 0, 10)
+profToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 20); profToggleBtn.TextColor3 = Color3.fromRGB(120, 180, 255)
+profToggleBtn.Text = "PIC: OFF"; profToggleBtn.TextSize = 12; profToggleBtn.Font = Enum.Font.GothamBold
+profToggleBtn.Parent = espPage
+Instance.new("UICorner", profToggleBtn).CornerRadius = UDim.new(0, 8)
+local profStroke = Instance.new("UIStroke"); profStroke.Color = Color3.fromRGB(60, 60, 60); profStroke.Parent = profToggleBtn
+
+local espHintLbl = Instance.new("TextLabel")
+espHintLbl.Size = UDim2.new(1, 0, 0, 20); espHintLbl.Position = UDim2.new(0, 0, 0, 58)
+espHintLbl.BackgroundTransparency = 1; espHintLbl.Text = "แสดงเรืองแสงและรูปตัวละคร"
+espHintLbl.TextColor3 = Color3.fromRGB(80, 80, 80); espHintLbl.TextSize = 9; espHintLbl.Font = Enum.Font.GothamBold
+espHintLbl.Parent = espPage
+
+
+-- ==========================================
+-- ระบบ Event และ Logic
+-- ==========================================
+
+-- สลับหมวด Tab (7 หมวด)
+local function switchTab(tab)
+    flyPage.Visible = (tab == "fly")
+    sprintPage.Visible = (tab == "sprint")
+    bhopPage.Visible = (tab == "bhop")
+    tpPage.Visible = (tab == "tp")
+    invisPage.Visible = (tab == "invis")
+    zeroGPage.Visible = (tab == "zerog") -- เพิ่ม
+    espPage.Visible = (tab == "esp")
+    
+    flyTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40); flyTab.TextColor3 = Color3.fromRGB(150, 150, 150)
+    sprintTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40); sprintTab.TextColor3 = Color3.fromRGB(150, 150, 150)
+    bhopTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40); bhopTab.TextColor3 = Color3.fromRGB(150, 150, 150)
+    tpTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40); tpTab.TextColor3 = Color3.fromRGB(150, 150, 150)
+    invisTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40); invisTab.TextColor3 = Color3.fromRGB(150, 150, 150)
+    zeroGTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40); zeroGTab.TextColor3 = Color3.fromRGB(150, 150, 150) -- เพิ่ม
+    espTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40); espTab.TextColor3 = Color3.fromRGB(150, 150, 150)
+    
+    if tab == "fly" then flyTab.BackgroundColor3 = Color3.fromRGB(0, 150, 255); flyTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+    elseif tab == "sprint" then sprintTab.BackgroundColor3 = Color3.fromRGB(255, 200, 0); sprintTab.TextColor3 = Color3.fromRGB(0, 0, 0)
+    elseif tab == "bhop" then bhopTab.BackgroundColor3 = Color3.fromRGB(0, 255, 100); bhopTab.TextColor3 = Color3.fromRGB(0, 0, 0)
+    elseif tab == "tp" then tpTab.BackgroundColor3 = Color3.fromRGB(255, 50, 100); tpTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+    elseif tab == "invis" then invisTab.BackgroundColor3 = Color3.fromRGB(180, 100, 255); invisTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+    elseif tab == "zerog" then zeroGTab.BackgroundColor3 = Color3.fromRGB(100, 100, 255); zeroGTab.TextColor3 = Color3.fromRGB(255, 255, 255) -- เพิ่ม
+    elseif tab == "esp" then espTab.BackgroundColor3 = Color3.fromRGB(255, 50, 100); espTab.TextColor3 = Color3.fromRGB(255, 255, 255) end
+end
+
+flyTab.MouseButton1Click:Connect(function() switchTab("fly") end)
+sprintTab.MouseButton1Click:Connect(function() switchTab("sprint") end)
+bhopTab.MouseButton1Click:Connect(function() switchTab("bhop") end)
+tpTab.MouseButton1Click:Connect(function() switchTab("tp") end)
+invisTab.MouseButton1Click:Connect(function() switchTab("invis") end)
+zeroGTab.MouseButton1Click:Connect(function() switchTab("zerog") end) -- เพิ่ม
+espTab.MouseButton1Click:Connect(function() switchTab("esp") end)
+
+-- เปิดปิดเมนู
+menuBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = not mainFrame.Visible
+    menuBtn.Text = mainFrame.Visible and "✕" or "⚙"
+end)
+
+-- เปิดปิดบิน
+flyToggleBtn.MouseButton1Click:Connect(function()
+    isFlying = not isFlying
+    flyToggleBtn.Text = isFlying and "หยุดบิน" or "เปิดบิน"
+    ftStroke.Color = isFlying and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(0, 150, 255)
+    flyToggleBtn.TextColor3 = isFlying and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(0, 200, 255)
+    if isFlying then humanoid.ChangeState(Enum.HumanoidStateType.Freefall)
+    else hrp.AssemblyLinearVelocity = Vector3.new(0,0,0); humanoid.ChangeState(Enum.HumanoidStateType.GettingUp); goingUp = false; goingDown = false end
+end)
+
+-- เปิดปิดวิ่ง
+sprintToggleBtn.MouseButton1Click:Connect(function()
+    isSprinting = not isSprinting
+    sprintToggleBtn.Text = isSprinting and "หยุดวิ่งเร็ว" or "เปิดวิ่งเร็ว"
+    spStroke.Color = isSprinting and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(255, 200, 0)
+    sprintToggleBtn.TextColor3 = isSprinting and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(255, 200, 0)
+    humanoid.WalkSpeed = isSprinting and sprintSpeed or defaultWalkSpeed
+end)
+
+-- เปิดปิด Bhop & Strafe
+bhopToggleBtn.MouseButton1Click:Connect(function()
+    bhopEnabled = not bhopEnabled
+    bhopToggleBtn.Text = bhopEnabled and "BHOP ON" or "BHOP OFF"
+    bhopToggleBtn.TextColor3 = bhopEnabled and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(150, 150, 150)
+    bhStroke.Color = bhopEnabled and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(60, 60, 60)
+end)
+strafeToggleBtn.MouseButton1Click:Connect(function()
+    strafeEnabled = not strafeEnabled
+    strafeToggleBtn.Text = strafeEnabled and "STRAFE ON" or "STRAFE OFF"
+    strafeToggleBtn.TextColor3 = strafeEnabled and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(150, 150, 150)
+    stStroke.Color = strafeEnabled and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(60, 60, 60)
+end)
+
+-- เปิดปิด Click TP
+tpToggleBtn.MouseButton1Click:Connect(function()
+    clickTpEnabled = not clickTpEnabled
+    tpToggleBtn.Text = clickTpEnabled and "CLICK TP: ON" or "CLICK TP: OFF"
+    tpStroke.Color = clickTpEnabled and Color3.fromRGB(255, 50, 100) or Color3.fromRGB(60, 60, 60)
+    tpToggleBtn.TextColor3 = clickTpEnabled and Color3.fromRGB(255, 100, 150) or Color3.fromRGB(255, 80, 120)
+end)
+
+-- เปิดปิด ล่องหน
+invisToggleBtn.MouseButton1Click:Connect(function()
+    isInvisible = not isInvisible
+    invisToggleBtn.Text = isInvisible and "INVISIBLE: ON" or "INVISIBLE: OFF"
+    invStroke.Color = isInvisible and Color3.fromRGB(180, 100, 255) or Color3.fromRGB(60, 60, 60)
+    invisToggleBtn.TextColor3 = isInvisible and Color3.fromRGB(200, 150, 255) or Color3.fromRGB(180, 100, 255)
+    local char = player.Character
+    if char then
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = isInvisible and 1 or 0
+            end
+        end
+    end
+end)
+
+-- เปิดปิด Zero Gravity (เพิ่มใหม่)
+zeroGToggleBtn.MouseButton1Click:Connect(function()
+    zeroGEnabled = not zeroGEnabled
+    zeroGToggleBtn.Text = zeroGEnabled and "ZERO G: ON" or "ZERO G: OFF"
+    zGStroke.Color = zeroGEnabled and Color3.fromRGB(100, 100, 255) or Color3.fromRGB(60, 60, 60)
+    zeroGToggleBtn.TextColor3 = zeroGEnabled and Color3.fromRGB(180, 180, 255) or Color3.fromRGB(150, 150, 255)
+    
+    local char = player.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.PlatformStand = zeroGEnabled end
+    end
+end)
+
+-- เปิดปิด ESP และ รูปตัวละคร
+espToggleBtn.MouseButton1Click:Connect(function()
+    espEnabled = not espEnabled
+    espToggleBtn.Text = espEnabled and "ESP: ON" or "ESP: OFF"
+    espToggleBtn.TextColor3 = espEnabled and Color3.fromRGB(255, 120, 150) or Color3.fromRGB(255, 80, 120)
+    espStroke.Color = espEnabled and Color3.fromRGB(255, 50, 100) or Color3.fromRGB(60, 60, 60)
+    for _, data in pairs(playerESP) do
+        if data.highlight then data.highlight.Enabled = espEnabled end
+    end
+end)
+
+profToggleBtn.MouseButton1Click:Connect(function()
+    profileEnabled = not profileEnabled
+    profToggleBtn.Text = profileEnabled and "PIC: ON" or "PIC: OFF"
+    profToggleBtn.TextColor3 = profileEnabled and Color3.fromRGB(150, 200, 255) or Color3.fromRGB(120, 180, 255)
+    profStroke.Color = profileEnabled and Color3.fromRGB(100, 150, 255) or Color3.fromRGB(60, 60, 60)
+    for _, data in pairs(playerESP) do
+        if data.billboard then data.billboard.Enabled = profileEnabled end
+    end
+end)
+
+-- กดค้างขึ้นลง (บิน)
+local function bindHold(btn, dir)
+    btn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if dir == "up" then goingUp = true elseif dir == "down" then goingDown = true end
+        end
+    end)
+    btn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if dir == "up" then goingUp = false elseif dir == "down" then goingDown = false end
+        end
+    end)
+end
+bindHold(upBtn, "up"); bindHold(downBtn, "down")
+
+-- ลาก UI
+local dragging = false; local dragStart, startPos
+dragBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true; dragStart = input.Position; startPos = mainFrame.Position
+    end
+end)
+dragBar.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then
+        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + (input.Position - dragStart).X, startPos.Y.Scale, startPos.Y.Offset + (input.Position - dragStart).Y)
+    end
+end)
+
+-- Slider รวม
+local activeSlider = nil
+local function updateSlider(input)
+    if activeSlider == "fly" then
+        local rel = math.clamp((input.Position.X - flyTrack.AbsolutePosition.X) / flyTrack.AbsoluteSize.X, 0, 1)
+        flyThumb.Position = UDim2.new(0, rel * (flyTrack.AbsoluteSize.X - flyThumb.AbsoluteSize.X), 0, -3)
+        flySpeed = math.max(1, math.floor(rel * 500)); flySpeedLbl.Text = "SPEED: " .. flySpeed
+    elseif activeSlider == "sprint" then
+        local rel = math.clamp((input.Position.X - sprintTrack.AbsolutePosition.X) / sprintTrack.AbsoluteSize.X, 0, 1)
+        sprintThumb.Position = UDim2.new(0, rel * (sprintTrack.AbsoluteSize.X - sprintThumb.AbsoluteSize.X), 0, -3)
+        sprintSpeed = math.max(1, math.floor(rel * 500)); sprintSpeedLbl.Text = "SPEED: " .. sprintSpeed
+        if isSprinting then humanoid.WalkSpeed = sprintSpeed end
+    elseif activeSlider == "bhop" then
+        local rel = math.clamp((input.Position.X - bhopTrack.AbsolutePosition.X) / bhopTrack.AbsoluteSize.X, 0, 1)
+        bhopThumb.Position = UDim2.new(0, rel * (bhopTrack.AbsoluteSize.X - bhopThumb.AbsoluteSize.X), 0, -3)
+        speedCap = math.floor(minCap + (maxCap - minCap) * rel)
+        bhopCapLbl.Text = "CAP: " .. string.format("%03d", speedCap)
+    end
+end
+
+flyTrack.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then activeSlider = "fly"; updateSlider(input) end end)
+sprintTrack.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then activeSlider = "sprint"; updateSlider(input) end end)
+bhopTrack.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then activeSlider = "bhop"; updateSlider(input) end end)
+
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then activeSlider = nil end end)
+UserInputService.InputChanged:Connect(function(input)
+    if activeSlider and (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) then updateSlider(input) end
+end)
+
+-- ==========================================
+-- ระบบ ESP + รูปตัวละคร
+-- ==========================================
+local function createESP(targetPlayer)
+    if targetPlayer == player then return end
+    if playerESP[targetPlayer] then return end
+    local char = targetPlayer.Character
+    if not char then return end
+    local head = char:FindFirstChild("Head")
+    if not head then return end
+
+    local hl = Instance.new("Highlight")
+    hl.Name = "ESP_HL"; hl.Adornee = char
+    hl.FillColor = Color3.fromRGB(255, 30, 30); hl.FillTransparency = 0.6
+    hl.OutlineColor = Color3.fromRGB(255, 255, 255); hl.OutlineTransparency = 0
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; hl.Enabled = espEnabled; hl.Parent = char
+
+    local bb = Instance.new("BillboardGui")
+    bb.Name = "ESP_Profile"; bb.Adornee = head
+    bb.Size = UDim2.new(0, 42, 0, 42); bb.StudsOffset = Vector3.new(0, 2.8, 0)
+    bb.AlwaysOnTop = true; bb.MaxDistance = 500; bb.Parent = head
+
+    local avatarImg = Instance.new("ImageLabel")
+    avatarImg.Name = "Avatar"; avatarImg.Size = UDim2.new(1, 0, 1, 0)
+    avatarImg.BackgroundColor3 = Color3.fromRGB(20, 20, 30); avatarImg.BorderSizePixel = 0
+    avatarImg.Image = getAvatarImage(targetPlayer.UserId); avatarImg.Parent = bb
+
+    local imgStroke = Instance.new("UIStroke")
+    imgStroke.Color = Color3.fromRGB(120, 180, 255); imgStroke.Thickness = 1.5; imgStroke.Parent = avatarImg
+    Instance.new("UICorner", avatarImg).CornerRadius = UDim.new(0, 21)
+    bb.Enabled = profileEnabled
+
+    playerESP[targetPlayer] = { highlight = hl, billboard = bb }
+end
+
+local function removeESP(targetPlayer)
+    local data = playerESP[targetPlayer]
+    if not data then return end
+    if data.highlight then data.highlight:Destroy() end
+    if data.billboard then data.billboard:Destroy() end
+    playerESP[targetPlayer] = nil
+end
+
+local function onCharacterAdded(targetPlayer, character)
+    character:WaitForChild("Head", 10)
+    task.wait(0.5)
+    createESP(targetPlayer)
+end
+
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterAdded:Connect(function(c) onCharacterAdded(p, c) end)
+    if p.Character then onCharacterAdded(p, p.Character) end
+end)
+Players.PlayerRemoving:Connect(function(p) removeESP(p) end)
+
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= player then
+        p.CharacterAdded:Connect(function(c) onCharacterAdded(p, c) end)
+        if p.Character then onCharacterAdded(p, p.Character) end
+    end
+end
+
+-- ==========================================
+-- Core Loop (บิน + Bhop)
+-- ==========================================
+RunService.RenderStepped:Connect(function()
+    character = player.Character
+    if not character then return end
+    hrp = character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Torso")
+    humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not hrp or not humanoid then return end
+
+    if isFlying then
+        local moveDir = humanoid.MoveDirection
+        local targetY = 0
+        if goingUp then targetY = flySpeed elseif goingDown then targetY = -flySpeed end
+        hrp.AssemblyLinearVelocity = Vector3.new(moveDir.X * flySpeed, targetY, moveDir.Z * flySpeed)
+    end
+
+    if bhopEnabled and not isFlying then
+        local vel = hrp.Velocity
+        local speed = math.floor(Vector3.new(vel.X, 0, vel.Z).Magnitude)
+        bhopLiveLbl.Text = "LIVE: " .. string.format("%03d", speed)
+        local state = humanoid:GetState()
+        if state == Enum.HumanoidStateType.Running or state == Enum.HumanoidStateType.Landed then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            if strafeEnabled then strafeDir = -strafeDir end
+        else
+            local moveDir = humanoid.MoveDirection
+            if moveDir.Magnitude > 0 and speed < speedCap then
+                local boost = moveDir * 3
+                if strafeEnabled then
+                    local right = hrp.CFrame.RightVector * strafeDir
+                    boost = boost + right * 3
+                    hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(2 * strafeDir), 0)
+                end
+                hrp.Velocity = Vector3.new(hrp.Velocity.X + boost.X, hrp.Velocity.Y, hrp.Velocity.Z + boost.Z)
+            end
+        end
+    else
+        if bhopLiveLbl then bhopLiveLbl.Text = "LIVE: 000" end
+    end
+end)
+
+-- ==========================================
+-- Core Loop Zero Gravity (แยก Loop ตามเดิม)
+-- ==========================================
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    zeroGKeys[input.KeyCode] = true
+end)
+UserInputService.InputEnded:Connect(function(input)
+    zeroGKeys[input.KeyCode] = false
+end)
+
+RunService.Heartbeat:Connect(function()
+    local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if not root or not zeroGForce then return end
+
+    if not zeroGEnabled then
+        zeroGForce.Force = Vector3.zero
+        return
+    end
+
+    zeroGForce.Force = Vector3.new(0, root.AssemblyMass * workspace.Gravity, 0)
+
+    local cam = workspace.CurrentCamera
+    local forward = cam.CFrame.LookVector
+    local right = cam.CFrame.RightVector
+    local up = cam.CFrame.UpVector
+
+    local accelVec = Vector3.zero
+    if zeroGKeys[Enum.KeyCode.W] then accelVec += forward end
+    if zeroGKeys[Enum.KeyCode.S] then accelVec -= forward end
+    if zeroGKeys[Enum.KeyCode.A] then accelVec -= right end
+    if zeroGKeys[Enum.KeyCode.D] then accelVec += right end
+    if zeroGKeys[Enum.KeyCode.Space] then accelVec += up end
+    if zeroGKeys[Enum.KeyCode.LeftShift] then accelVec -= up end
+
+    if accelVec.Magnitude > 0 then
+        root.AssemblyLinearVelocity += accelVec.Unit * zeroGAccel
+    end
+
+    if root.AssemblyLinearVelocity.Magnitude > zeroGMaxSpeed then
+        root.AssemblyLinearVelocity = root.AssemblyLinearVelocity.Unit * zeroGMaxSpeed
+    end
+end)
+
+-- ==========================================
+-- ระบบ Click TP
+-- ==========================================
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if not clickTpEnabled then return end
+        if isFlying then return end
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            if mouse.Target then
+                local pos = mouse.Hit.Position
+                char:MoveTo(pos + Vector3.new(0, 3, 0))
+            end
+        end
+    end
+end)
+
+-- ==========================================
+-- รีเซ็ตเมื่อตาย (รวม Zero G ด้วย)
+-- ==========================================
+player.CharacterAdded:Connect(function(char)
+    isFlying = false; isSprinting = false; bhopEnabled = false; strafeEnabled = false
+    goingUp = false; goingDown = false; clickTpEnabled = false; isInvisible = false
+    espEnabled = false; profileEnabled = false; zeroGEnabled = false -- เพิ่มรีเซ็ต Zero G
+
+    flyToggleBtn.Text = "เปิดบิน"; ftStroke.Color = Color3.fromRGB(0, 150, 255); flyToggleBtn.TextColor3 = Color3.fromRGB(0, 200, 255)
+    sprintToggleBtn.Text = "เปิดวิ่งเร็ว"; spStroke.Color = Color3.fromRGB(255, 200, 0); sprintToggleBtn.TextColor3 = Color3.fromRGB(255, 200, 0)
+    bhopToggleBtn.Text = "BHOP OFF"; bhStroke.Color = Color3.fromRGB(60, 60, 60); bhopToggleBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    strafeToggleBtn.Text = "STRAFE OFF"; stStroke.Color = Color3.fromRGB(60, 60, 60); strafeToggleBtn.TextColor3 = Color3.fromRGB(150, 150, 150)
+    tpToggleBtn.Text = "CLICK TP: OFF"; tpStroke.Color = Color3.fromRGB(60, 60, 60); tpToggleBtn.TextColor3 = Color3.fromRGB(255, 80, 120)
+    invisToggleBtn.Text = "INVISIBLE: OFF"; invStroke.Color = Color3.fromRGB(60, 60, 60); invisToggleBtn.TextColor3 = Color3.fromRGB(180, 100, 255)
+    
+    espToggleBtn.Text = "ESP: OFF"; espStroke.Color = Color3.fromRGB(60, 60, 60); espToggleBtn.TextColor3 = Color3.fromRGB(255, 80, 120)
+    profToggleBtn.Text = "PIC: OFF"; profStroke.Color = Color3.fromRGB(60, 60, 60); profToggleBtn.TextColor3 = Color3.fromRGB(120, 180, 255)
+    
+    -- เพิ่มรีเซ็ตปุ่ม Zero G
+    zeroGToggleBtn.Text = "ZERO G: OFF"; zGStroke.Color = Color3.fromRGB(60, 60, 60); zeroGToggleBtn.TextColor3 = Color3.fromRGB(150, 150, 255)
+
+    char:WaitForChild("Humanoid").WalkSpeed = defaultWalkSpeed
+    
+    -- Setup Zero G สำหรับตัวละครใหม่
+    setupZeroG(char)
+    
+    -- รีเซ็ต ESP
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player then removeESP(p) end
+    end
+    task.wait(2)
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then onCharacterAdded(p, p.Character) end
+    end
+end)
