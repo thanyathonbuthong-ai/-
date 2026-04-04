@@ -1,0 +1,925 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+local camera = Workspace.CurrentCamera
+
+local PURPLE = Color3.fromRGB(150, 0, 255)
+local BG_BLACK = Color3.fromRGB(10, 10, 10)
+
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+ScreenGui.Name = "HilosHax_AllInOne_UI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ==================== กล้องตัวอย่าง 3D PaperDoll ====================
+local viewportFrame = Instance.new("Frame")
+viewportFrame.Name = "PaperDollContainer"
+viewportFrame.Size = UDim2.new(0, 260, 0, 360)
+viewportFrame.Position = UDim2.new(0, 10, 0, 10)
+viewportFrame.BackgroundTransparency = 1
+viewportFrame.Visible = false 
+viewportFrame.Parent = ScreenGui
+
+local viewport = Instance.new("ViewportFrame")
+viewport.Size = UDim2.new(1, 0, 1, 0)
+viewport.BackgroundTransparency = 1
+viewport.Parent = viewportFrame
+
+local pdCamera = Instance.new("Camera")
+viewport.CurrentCamera = pdCamera
+pdCamera.Parent = viewport
+
+-- ==================== แผนที่ Minimap ====================
+local viewportSize = camera.ViewportSize
+local baseSize = math.clamp(math.floor(math.min(viewportSize.X, viewportSize.Y)*0.22), 120, 260)
+local offsetFromEdge = math.floor(baseSize*0.15)
+
+local MinimapFrame = Instance.new("Frame")
+MinimapFrame.Name = "Minimap"
+MinimapFrame.Parent = ScreenGui
+MinimapFrame.AnchorPoint = Vector2.new(1,0)
+MinimapFrame.Position = UDim2.new(1, -offsetFromEdge, 0, offsetFromEdge*0.6)
+MinimapFrame.Size = UDim2.new(0, baseSize, 0, baseSize)
+MinimapFrame.BackgroundColor3 = Color3.fromRGB(29, 29, 29)
+MinimapFrame.BorderSizePixel = 0
+MinimapFrame.ClipsDescendants = true
+MinimapFrame.Visible = false
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 3.6
+UIStroke.Color = Color3.fromRGB(70, 70, 70)
+UIStroke.Parent = MinimapFrame
+
+local MapViewport = Instance.new("ViewportFrame")
+MapViewport.Parent = MinimapFrame
+MapViewport.Size = UDim2.new(1, 0, 1, 0)
+MapViewport.BorderSizePixel = 0
+MapViewport.BackgroundColor3 = Color3.fromRGB(120, 120, 120)
+MapViewport.Ambient = Color3.new(1,1,1)
+MapViewport.LightColor = Color3.new(1,1,1)
+MapViewport.LightDirection = Vector3.new(0,-1,0)
+
+local WorldModel = Instance.new("WorldModel")
+WorldModel.Parent = MapViewport
+
+local Arrow = Instance.new("ImageLabel")
+Arrow.Parent = MapViewport
+Arrow.AnchorPoint = Vector2.new(0.5, 0.5)
+Arrow.Position = UDim2.new(0.5, 0, 0.5, 0)
+Arrow.Size = UDim2.new(0, math.floor(baseSize*0.1), 0, math.floor(baseSize*0.1))
+Arrow.BackgroundTransparency = 1
+Arrow.Image = "rbxassetid://5485245567"
+
+local MapCamera = Instance.new("Camera")
+MapCamera.FieldOfView = 70
+MapCamera.CameraType = Enum.CameraType.Scriptable
+MapCamera.Parent = MapViewport
+MapViewport.CurrentCamera = MapCamera
+
+-- ==================== Freecam Control Gui ====================
+local ControlGui = Instance.new("ScreenGui")
+ControlGui.Name = "FreecamControls"
+ControlGui.ResetOnSpawn = false
+ControlGui.IgnoreGuiInset = true
+ControlGui.Parent = ScreenGui
+ControlGui.Enabled = false
+ControlGui.DisplayOrder = 10
+
+local function addScale(gui)
+    local s = Instance.new("UIScale")
+    local cam = workspace.CurrentCamera
+    local function update() s.Scale = math.clamp(cam.ViewportSize.Y/720,0.85,1.35) end
+    update()
+    cam:GetPropertyChangedSignal("ViewportSize"):Connect(update)
+    s.Parent = gui
+end
+addScale(ControlGui)
+
+local Container = Instance.new("Frame")
+Container.BackgroundTransparency = 1
+Container.Size = UDim2.new(0,400,0,400)
+Container.Position = UDim2.new(0.02,0,0.38,0)
+Container.Parent = ControlGui
+
+local ARROW_NORMAL = "rbxassetid://16810132542"
+local ARROW_PRESSED = "rbxassetid://16810118497"
+
+local function createButton(name, rotationValue)
+    local btn = Instance.new("ImageButton")
+    btn.Name = name
+    btn.BackgroundTransparency = 1
+    btn.Size = UDim2.new(0,160,0,160)
+    btn.Parent = Container
+    local arrow = Instance.new("ImageLabel")
+    arrow.Size = UDim2.new(0.8,0,0.8,0)
+    arrow.Position = UDim2.new(0.1,0,0.1,0)
+    arrow.BackgroundTransparency = 1
+    arrow.Image = ARROW_NORMAL
+    arrow.Rotation = rotationValue
+    arrow.Parent = btn
+    btn.MouseButton1Down:Connect(function() arrow.Image = ARROW_PRESSED end)
+    btn.MouseButton1Up:Connect(function() arrow.Image = ARROW_NORMAL end)
+    btn.MouseLeave:Connect(function() arrow.Image = ARROW_NORMAL end)
+    return btn
+end
+
+local Forward = createButton("Forward",0)
+local Backward = createButton("Backward",180)
+local Left = createButton("Left",-90)
+local Right = createButton("Right",90)
+Forward.Position = UDim2.new(0.5,-80,0,0)
+Backward.Position = UDim2.new(0.5,-80,1,-160)
+Left.Position = UDim2.new(0,0,0.5,-80)
+Right.Position = UDim2.new(1,-160,0.5,-80)
+
+-- ==================== สร้าง Main Frame (UI หลัก) ====================
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.BackgroundColor3 = BG_BLACK
+MainFrame.Position = UDim2.new(0.5, -150, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 300, 0, 250)
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.ClipsDescendants = true
+Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 15)
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = PURPLE
+MainStroke.Thickness = 2
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, -80, 0, 50)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.Text = "HILOSHAX'S ALL IN ONE"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.TextXAlignment = Enum.TextXAlignment.Left
+
+local CloseBtn = Instance.new("TextButton", MainFrame)
+CloseBtn.Size = UDim2.new(0, 30, 0, 30)
+CloseBtn.Position = UDim2.new(1, -40, 0, 10)
+CloseBtn.Text = "X"
+CloseBtn.BackgroundColor3 = Color3.fromRGB(40, 10, 10)
+CloseBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", CloseBtn)
+
+local MinBtn = Instance.new("TextButton", MainFrame)
+MinBtn.Size = UDim2.new(0, 30, 0, 30)
+MinBtn.Position = UDim2.new(1, -75, 0, 10)
+MinBtn.Text = "-"
+MinBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MinBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", MinBtn)
+
+-- ==================== หน้าต่างหมวดหลัก (ไม่มี Tab แล้ว) ====================
+local MainTab = Instance.new("Frame", MainFrame)
+MainTab.Size = UDim2.new(1, 0, 1, -60)
+MainTab.Position = UDim2.new(0, 0, 0, 55)
+MainTab.BackgroundTransparency = 1
+MainTab.ClipsDescendants = true
+
+-- ==================== ปุ่มทั้งหมด ====================
+local GojoBtn = Instance.new("TextButton", MainTab)
+GojoBtn.Size = UDim2.new(0.8, 0, 0, 26)
+GojoBtn.Position = UDim2.new(0.1, 0, 0.02, 0)
+GojoBtn.Text = "OPTIMIZE (GOJO)"
+GojoBtn.BackgroundColor3 = Color3.fromRGB(0, 50, 100)
+GojoBtn.TextColor3 = Color3.new(1, 1, 1)
+GojoBtn.Font = Enum.Font.GothamBold
+GojoBtn.TextSize = 9
+Instance.new("UICorner", GojoBtn)
+
+local MinimapBtn = Instance.new("TextButton", MainTab)
+MinimapBtn.Size = UDim2.new(0.8, 0, 0, 26)
+MinimapBtn.Position = UDim2.new(0.1, 0, 0.145, 0)
+MinimapBtn.Text = "MINIMAP: OFF"
+MinimapBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 0)
+MinimapBtn.TextColor3 = Color3.new(1, 1, 1)
+MinimapBtn.Font = Enum.Font.GothamBold
+MinimapBtn.TextSize = 9
+Instance.new("UICorner", MinimapBtn)
+
+local ToggleBtn = Instance.new("TextButton", MainTab)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0, 26)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.27, 0)
+ToggleBtn.Text = "PAPERDOLL: OFF"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 0, 50)
+ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 9
+Instance.new("UICorner", ToggleBtn)
+
+local ZoomBtn = Instance.new("TextButton", MainTab)
+ZoomBtn.Size = UDim2.new(0.8, 0, 0, 26)
+ZoomBtn.Position = UDim2.new(0.1, 0, 0.395, 0)
+ZoomBtn.Text = "ZOOM: OFF"
+ZoomBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 0)
+ZoomBtn.TextColor3 = Color3.new(1, 1, 1)
+ZoomBtn.Font = Enum.Font.GothamBold
+ZoomBtn.TextSize = 9
+Instance.new("UICorner", ZoomBtn)
+
+local FreecamBtn = Instance.new("TextButton", MainTab)
+FreecamBtn.Size = UDim2.new(0.8, 0, 0, 26)
+FreecamBtn.Position = UDim2.new(0.1, 0, 0.52, 0)
+FreecamBtn.Text = "FREECAM: OFF"
+FreecamBtn.BackgroundColor3 = Color3.fromRGB(0, 40, 40)
+FreecamBtn.TextColor3 = Color3.new(1, 1, 1)
+FreecamBtn.Font = Enum.Font.GothamBold
+FreecamBtn.TextSize = 9
+Instance.new("UICorner", FreecamBtn)
+
+local GiBtn = Instance.new("TextButton", MainTab)
+GiBtn.Size = UDim2.new(0.8, 0, 0, 26)
+GiBtn.Position = UDim2.new(0.1, 0, 0.645, 0)
+GiBtn.Text = "REALISTIC GI & RAIN: OFF"
+GiBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+GiBtn.TextColor3 = Color3.new(1, 1, 1)
+GiBtn.Font = Enum.Font.GothamBold
+GiBtn.TextSize = 9
+Instance.new("UICorner", GiBtn)
+
+local BpxBtn = Instance.new("TextButton", MainTab)
+BpxBtn.Size = UDim2.new(0.8, 0, 0, 26)
+BpxBtn.Position = UDim2.new(0.1, 0, 0.77, 0)
+BpxBtn.Text = "BACKPACK+: OFF"
+BpxBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 40)
+BpxBtn.TextColor3 = Color3.new(1, 1, 1)
+BpxBtn.Font = Enum.Font.GothamBold
+BpxBtn.TextSize = 9
+Instance.new("UICorner", BpxBtn)
+
+-- ==================== ระบบ Confirm GUI ====================
+local ConfirmGui = Instance.new("Frame", ScreenGui)
+ConfirmGui.Size = UDim2.new(0, 320, 0, 180)
+ConfirmGui.Position = UDim2.new(0.5, -160, -0.5, 0)
+ConfirmGui.BackgroundColor3 = BG_BLACK
+ConfirmGui.Visible = false
+Instance.new("UICorner", ConfirmGui)
+Instance.new("UIStroke", ConfirmGui).Color = PURPLE
+
+local CText = Instance.new("TextLabel", ConfirmGui)
+CText.Size = UDim2.new(1, -40, 0, 80)
+CText.Position = UDim2.new(0, 20, 0, 10)
+CText.Text = "(THIS WILL PERM CLOSE THE GUI. ARE YOU SURE?)"
+CText.TextColor3 = Color3.new(1, 1, 1)
+CText.BackgroundTransparency = 1
+CText.TextWrapped = true
+CText.Font = Enum.Font.GothamBold
+CText.TextSize = 11
+
+local YesBtn = Instance.new("TextButton", ConfirmGui)
+YesBtn.Size = UDim2.new(0, 110, 0, 45)
+YesBtn.Position = UDim2.new(0.25, -55, 0.75, 0)
+YesBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+YesBtn.Text = "YES"
+YesBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", YesBtn)
+
+local NoBtn = Instance.new("TextButton", ConfirmGui)
+NoBtn.Size = UDim2.new(0, 110, 0, 45)
+NoBtn.Position = UDim2.new(0.75, -55, 0.75, 0)
+NoBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+NoBtn.Text = "NO"
+NoBtn.TextColor3 = Color3.new(1, 1, 1)
+Instance.new("UICorner", NoBtn)
+
+CloseBtn.MouseButton1Down:Connect(function()
+    ConfirmGui.Visible = true
+    ConfirmGui:TweenPosition(UDim2.new(0.5, -160, 0.4, 0), "Out", "Quad", 0.3)
+end)
+
+NoBtn.MouseButton1Down:Connect(function()
+    ConfirmGui:TweenPosition(UDim2.new(0.5, -160, -0.5, 0), "In", "Quad", 0.3, true, function() ConfirmGui.Visible = false end)
+end)
+
+YesBtn.MouseButton1Down:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+local Minimized = false
+MinBtn.MouseButton1Down:Connect(function()
+    Minimized = not Minimized
+    MainFrame:TweenSize(Minimized and UDim2.new(0, 300, 0, 50) or UDim2.new(0, 300, 0, 250), "Out", "Quart", 0.3)
+end)
+
+-- ==================== Event ปุ่มเปิด/ปิด ====================
+local gojoExecuted = false
+local function playGojoIntro()
+    local introSound = Instance.new("Sound")
+    introSound.Name = "GojoIntro"
+    introSound.SoundId = "rbxassetid://6955171739" 
+    introSound.Volume = 2
+    introSound.Parent = game:GetService("SoundService")
+    introSound:Play()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "DaMieN ",
+        Text = "Throughout Heavens and Earth, I alone am the honored one.",
+        Duration = 5
+    })
+end
+
+local function optimizeGame()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") or v:IsA("ColorCorrectionEffect") then
+            v.Enabled = false
+        elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+            v.Enabled = false
+        end
+    end
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v:IsA("Part") or v:IsA("MeshPart") or v:IsA("UnionOperation") then
+            v.Material = Enum.Material.SmoothPlastic
+            v.Reflectance = 0
+        end
+    end
+    local lighting = game:GetService("Lighting")
+    lighting.GlobalShadows = false
+    lighting.FogEnd = 9e9
+    settings().Network.IncomingReplicationLag = 0
+end
+
+GojoBtn.MouseButton1Down:Connect(function()
+    if not gojoExecuted then
+        gojoExecuted = true
+        GojoBtn.Text = "ACTIVATED"
+        GojoBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+        playGojoIntro()
+        task.wait(1) 
+        optimizeGame()
+    end
+end)
+
+local isMinimapEnabled = false
+MinimapBtn.MouseButton1Down:Connect(function()
+    isMinimapEnabled = not isMinimapEnabled
+    MinimapBtn.Text = isMinimapEnabled and "MINIMAP: INSTANT" or "MINIMAP: OFF"
+    MinimapBtn.BackgroundColor3 = isMinimapEnabled and Color3.fromRGB(150, 150, 0) or Color3.fromRGB(30, 30, 0)
+    MinimapFrame.Visible = isMinimapEnabled
+end)
+
+local isPaperDollEnabled = false
+ToggleBtn.MouseButton1Down:Connect(function()
+    isPaperDollEnabled = not isPaperDollEnabled
+    ToggleBtn.Text = isPaperDollEnabled and "PAPERDOLL: INSTANT" or "PAPERDOLL: OFF"
+    ToggleBtn.BackgroundColor3 = isPaperDollEnabled and PURPLE or Color3.fromRGB(30, 0, 50)
+    viewportFrame.Visible = isPaperDollEnabled
+end)
+
+local defaultFov = 70
+local zoomFov = 40
+local isZoomed = false
+local function smoothZoom(targetFov)
+    local tween = TweenService:Create(camera, TweenInfo.new(0.45, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {FieldOfView = targetFov})
+    tween:Play()
+end
+
+ZoomBtn.MouseButton1Down:Connect(function()
+    isZoomed = not isZoomed
+    if isZoomed then
+        ZoomBtn.Text = "ZOOM: INSTANT"
+        ZoomBtn.BackgroundColor3 = Color3.fromRGB(180, 100, 0)
+        smoothZoom(zoomFov)
+    else
+        ZoomBtn.Text = "ZOOM: OFF"
+        ZoomBtn.BackgroundColor3 = Color3.fromRGB(50, 30, 0)
+        smoothZoom(defaultFov)
+    end
+end)
+
+-- ==================== Freecam Logic ====================
+local freecam = false
+local speed = 2
+local smoothness = 0.15
+local velocity = Vector3.zero
+local rotation = Vector2.zero
+local currentRotation = Vector2.zero
+local touchDragging = false
+local lastTouchPos = nil
+local pressed = { X = 0, Z = 0 }
+local lockConnection
+local originalWalkSpeed
+local originalJumpPower
+local savedCFrame
+local currentCharacter
+
+pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.TouchControls, true) end)
+
+local function bind(btn, axis, value)
+    btn.InputBegan:Connect(function(input)
+        if not freecam then return end
+        if input.UserInputType == Enum.UserInputType.Touch then
+            if axis == "X" then pressed.X += value else pressed.Z += value end
+        end
+    end)
+    btn.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            if axis == "X" then pressed.X -= value else pressed.Z -= value end
+        end
+    end)
+end
+
+bind(Forward,"Z",-1)
+bind(Backward,"Z",1)
+bind(Left,"X",-1)
+bind(Right,"X",1)
+
+local function startLock(char)
+    currentCharacter = char
+    local hrp = char:WaitForChild("HumanoidRootPart")
+    local humanoid = char:WaitForChild("Humanoid")
+    originalWalkSpeed = humanoid.WalkSpeed
+    originalJumpPower = humanoid.JumpPower
+    humanoid.WalkSpeed = 0
+    humanoid.JumpPower = 0
+    savedCFrame = hrp.CFrame
+    if lockConnection then lockConnection:Disconnect() end
+    lockConnection = RunService.Heartbeat:Connect(function()
+        if freecam and hrp.Parent then
+            hrp.CFrame = savedCFrame
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+        end
+    end)
+end
+
+local function stopLock()
+    if not currentCharacter then return end
+    local char = currentCharacter
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    local humanoid = char:FindFirstChild("Humanoid")
+    if lockConnection then lockConnection:Disconnect() lockConnection = nil end
+    if humanoid then
+        humanoid.WalkSpeed = originalWalkSpeed or 16
+        humanoid.JumpPower = originalJumpPower or 50
+    end
+    if hrp then
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+    end
+    savedCFrame = nil
+end
+
+local function enableFreecam()
+    freecam = true
+    velocity = Vector3.zero
+    rotation = Vector2.zero
+    currentRotation = Vector2.zero
+    pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.TouchControls, false) end)
+    local char = player.Character
+    if char and char:FindFirstChild("Head") then
+        camera.CFrame = char.Head.CFrame
+        startLock(char)
+    end
+    camera.CameraType = Enum.CameraType.Scriptable
+    ControlGui.Enabled = true
+end
+
+local function disableFreecam()
+    freecam = false
+    pressed.X = 0
+    pressed.Z = 0
+    pcall(function() StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.TouchControls, true) end)
+    stopLock()
+    camera.CameraType = Enum.CameraType.Custom
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        camera.CameraSubject = player.Character.Humanoid
+    end
+    ControlGui.Enabled = false
+end
+
+FreecamBtn.MouseButton1Down:Connect(function()
+    if freecam then
+        disableFreecam()
+        FreecamBtn.Text = "FREECAM: OFF"
+        FreecamBtn.BackgroundColor3 = Color3.fromRGB(0, 40, 40)
+    else
+        enableFreecam()
+        FreecamBtn.Text = "FREECAM: INSTANT"
+        FreecamBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 120)
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if not freecam then return end
+    if input.UserInputType == Enum.UserInputType.Touch then
+        if not touchDragging then
+            touchDragging = true
+            lastTouchPos = input.Position
+        else
+            local delta = input.Position - lastTouchPos
+            lastTouchPos = input.Position
+            rotation += Vector2.new(-delta.Y, -delta.X) * 0.2
+        end
+    end
+end)
+
+UserInputService.TouchEnded:Connect(function()
+    touchDragging = false
+    lastTouchPos = nil
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not freecam then return end
+    currentRotation = currentRotation:Lerp(rotation, smoothness)
+    local camCF = CFrame.new(camera.CFrame.Position) * CFrame.Angles(0, math.rad(currentRotation.Y), 0) * CFrame.Angles(math.rad(currentRotation.X), 0, 0)
+    local moveVector = Vector3.new(pressed.X,0,pressed.Z)
+    if moveVector.Magnitude > 1 then moveVector = moveVector.Unit end
+    velocity = velocity:Lerp(camCF:VectorToWorldSpace(moveVector) * speed, smoothness)
+    camera.CFrame = camCF + velocity
+end)
+
+player.CharacterAdded:Connect(function(char)
+    task.wait(0.1)
+    if freecam then startLock(char) end
+end)
+
+-- ==================== Realistic GI & Rain Logic ====================
+local isGiEnabled = false
+local rainModel = nil
+local giLights = {}
+local giConnections = {}
+
+local function enableGI()
+    local Terrain = Workspace:FindFirstChildOfClass("Terrain") or Instance.new("Terrain",Workspace)
+    for _,v in pairs(Lighting:GetChildren()) do
+        if v:IsA("Sky") then v:Destroy() end
+    end
+    Lighting.Technology = Enum.Technology.Unified
+    Lighting.Ambient = Color3.fromRGB(65,61,86)
+    Lighting.Brightness = 3.6
+    Lighting.EnvironmentDiffuseScale = 0.1
+    Lighting.EnvironmentSpecularScale = 1
+    Lighting.GlobalShadows = true
+    Lighting.OutdoorAmbient = Color3.fromRGB(160,160,160)
+    Lighting.ShadowSoftness = 0.5
+    Lighting.GeographicLatitude = 41.733
+    Lighting.ExposureCompensation = 0.2
+    Lighting.FogColor = Color3.fromRGB(192,192,192)
+    Lighting.FogEnd = 100000
+    Lighting.ClockTime = 6.5
+    Terrain.WaterColor = Color3.fromRGB(12,81,89)
+    Terrain.WaterReflectance = 1
+    Terrain.WaterTransparency = 0.11
+    Terrain.WaterWaveSize = 0.45
+    Terrain.WaterWaveSpeed = 25
+    Instance.new("SunRaysEffect", Lighting)
+    Instance.new("Atmosphere", Lighting)
+    Instance.new("DepthOfFieldEffect", Lighting)
+    local clouds = Instance.new("Clouds", Lighting)
+    clouds.Cover = 0.6
+    clouds.Density = 0.5
+    clouds.Color = Color3.fromRGB(225,246,217)
+    local sky = Instance.new("Sky")
+    sky.SkyboxBk = "rbxassetid://1618912481"
+    sky.SkyboxFt = "rbxassetid://1618913244"
+    sky.SkyboxLf = "rbxassetid://1618912849"
+    sky.SkyboxRt = "rbxassetid://1618911568"
+    sky.SkyboxUp = "rbxassetid://1618913654"
+    sky.SkyboxDn = "rbxassetid://1618913943"
+    sky.Parent = Lighting
+    rainModel = Instance.new("Model")
+    rainModel.Name = "RainParticles"
+    rainModel.Parent = Workspace
+    local drops = Instance.new("Part")
+    drops.Name = "Drops"
+    drops.Size = Vector3.new(512,20,512)
+    drops.Anchored = true
+    drops.CanCollide = false
+    drops.Transparency = 1
+    drops.Parent = rainModel
+    for i=1,38 do
+        local p = Instance.new("ParticleEmitter")
+        p.Texture = "rbxassetid://241868005"
+        p.Rate = 1e5
+        p.Lifetime = NumberRange.new(30)
+        p.Speed = NumberRange.new(-100)
+        p.Size = NumberSequence.new(3)
+        p.Color = ColorSequence.new(Color3.fromRGB(59,124,185), Color3.fromRGB(71,126,177))
+        p.LightEmission = 1
+        p.LightInfluence = 0
+        p.Orientation = Enum.ParticleOrientation.FacingCamera
+        p.EmissionDirection = Enum.NormalId.Top
+        p.Parent = drops
+    end
+    local splashes = Instance.new("Part")
+    splashes.Name = "Splashes"
+    splashes.Size = Vector3.new(512,0.05,512)
+    splashes.Anchored = true
+    splashes.CanCollide = false
+    splashes.Transparency = 1
+    splashes.Parent = rainModel
+    for i=1,3 do
+        local p = Instance.new("ParticleEmitter")
+        p.Texture = "rbxassetid://241576804"
+        p.Rate = 1e7
+        p.Lifetime = NumberRange.new(0.5)
+        p.Speed = NumberRange.new(3)
+        p.Size = NumberSequence.new{NumberSequenceKeypoint.new(0,0),NumberSequenceKeypoint.new(1,1.5)}
+        p.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0,1),NumberSequenceKeypoint.new(0.1,0),NumberSequenceKeypoint.new(0.55,0.75),NumberSequenceKeypoint.new(1,1)}
+        p.Acceleration = Vector3.new(0,-30,0)
+        p.Orientation = Enum.ParticleOrientation.FacingCamera
+        p.Parent = splashes
+    end
+    local rainSound = Instance.new("Sound")
+    rainSound.SoundId = "rbxassetid://3786250088"
+    rainSound.Looped = true
+    rainSound.Volume = 1
+    rainSound.RollOffMaxDistance = 10000
+    rainSound.RollOffMinDistance = 10
+    rainSound.Parent = rainModel
+    rainSound:Play()
+    local MAX_LIGHTS = 150
+    giLights = {}
+    local function isCharacterPart(part)
+        local model = part:FindFirstAncestorOfClass("Model")
+        return model and Players:GetPlayerFromCharacter(model)
+    end
+    local function createBounce(part)
+        if not part:IsA("BasePart") then return end
+        if isCharacterPart(part) then return end
+        if part.Transparency > 0.6 then return end
+        if part.Size.Magnitude < 3 then return end
+        if #giLights >= MAX_LIGHTS then return end
+        if part:FindFirstChild("GI_Bounce") then return end
+        local att = Instance.new("Attachment")
+        att.Name = "GI_Bounce"
+        att.Position = Vector3.new(0, part.Size.Y/2, 0)
+        att.Parent = part
+        local light = Instance.new("PointLight")
+        light.Name = "GI_Light"
+        light.Range = math.clamp(part.Size.Magnitude*3,25,60)
+        light.Brightness = 1.35
+        light.Color = part.Color
+        light.Shadows = false
+        light.Parent = att
+        giLights[#giLights+1] = light
+    end
+    local function applyBounce()
+        for _,v in ipairs(Workspace:GetDescendants()) do createBounce(v) end
+    end
+    applyBounce()
+    table.insert(giConnections, Workspace.DescendantAdded:Connect(createBounce))
+    table.insert(giConnections, RunService.Heartbeat:Connect(function()
+        for i=1,#giLights do
+            local light = giLights[i]
+            local part = light.Parent and light.Parent.Parent
+            if part and part:IsA("BasePart") and not isCharacterPart(part) then
+                light.Color = part.Color
+                light.Range = math.clamp(part.Size.Magnitude*3,25,60)
+            end
+        end
+    end))
+    table.insert(giConnections, spawn(function()
+        while isGiEnabled do
+            Terrain.WaterWaveSpeed = 25 + math.sin(tick()*0.5)*15
+            Terrain.WaterWaveSize = 0.45 + math.sin(tick()*0.3)*0.2
+            task.wait(0.1)
+        end
+    end))
+    table.insert(giConnections, RunService.RenderStepped:Connect(function()
+        if camera and rainModel then
+            local cf = camera.CFrame
+            drops.CFrame = cf + cf.LookVector*10 + Vector3.new(0,5,0)
+            splashes.CFrame = cf + cf.LookVector*10 - Vector3.new(0,10,0)
+        end
+    end))
+    table.insert(giConnections, player.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        applyBounce()
+    end))
+end
+
+local function disableGI()
+    isGiEnabled = false
+    if rainModel then rainModel:Destroy() rainModel = nil end
+    for _, light in ipairs(giLights) do
+        if light and light.Parent then light.Parent:Destroy() end
+    end
+    giLights = {}
+    for _, conn in ipairs(giConnections) do
+        if conn then pcall(function() conn:Disconnect() end) end
+    end
+    giConnections = {}
+    for _,v in pairs(Lighting:GetChildren()) do
+        if v:IsA("Sky") or v:IsA("SunRaysEffect") or v:IsA("Atmosphere") or v:IsA("DepthOfFieldEffect") or v:IsA("Clouds") then
+            v:Destroy()
+        end
+    end
+end
+
+GiBtn.MouseButton1Down:Connect(function()
+    isGiEnabled = not isGiEnabled
+    if isGiEnabled then
+        GiBtn.Text = "REALISTIC GI & RAIN: ON"
+        GiBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 150)
+        enableGI()
+    else
+        GiBtn.Text = "REALISTIC GI & RAIN: OFF"
+        GiBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 40)
+        disableGI()
+    end
+end)
+
+-- ==================== BPX Logic (ห่อไว้เพื่อไม่ให้ชนกับตัวแปรอื่น) ====================
+local bpxLoaded = false
+local bpxGui = nil
+
+BpxBtn.MouseButton1Down:Connect(function()
+    if not bpxLoaded then
+        bpxLoaded = true
+        BpxBtn.Text = "BACKPACK+: INSTANT"
+        BpxBtn.BackgroundColor3 = Color3.fromRGB(120, 0, 120)
+        
+        local success, err = pcall(function()
+            do local ok,e=pcall(getgenv);if ok and type(e)=="table"then if e.BPX then return end;e.BPX=true end end;if not game:IsLoaded()then game.Loaded:Wait()end;local function sgs(n)local cr=rawget(getfenv(0)or{},"cloneref");if cr then local ok,ref=pcall(function()return cr(game:FindService(n))end);if ok and ref then return ref end;local fallbackOk,fallbackRef=pcall(function()return cr(Instance.new(n))end);if fallbackOk and fallbackRef then return fallbackRef end end;local s=game:FindService(n);if s then return s end;local ok,inst=pcall(Instance.new,n);if ok and inst and typeof(inst)=="Instance"then return inst end end;local Plr=(sgs("Players")).LocalPlayer;local TS=sgs("TweenService");local UIS=sgs("UserInputService");local SG=sgs("StarterGui");local WS=sgs("Workspace");local TSvc=sgs("TextService");local RS=sgs("RunService");pcall(function()RS.PreSimulation:Connect(function()SG:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack,false)end)end);local IsOnMobile=(function()local platform=UIS:GetPlatform();if platform==Enum.Platform.IOS or platform==Enum.Platform.Android or platform==Enum.Platform.AndroidTV or platform==Enum.Platform.Chromecast or platform==Enum.Platform.MetaOS then return true end;if platform==Enum.Platform.None then return UIS.TouchEnabled and(not(UIS.KeyboardEnabled or UIS.MouseEnabled))end;return false end)();local mob=IsOnMobile;local sw=false;local swSel=nil;local sel=nil;local col=false;local exp=false;local need=false;local tBtns={};local tOrder={};local qtxt="";local strokes={};local toolCnt=0;local me=false;local Thm={bg=Color3.fromRGB(14,14,16),soft=Color3.fromRGB(26,26,30),acc=Color3.fromRGB(45,120,255),acc2=Color3.fromRGB(0,185,95),dng=Color3.fromRGB(205,60,60),txt=Color3.fromRGB(255,255,255),mtx=Color3.fromRGB(210,210,210),str=Color3.fromRGB(60,60,62),hot=Color3.fromRGB(42,42,46),yel=Color3.fromRGB(255,225,90),lk=Color3.fromRGB(150,150,150)};local gap=mob and 8 or 10;local qbW=mob and 520 or 600;local cell=mob and 46 or 50;local pad=mob and 4 or 5;local bW=mob and 46 or 52;local bH=mob and 40 or 44;local barH=mob and 56 or 64;local function root()local ok,r=pcall(function()return gethui and gethui()end);if ok and typeof(r)=="Instance"then return r end;local cg=sgs("CoreGui");return cg:FindFirstChild("RobloxGui")or cg or Plr:FindFirstChildOfClass("PlayerGui")end;local function tw(i,t,p,e,d)(TS:Create(i,TweenInfo.new(t or 0.18,e or Enum.EasingStyle.Quad,d or Enum.EasingDirection.Out),p)):Play()end;local function stroke(i,th)local s=Instance.new("UIStroke");s.Color=Thm.str;s.Thickness=th or 1;s.ApplyStrokeMode=Enum.ApplyStrokeMode.Border;s.Parent=i;table.insert(strokes,s);return s end;local function corner(i,r)local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,r or 10);c.Parent=i;return c end;local function attr(g,n,v)pcall(function()g:SetAttribute(n,v)end)end;local function getattr(g,n,d)local ok,v=pcall(function()return g:GetAttribute(n)end);if ok and v~=nil then return v end;return d end;local function hum()return Plr.Character and Plr.Character:FindFirstChildOfClass("Humanoid")end;local function canDrop(t)return t:IsA("Tool")and t.CanBeDropped and(not getattr(t,"BP_Lock",false))end;local ui=Instance.new("ScreenGui");ui.Name="BPX";ui.IgnoreGuiInset=true;ui.DisplayOrder=900000000;ui.ResetOnSpawn=false;ui.ZIndexBehavior=Enum.ZIndexBehavior.Global;ui.Parent=root();bpxGui=ui;local bar=Instance.new("Frame");bar.Name="Bar";bar.AnchorPoint=Vector2.new(0.5,1);bar.Position=UDim2.new(0.5,0,1,-gap);bar.Size=UDim2.new(0,qbW+(mob and 220 or 260),0,barH);bar.BackgroundTransparency=1;bar.Parent=ui;local row=Instance.new("Frame");row.AnchorPoint=Vector2.new(0.5,0.5);row.Position=UDim2.new(0.5,0,0.5,0);row.Size=UDim2.new(1,0,1,0);row.BackgroundTransparency=1;row.Parent=bar;local rowLay=Instance.new("UIListLayout");rowLay.FillDirection=Enum.FillDirection.Horizontal;rowLay.HorizontalAlignment=Enum.HorizontalAlignment.Center;rowLay.VerticalAlignment=Enum.VerticalAlignment.Center;rowLay.Padding=UDim.new(0,mob and 8 or 10);rowLay.Parent=row;local ex=Instance.new("TextButton");ex.Name="Ex";ex.Size=UDim2.new(0,mob and 40 or 44,0,mob and 40 or 44);ex.Text="Open";ex.Font=Enum.Font.GothamBold;ex.TextScaled=true;ex.BackgroundColor3=Thm.hot;ex.BackgroundTransparency=0.2;ex.TextColor3=Thm.txt;ex.Parent=row;corner(ex,10);stroke(ex,1);local lDock=Instance.new("Frame");lDock.Name="LD";lDock.Size=UDim2.new(0,bW,0,bH);lDock.BackgroundTransparency=1;lDock.Parent=row;local lList=Instance.new("UIListLayout");lList.FillDirection=Enum.FillDirection.Horizontal;lList.HorizontalAlignment=Enum.HorizontalAlignment.Left;lList.VerticalAlignment=Enum.VerticalAlignment.Center;lList.Padding=UDim.new(0,mob and 8 or 8);lList.Parent=lDock;local meBtn=Instance.new("TextButton");meBtn.Size=UDim2.new(0,bW,0,bH);meBtn.Text="Multi";meBtn.Font=Enum.Font.GothamBold;meBtn.TextScaled=true;meBtn.BackgroundColor3=Thm.soft;meBtn.BackgroundTransparency=0.1;meBtn.TextColor3=Thm.txt;meBtn.Parent=lDock;corner(meBtn,10);stroke(meBtn,1);local qb=Instance.new("Frame");qb.Name="QB";qb.Size=UDim2.new(0,qbW,0,mob and 54 or 60);qb.BackgroundColor3=Thm.soft;qb.BackgroundTransparency=0.25;qb.ClipsDescendants=true;qb.Parent=row;corner(qb,12);stroke(qb,1);local ql=Instance.new("UIGridLayout");ql.FillDirection=Enum.FillDirection.Horizontal;ql.CellSize=UDim2.new(0,cell,0,cell);ql.CellPadding=UDim2.new(0,pad,0,pad);ql.HorizontalAlignment=Enum.HorizontalAlignment.Center;ql.VerticalAlignment=Enum.VerticalAlignment.Center;ql.SortOrder=Enum.SortOrder.LayoutOrder;ql.Parent=qb;local rDock=Instance.new("Frame");rDock.Name="RD";rDock.Size=UDim2.new(0,bW*3+(mob and 8 or 8)*2,0,bH);rDock.BackgroundTransparency=1;rDock.Parent=row;local rList=Instance.new("UIListLayout");rList.FillDirection=Enum.FillDirection.Horizontal;rList.HorizontalAlignment=Enum.HorizontalAlignment.Left;rList.VerticalAlignment=Enum.VerticalAlignment.Center;rList.Padding=UDim.new(0,mob and 8 or 8);rList.Parent=rDock;local swBtn=Instance.new("TextButton");swBtn.Size=UDim2.new(0,bW,0,bH);swBtn.Text="Swap";swBtn.Font=Enum.Font.GothamBold;swBtn.TextScaled=true;swBtn.BackgroundColor3=Thm.soft;swBtn.BackgroundTransparency=0.1;swBtn.TextColor3=Thm.txt;swBtn.Visible=false;swBtn.Parent=rDock;corner(swBtn,10);stroke(swBtn,1);local drpBtn=Instance.new("TextButton");drpBtn.Size=UDim2.new(0,bW,0,bH);drpBtn.Text="Drop(0)";drpBtn.Font=Enum.Font.GothamBold;drpBtn.TextScaled=true;drpBtn.BackgroundColor3=Thm.dng;drpBtn.BackgroundTransparency=0.5;drpBtn.TextTransparency=0.4;drpBtn.TextColor3=Thm.txt;drpBtn.Active=false;drpBtn.AutoButtonColor=false;drpBtn.Parent=rDock;corner(drpBtn,10);stroke(drpBtn,1);local colBtn=Instance.new("TextButton");colBtn.Size=UDim2.new(0,bW,0,bH);colBtn.Text="-";colBtn.Font=Enum.Font.GothamBold;colBtn.TextScaled=true;colBtn.BackgroundColor3=Thm.soft;colBtn.BackgroundTransparency=0.1;colBtn.TextColor3=Thm.txt;colBtn.Parent=rDock;corner(colBtn,10);stroke(colBtn,1);local expFr=Instance.new("Frame");expFr.Name="Exp";expFr.Size=UDim2.new(0,qbW,0,0);expFr.AnchorPoint=Vector2.new(0.5,1);expFr.Position=UDim2.new(0.5,0,1,-(barH+gap+8));expFr.BackgroundColor3=Thm.bg;expFr.BackgroundTransparency=0.2;expFr.BorderSizePixel=0;expFr.Visible=true;expFr.ClipsDescendants=true;expFr.Parent=ui;corner(expFr,12);stroke(expFr,1);local hdr=Instance.new("Frame");hdr.Size=UDim2.new(1,-10,0,mob and 34 or 40);hdr.Position=UDim2.new(0,5,0,5);hdr.BackgroundColor3=Thm.soft;hdr.BackgroundTransparency=0.2;hdr.Parent=expFr;corner(hdr,8);stroke(hdr,1);local srch=Instance.new("TextBox");srch.Size=UDim2.new(1,-10,1,0);srch.Position=UDim2.new(0,5,0,0);srch.ClearTextOnFocus=false;srch.PlaceholderText="Search";srch.Text="";srch.Font=Enum.Font.Gotham;srch.TextSize=mob and 13 or 14;srch.TextColor3=Thm.txt;srch.PlaceholderColor3=Thm.mtx;srch.BackgroundTransparency=1;srch.TextXAlignment=Enum.TextXAlignment.Left;srch.Parent=hdr;local scr=Instance.new("ScrollingFrame");scr.Size=UDim2.new(1,-10,1,-(mob and 38 or 50));scr.Position=UDim2.new(0,5,0,mob and 40 or 45);scr.CanvasSize=UDim2.new(0,0,0,0);scr.ScrollBarThickness=4;scr.ScrollingDirection=Enum.ScrollingDirection.Y;scr.BackgroundTransparency=1;scr.Parent=expFr;local gl=Instance.new("UIGridLayout");gl.CellSize=UDim2.new(0,cell,0,cell);gl.CellPadding=UDim2.new(0,pad,0,pad);gl.SortOrder=Enum.SortOrder.LayoutOrder;gl.Parent=scr;local cfm=Instance.new("Frame");cfm.Name="Cfm";cfm.AnchorPoint=Vector2.new(0.5,0.5);cfm.Size=UDim2.new(0,300,0,78);cfm.Position=UDim2.new(0.5,0,0.5,0);cfm.BackgroundColor3=Thm.soft;cfm.BackgroundTransparency=1;cfm.Visible=false;cfm.ZIndex=800;cfm.Parent=ui;corner(cfm,10);stroke(cfm,1);local cScale=Instance.new("UIScale");cScale.Scale=0.95;cScale.Parent=cfm;local cfmT=Instance.new("TextLabel");cfmT.BackgroundTransparency=1;cfmT.Size=UDim2.new(1,-140,1,-18);cfmT.Position=UDim2.new(0,12,0,9);cfmT.Font=Enum.Font.GothamSemibold;cfmT.TextSize=14;cfmT.TextColor3=Thm.txt;cfmT.TextWrapped=true;cfmT.TextTransparency=1;cfmT.Text="Drop all unlocked tools?";cfmT.ZIndex=801;cfmT.Parent=cfm;local cYes=Instance.new("TextButton");cYes.Size=UDim2.new(0,56,0,36);cYes.Position=UDim2.new(1,-124,0.5,-18);cYes.Text="Yes";cYes.Font=Enum.Font.GothamBold;cYes.TextScaled=true;cYes.BackgroundColor3=Thm.dng;cYes.TextColor3=Thm.txt;cYes.TextTransparency=1;cYes.ZIndex=801;cYes.Parent=cfm;corner(cYes,8);stroke(cYes,1);local cNo=Instance.new("TextButton");cNo.Size=UDim2.new(0,56,0,36);cNo.Position=UDim2.new(1,-62,0.5,-18);cNo.Text="No";cNo.Font=Enum.Font.GothamBold;cNo.TextScaled=true;cNo.BackgroundColor3=Thm.soft;cNo.TextColor3=Thm.txt;cNo.TextTransparency=1;cNo.ZIndex=801;cNo.Parent=cfm;corner(cNo,8);stroke(cNo,1);local tip=Instance.new("Frame");tip.Name="Tip";tip.BackgroundColor3=Thm.soft;tip.BackgroundTransparency=0.05;tip.Visible=false;tip.ZIndex=700;tip.Parent=ui;corner(tip,8);stroke(tip,1);local tipT=Instance.new("TextLabel");tipT.BackgroundTransparency=1;tipT.Size=UDim2.new(1,-14,1,-8);tipT.Position=UDim2.new(0,7,0,4);tipT.Font=Enum.Font.GothamSemibold;tipT.TextScaled=true;tipT.TextColor3=Color3.new(1,1,1);tipT.TextStrokeTransparency=0;tipT.TextStrokeColor3=Color3.new(0,0,0);tipT.Text="";tipT.ZIndex=701;tipT.Parent=tip;local tipMax=Instance.new("UITextSizeConstraint");tipMax.MaxTextSize=18;tipMax.MinTextSize=10;tipMax.Parent=tipT;local mTop=Instance.new("Frame");mTop.Name="MTop";mTop.AnchorPoint=Vector2.new(0.5,0);mTop.Size=UDim2.new(0,mob and 170 or 0,0,mob and 36 or 0);mTop.Position=UDim2.new(0.5,0,0,mob and 8 or 0);mTop.BackgroundColor3=Thm.soft;mTop.BackgroundTransparency=0.1;mTop.Visible=false;mTop.ZIndex=1000;mTop.Parent=ui;corner(mTop,10);stroke(mTop,1);local mList=Instance.new("UIListLayout");mList.FillDirection=Enum.FillDirection.Horizontal;mList.HorizontalAlignment=Enum.HorizontalAlignment.Center;mList.VerticalAlignment=Enum.VerticalAlignment.Center;mList.Padding=UDim.new(0,8);mList.Parent=mTop;local function mBtn(txt,col)local b=Instance.new("TextButton");b.Size=UDim2.new(0,50,0,30);b.Text=txt;b.TextScaled=true;b.Font=Enum.Font.GothamBold;b.BackgroundColor3=col or Thm.soft;b.TextColor3=Thm.txt;b.ZIndex=1001;b.Parent=mTop;corner(b,8);stroke(b,1);return b end;local mFav=mBtn("★");local mLock=mBtn("🔓");local mDrop=mBtn("D",Thm.dng);local mini=Instance.new("TextButton");mini.Name="Mini";mini.AnchorPoint=Vector2.new(0.5,1);mini.Position=UDim2.new(0.5,0,1,-gap);mini.Size=UDim2.new(0,mob and 64 or 72,0,mob and 32 or 36);mini.Text="Open";mini.Font=Enum.Font.GothamBold;mini.TextScaled=true;mini.BackgroundColor3=Thm.soft;mini.BackgroundTransparency=0.1;mini.TextColor3=Thm.txt;mini.Visible=false;mini.ZIndex=999999;mini.Parent=ui;corner(mini,10);stroke(mini,1);local function setStrokeOn(on)for _,s in ipairs(strokes)do if s and s.Parent then s.Transparency=on and 0 or 1 end end end;local function keyChip(btn,txt)if mob or(not txt)then return end;local old=btn:FindFirstChild("Key");if old then old:Destroy()end;local f=Instance.new("Frame");f.Name="Key";f.Size=UDim2.new(0,20,0,20);f.Position=UDim2.new(0,3,0,3);f.BackgroundColor3=Thm.bg;f.BackgroundTransparency=0.1;f.ZIndex=btn.ZIndex+2;f.Parent=btn;corner(f,5);stroke(f,1);local t=Instance.new("TextLabel");t.BackgroundTransparency=1;t.Size=UDim2.new(1,0,1,0);t.Font=Enum.Font.GothamBold;t.TextScaled=true;t.TextColor3=Thm.txt;t.Text=txt;t.ZIndex=f.ZIndex+1;t.Parent=f;local ts=Instance.new("UITextSizeConstraint");ts.MaxTextSize=14;ts.MinTextSize=10;ts.Parent=t;return f end;if not mob then keyChip(ex,"`");keyChip(drpBtn,"E");keyChip(colBtn,"C")end;local function cntDrop()local n=0;for _,cont in ipairs({Plr.Backpack,Plr.Character})do if cont then for _,t in ipairs(cont:GetChildren())do if canDrop(t)then n+=1 end end end end return n end;local function showCfm()cfm.Visible=true;cfm.BackgroundTransparency=1;cScale.Scale=0.95;cfmT.TextTransparency=1;cYes.TextTransparency=1;cNo.TextTransparency=1;tw(cfm,0.16,{BackgroundTransparency=0.1});tw(cScale,0.16,{Scale=1},Enum.EasingStyle.Back);tw(cfmT,0.16,{TextTransparency=0});tw(cYes,0.16,{TextTransparency=0});tw(cNo,0.16,{TextTransparency=0})end;local function hideCfm()if not cfm.Visible then return end;tw(cfm,0.12,{BackgroundTransparency=1});tw(cScale,0.12,{Scale=0.95});tw(cfmT,0.12,{TextTransparency=1});tw(cYes,0.12,{TextTransparency=1});tw(cNo,0.12,{TextTransparency=1});task.delay(0.12,function()cfm.Visible=false end)end;local function tipForBtn(b,name)if mob then return end;local padX=16;local h=26;local sz=TSvc:GetTextSize(name,18,Enum.Font.GothamSemibold,Vector2.new(500,36));local w=math.clamp(sz.X+padX,80,260);tip.Size=UDim2.fromOffset(w,h);tipT.Text=name;local bp=b.AbsolutePosition;local bs=b.AbsoluteSize;tip.Position=UDim2.fromOffset(bp.X+(bs.X-w)/2,bp.Y-h-2);tip.Visible=true end;local function orderedQBButtons()local arr={};for _,ch in ipairs(qb:GetChildren())do if ch:IsA("GuiButton")then table.insert(arr,ch)end end;table.sort(arr,function(a,b)return(a.LayoutOrder or 0)<(b.LayoutOrder or 0)end);return arr end;local function updMobileTop()if not mob then mTop.Visible=false;return end;local t=sel;if t and t:IsA("Tool")then mTop.Visible=true;mFav.TextColor3=getattr(t,"BP_Fav",false)and Thm.yel or Thm.txt;mLock.Text=getattr(t,"BP_Lock",false)and"🔒"or"🔓";local ok=canDrop(t);mDrop.AutoButtonColor=ok;mDrop.Active=ok;mDrop.TextTransparency=ok and 0 or 0.4;mDrop.BackgroundTransparency=ok and 0.05 or 0.5;else mTop.Visible=false end end;local function tog(t)local h=hum();if not h then return end;local c=Plr.Character;local bp=Plr:FindFirstChildOfClass("Backpack")or Plr:FindFirstChild("Backpack");if not c or(not bp)then return end;if t.Parent==c then pcall(function()h:UnequipTools()end);task.wait();if t.Parent==c then t.Parent=bp end;sel=nil else pcall(function()h:UnequipTools()end);pcall(function()h:EquipTool(t)end);sel=t end;updMobileTop()end;local function dropOne(t)local c=Plr.Character;if not c then return end;if t.Parent==c then t.Parent=WS else t.Parent=c;task.wait();t.Parent=WS end;if sel==t then sel=nil;updMobileTop()end end;local function opsBar(b,t)if mob then return end;local ops=Instance.new("Frame");ops.Name="Ops";ops.Size=UDim2.new(1,0,0,16);ops.Position=UDim2.new(0,0,1,-16);ops.BackgroundColor3=Thm.bg;ops.BackgroundTransparency=0.35;ops.Visible=false;ops.ZIndex=7;ops.Parent=b;local ol=Instance.new("UIListLayout");ol.FillDirection=Enum.FillDirection.Horizontal;ol.HorizontalAlignment=Enum.HorizontalAlignment.Center;ol.VerticalAlignment=Enum.VerticalAlignment.Center;ol.Padding=UDim.new(0,6);ol.Parent=ops;local function miniB(txt)local x=Instance.new("TextButton");x.Size=UDim2.new(0,18,0,12);x.Text=txt;x.Font=Enum.Font.GothamBold;x.TextScaled=true;x.BackgroundColor3=Thm.soft;x.BackgroundTransparency=0.1;x.TextColor3=Thm.txt;x.BorderSizePixel=0;x.ZIndex=8;x.Parent=ops;corner(x,4);return x end;local fav=miniB("★");local lock=miniB(getattr(t,"BP_Lock",false)and"🔒"or"🔓");local drop=nil;if t.CanBeDropped then drop=miniB("D")end;fav.TextColor3=getattr(t,"BP_Fav",false)and Thm.yel or Thm.txt;fav.MouseButton1Click:Connect(function()local nv=not getattr(t,"BP_Fav",false);attr(t,"BP_Fav",nv);need=false;rebuild()end);lock.MouseButton1Click:Connect(function()local nv=not getattr(t,"BP_Lock",false);attr(t,"BP_Lock",nv);need=false;rebuild()end);if drop then drop.MouseButton1Click:Connect(function()if canDrop(t)then dropOne(t);need=false;rebuild()end end)end;b.MouseEnter:Connect(function()ops.Visible=true end);b.MouseLeave:Connect(function()ops.Visible=false;tip.Visible=false end);b.MouseButton1Down:Connect(function()ops.Visible=true end)end;mFav.MouseButton1Click:Connect(function()if not sel or(not sel:IsA("Tool"))then return end;attr(sel,"BP_Fav",not getattr(sel,"BP_Fav",false));rebuild()end);mLock.MouseButton1Click:Connect(function()if not sel or(not sel:IsA("Tool"))then return end;attr(sel,"BP_Lock",not getattr(sel,"BP_Lock",false));rebuild()end);mDrop.MouseButton1Click:Connect(function()if not sel or(not sel:IsA("Tool"))then return end;if canDrop(sel)then dropOne(sel);rebuild()end end);local function place()bar.Position=UDim2.new(0.5,0,1,-gap);expFr.Position=UDim2.new(0.5,0,1,-(barH+gap+8))end;function rebuild()for _,c in ipairs(qb:GetChildren())do if c:IsA("GuiButton")then c:Destroy()end end;for _,c in ipairs(scr:GetChildren())do if c:IsA("GuiButton")then c:Destroy()end end;table.clear(tBtns);local bp=Plr:FindFirstChild("Backpack");local map={};for _,cont in ipairs({bp,Plr.Character})do if cont then for _,t in ipairs(cont:GetChildren())do if t:IsA("Tool")then map[t]=true end end end end;toolCnt=0;for _ in pairs(map)do toolCnt+=1 end;if sel and(not map[sel])then sel=nil end;for t in pairs(map)do if not table.find(tOrder,t)then table.insert(tOrder,t)end end;for i=#tOrder,1,-1 do if not map[tOrder[i]]then table.remove(tOrder,i)end end;local list={};local idxMap={};for i,v in ipairs(tOrder)do idxMap[v]=i end;local q=qtxt;local qlwr=q~=""and string.lower(q)or nil;for _,t in ipairs(tOrder)do if map[t]then if not qlwr or string.find(string.lower(t.Name),qlwr,1,true)then table.insert(list,t)end end end;table.sort(list,function(a,b)local fa=getattr(a,"BP_Fav",false)and 0 or 1;local fb=getattr(b,"BP_Fav",false)and 0 or 1;if fa~=fb then return fa<fb end;return(idxMap[a]or 1000000000)<(idxMap[b]or 1000000000)end);local function mkBtn(t,i)local has=t.TextureId and t.TextureId~="";local b=has and Instance.new("ImageButton")or Instance.new("TextButton");if has then b.Image=t.TextureId else b.Text=t.Name;b.TextScaled=true;b.TextColor3=Thm.txt end;b.Name=t.Name;b.Size=UDim2.new(0,cell,0,cell);b.AutoButtonColor=false;local isEquipped=t.Parent==Plr.Character;if sw then b.BackgroundColor3=swSel==t and Thm.acc2 or Thm.hot else b.BackgroundColor3=isEquipped and Thm.acc or Thm.hot end;local cr=Instance.new("UICorner");cr.CornerRadius=UDim.new(0,0.2);cr.Parent=b;local bs=stroke(b,2);bs.Color=getattr(t,"BP_Fav",false)and Thm.yel or Thm.str;local lk=Instance.new("Frame");lk.Size=UDim2.new(1,0,0,2);lk.BackgroundColor3=getattr(t,"BP_Lock",false)and Thm.lk or Color3.fromRGB(0,0,0);lk.BackgroundTransparency=getattr(t,"BP_Lock",false)and 0.15 or 1;lk.BorderSizePixel=0;lk.ZIndex=6;lk.Parent=b;tBtns[b]=t;if not mob and i<=10 then local f=Instance.new("Frame");f.Name="Key";f.Size=UDim2.new(0,20,0,20);f.Position=UDim2.new(0,3,0,3);f.BackgroundColor3=Thm.bg;f.BackgroundTransparency=0.1;f.ZIndex=9;f.Parent=b;corner(f,5);stroke(f,1);local tX=Instance.new("TextLabel");tX.BackgroundTransparency=1;tX.Size=UDim2.new(1,0,1,0);tX.Font=Enum.Font.GothamBold;tX.TextScaled=true;tX.TextColor3=Thm.txt;tX.Text=i==10 and"0"or tostring(i);tX.ZIndex=10;tX.Parent=f;local ts=Instance.new("UITextSizeConstraint");ts.MaxTextSize=14;ts.MinTextSize=10;ts.Parent=tX end;opsBar(b,t);if not mob then b.MouseEnter:Connect(function()tipForBtn(b,t.Name)end);b.MouseLeave:Connect(function()tip.Visible=false end);b.MouseButton1Down:Connect(function()tipForBtn(b,t.Name)end);b.MouseButton1Up:Connect(function()tip.Visible=false end)end;b.MouseButton1Click:Connect(function()if sw then if not swSel then swSel=t;rebuild();return end;if swSel==t then swSel=nil;rebuild();return end;local i1,i2;for k,v in ipairs(tOrder)do if v==swSel then i1=k end;if v==t then i2=k end end;if i1 and i2 then tOrder[i1],tOrder[i2]=tOrder[i2],tOrder[i1]end;swSel=nil;rebuild()elseif me then local c=Plr.Character;local bp=Plr:FindFirstChildOfClass("Backpack")or Plr:FindFirstChild("Backpack");if not c or(not bp)then return end;if t.Parent==bp then t.Parent=c else t.Parent=bp end;rebuild()else tog(t);rebuild()end end);return b end;for i,t in ipairs(list)do local b=mkBtn(t,i);b.LayoutOrder=i;if i<=10 then b.Parent=qb else b.Parent=scr end end;local extra=math.max((#list)-10,0);local rows=math.ceil(extra/10);scr.CanvasSize=UDim2.new(0,0,0,rows*(cell+pad));local d=cntDrop();drpBtn.AutoButtonColor=d>0;drpBtn.Active=d>0;drpBtn.TextTransparency=d>0 and 0 or 0.4;drpBtn.BackgroundTransparency=d>0 and 0.05 or 0.5;drpBtn.Text="Drop("..tostring(d)..")";swBtn.Visible=toolCnt>=2 and(not col)and bar.Visible;if not mob and swBtn.Visible then keyChip(swBtn,"Q")end;if not swBtn.Visible then sw=false;swSel=nil end;swBtn.Text=sw and"X"or"Swap";if col then bar.Visible=false;exp=false;expFr.Visible=false;setStrokeOn(false);mini.Visible=true;mini.Text="Open"else bar.Visible=true;expFr.Visible=true;setStrokeOn(true);mini.Visible=false end;local h=exp and(mob and 220 or 260)or 0;tw(expFr,0.18,{Size=UDim2.new(0,qbW,0,h)});ex.Text=exp and"Close"or"Open";place();updMobileTop();meBtn.BackgroundColor3=me and Thm.acc2 or Thm.soft end;local function req()if need then return end;need=true;task.defer(function()task.wait(0.02);need=false;rebuild()end)end;local function setSwap()if toolCnt<2 then return end;sw=not sw;swSel=nil;swBtn.Text=sw and"X"or"Swap";tw(swBtn,0.12,{BackgroundColor3=sw and Thm.acc2 or Thm.soft});req()end;local function showBar()bar.Visible=true;bar.Position=UDim2.new(0.5,0,1,barH+40);exp=false;expFr.Visible=false;setStrokeOn(false);tw(bar,0.22,{Position=UDim2.new(0.5,0,1,-gap)});task.wait(0.02)end;local function hideBar()tw(bar,0.18,{Position=UDim2.new(0.5,0,1,barH+40)});task.delay(0.18,function()if col then bar.Visible=false end end)end;local function toggleCol()col=not col;if col then hideBar();tw(expFr,0.16,{Size=UDim2.new(0,qbW,0,0)});setStrokeOn(false);mini.Visible=true;mini.Text="Open"else showBar();mini.Visible=false;setStrokeOn(true)end end;local function toggleExp()if col then return end;exp=not exp;req()end;local running=false;local function doDropAll()local d=cntDrop();if d<=0 or running then return end;showCfm()end;cYes.MouseButton1Click:Connect(function()if running then return end;running=true;local lst={};for _,cont in ipairs({Plr.Backpack,Plr.Character})do if cont then for _,t in ipairs(cont:GetChildren())do if canDrop(t)then table.insert(lst,t)end end end end;local h=hum();if h then pcall(function()h:UnequipTools()end)end;local c=Plr.Character;for _,t in ipairs(lst)do if t and t.Parent and t.Parent~=WS then if c and t.Parent~=c then t.Parent=c;task.wait()end;t.Parent=WS end end;sel=nil;updMobileTop();hideCfm();running=false;req()end);cNo.MouseButton1Click:Connect(hideCfm);UIS.InputBegan:Connect(function(i,gp)if gp or mob then return end;local kc=i.KeyCode;local map={[Enum.KeyCode.One]=1,[Enum.KeyCode.Two]=2,[Enum.KeyCode.Three]=3,[Enum.KeyCode.Four]=4,[Enum.KeyCode.Five]=5,[Enum.KeyCode.Six]=6,[Enum.KeyCode.Seven]=7,[Enum.KeyCode.Eight]=8,[Enum.KeyCode.Nine]=9,[Enum.KeyCode.Zero]=10};local idx=map[kc];if idx then local arr=orderedQBButtons();local b=arr[idx];local t=b and tBtns[b];if t then if me then local c=Plr.Character;local bp=Plr:FindFirstChildOfClass("Backpack")or Plr:FindFirstChild("Backpack");if c and bp then if t.Parent==bp then t.Parent=c else t.Parent=bp end end;req()elseif not sw then tog(t);req()end end end;if kc==Enum.KeyCode.Q then setSwap()elseif kc==Enum.KeyCode.E then doDropAll()elseif kc==Enum.KeyCode.C then toggleCol()elseif kc==Enum.KeyCode.Backquote then toggleExp()elseif kc==Enum.KeyCode.F then if sel and sel:IsA("Tool")then attr(sel,"BP_Fav",not getattr(sel,"BP_Fav",false));req()end elseif kc==Enum.KeyCode.L then if sel and sel:IsA("Tool")then attr(sel,"BP_Lock",not getattr(sel,"BP_Lock",false));req()end end end);swBtn.MouseButton1Click:Connect(setSwap);drpBtn.MouseButton1Click:Connect(doDropAll);colBtn.MouseButton1Click:Connect(toggleCol);ex.MouseButton1Click:Connect(toggleExp);mini.MouseButton1Click:Connect(toggleCol);(srch:GetPropertyChangedSignal("Text")):Connect(function()qtxt=srch.Text or"";req()end);local conns={};local tConns={};local function attachToolSignals(t)if not t or(not t:IsA("Tool"))then return end;if tConns[t]then for _,c in ipairs(tConns[t])do if c and c.Disconnect then c:Disconnect()end end end;tConns[t]={};table.insert(tConns[t],t.Equipped:Connect(function()sel=t;updMobileTop();req()end));table.insert(tConns[t],t.Unequipped:Connect(function()if sel==t then sel=nil;updMobileTop();req()end end));table.insert(tConns[t],t.AncestryChanged:Connect(function()if t.Parent==Plr.Character then sel=t;updMobileTop();req()elseif sel==t and t.Parent~=Plr.Character then sel=nil;updMobileTop();req()end end))end;local function hook()for _,c in ipairs(conns)do if c and c.Disconnect then c:Disconnect()end end;table.clear(conns);local bp=Plr:FindFirstChild("Backpack");if bp then for _,t in ipairs(bp:GetChildren())do attachToolSignals(t)end;table.insert(conns,bp.ChildAdded:Connect(function(ch)attachToolSignals(ch);req()end));table.insert(conns,bp.ChildRemoved:Connect(function(ch)if tConns[ch]then for _,c in ipairs(tConns[ch])do if c and c.Disconnect then c:Disconnect()end end;tConns[ch]=nil end;if ch==sel then sel=nil;updMobileTop()end;req()end))end;if Plr.Character then for _,t in ipairs(Plr.Character:GetChildren())do attachToolSignals(t)end;table.insert(conns,Plr.Character.ChildAdded:Connect(function(ch)attachToolSignals(ch);req()end));table.insert(conns,Plr.Character.ChildRemoved:Connect(function(ch)if tConns[ch]then for _,c in ipairs(tConns[ch])do if c and c.Disconnect then c:Disconnect()end end;tConns[ch]=nil end;if ch==sel then sel=nil;updMobileTop()end;req()end))end end;Plr.CharacterAdded:Connect(function()task.wait(0.1);req();hook()end);meBtn.MouseButton1Click:Connect(function()me=not me;meBtn.BackgroundColor3=me and Thm.acc2 or Thm.soft end);hook();rebuild();RS.Heartbeat:Connect(function()if ui.Parent==nil then ui.Parent=root()end;local c=Plr.Character;if c then local anyTool=nil;for _,t in ipairs(c:GetChildren())do if t:IsA("Tool")then anyTool=t;break end end;if sel~=anyTool then sel=anyTool;updMobileTop();req()end end end)end)
+        
+        if not success then
+            warn("BPX Load Error:", err)
+            BpxBtn.Text = "ERROR LOADING"
+            BpxBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+        end
+    else
+        -- ถ้าเปิดอยู่แล้ว กดปุ่มจะซ่อน/แสดง
+        if bpxGui then
+            bpxGui.Enabled = not bpxGui.Enabled
+            BpxBtn.Text = bpxGui.Enabled and "BACKPACK+: INSTANT" or "BACKPACK+: HIDDEN"
+            BpxBtn.BackgroundColor3 = bpxGui.Enabled and Color3.fromRGB(120, 0, 120) or Color3.fromRGB(40, 0, 40)
+        end
+    end
+end)
+
+-- ==================== ระบบ Logic ของ PaperDoll ====================
+local function createPaperDoll()
+    local character = player.Character or player.CharacterAdded:Wait()
+    character.Archivable = true
+    local clone = character:Clone()
+    for _,v in pairs(clone:GetDescendants()) do
+        if v:IsA("Script") or v:IsA("LocalScript") then v:Destroy() end
+    end
+    clone.Parent = viewport
+    clone:SetPrimaryPartCFrame(CFrame.new(0,0,0))
+    return clone
+end
+
+local model = createPaperDoll()
+local camOffset = Vector3.new(0,2,8)
+local camRotation = Vector2.new(0,0)
+local modelRotationY = 0
+local draggingPD = false
+local rotatingModel = false
+local lockedPD = false
+local tapCount = 0
+local lastTap = 0
+
+viewport.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        local now = tick()
+        if now - lastTap < 0.5 then tapCount += 1 else tapCount = 1 end
+        lastTap = now
+        if tapCount >= 4 then lockedPD = not lockedPD tapCount = 0 end
+        if not lockedPD then
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then rotatingModel = true
+            else draggingPD = true end
+        end
+    end
+end)
+
+viewport.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingPD = false
+        rotatingModel = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if lockedPD then return end
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        if draggingPD then
+            camRotation += Vector2.new(-input.Delta.X * 0.2, -input.Delta.Y * 0.2)
+        elseif rotatingModel then
+            modelRotationY -= input.Delta.X * 0.5
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not isPaperDollEnabled then return end
+    if not model or not model.PrimaryPart then return end
+    model:SetPrimaryPartCFrame(CFrame.new(0,0,0) * CFrame.Angles(0, math.rad(modelRotationY), 0))
+    local torso = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+    if torso then
+        local focus = torso.Position + Vector3.new(0,1,0)
+        local rotationCFrame = CFrame.Angles(math.rad(camRotation.Y), math.rad(camRotation.X), 0)
+        local camPos = focus + rotationCFrame:VectorToWorldSpace(camOffset)
+        pdCamera.CFrame = CFrame.new(camPos, focus)
+    end
+end)
+
+player.CharacterAdded:Connect(function()
+    if model then model:Destroy() end
+    model = createPaperDoll()
+end)
+
+-- ==================== ระบบ Logic ของ Minimap ====================
+getgenv().GUI_POSITIONS = getgenv().GUI_POSITIONS or {}
+getgenv().GUI_LOCKS = getgenv().GUI_LOCKS or {}
+
+local Character = player.Character or player.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+player.CharacterAdded:Connect(function(char)
+    Character = char
+    HumanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end)
+
+local function holdSystem(button, name)
+    local HOLD_TIME = 5
+    local locked = getgenv().GUI_LOCKS[name] or false
+    local holding = false
+    local holdStart = 0
+    local holdTriggered = false
+    button.InputBegan:Connect(function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+        holding = true holdStart = tick() holdTriggered = false
+    end)
+    button.InputEnded:Connect(function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
+        holding = false
+    end)
+    RunService.RenderStepped:Connect(function()
+        if holding and not holdTriggered then
+            if tick() - holdStart >= HOLD_TIME then
+                holdTriggered = true locked = not locked getgenv().GUI_LOCKS[name] = locked
+            end
+        end
+    end)
+    return function() return locked end
+end
+
+local function drag(button, isLocked, name)
+    local dragging = false local dragInput local dragStart local startPos
+    if getgenv().GUI_POSITIONS[name] then button.Position = getgenv().GUI_POSITIONS[name] end
+    button.InputBegan:Connect(function(input)
+        if isLocked and isLocked() then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true dragInput = input dragStart = input.Position startPos = button.Position
+        end
+    end)
+    button.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            button.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            getgenv().GUI_POSITIONS[name] = button.Position
+        end
+    end)
+    UserInputService.InputEnded:Connect(function(input)
+        if input == dragInput then dragging = false dragInput = nil end
+    end)
+end
+
+local minimapLocked = holdSystem(MinimapFrame, "minimap")
+drag(MinimapFrame, minimapLocked, "minimap")
+
+local clonedParts = {}
+local allowed = {Part=true, MeshPart=true, UnionOperation=true}
+
+local function addPart(obj)
+    if clonedParts[obj] then return end
+    if Character and obj:IsDescendantOf(Character) then return end
+    if not allowed[obj.ClassName] then return end
+    if obj.Size.Magnitude < 1 then return end
+    local clone = obj:Clone()
+    clone.Anchored = true clone.CanCollide = false clone.Parent = WorldModel clonedParts[obj] = clone
+end
+
+local function removePart(obj)
+    local clone = clonedParts[obj]
+    if clone then clone:Destroy() clonedParts[obj] = nil end
+end
+
+task.spawn(function()
+    local count = 0
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        addPart(obj) count += 1
+        if count % 60 == 0 then RunService.Heartbeat:Wait() end
+    end
+end)
+
+Workspace.DescendantAdded:Connect(addPart)
+Workspace.DescendantRemoving:Connect(removePart)
+
+RunService.RenderStepped:Connect(function()
+    if not isMinimapEnabled then return end
+    if HumanoidRootPart then
+        MapCamera.CFrame = CFrame.new(HumanoidRootPart.Position + Vector3.new(0,150,0), HumanoidRootPart.Position)
+        Arrow.Rotation = -HumanoidRootPart.Orientation.Y - 90
+    end
+end)
