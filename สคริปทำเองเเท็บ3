@@ -1,0 +1,1104 @@
+-- // Services
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+local TextChatService = game:GetService("TextChatService")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+task.wait(0.5)
+
+-- // Main GUI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NinjaMobileHub"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Parent = PlayerGui
+
+-- // Colors Theme
+local BG = Color3.fromRGB(20, 20, 24)
+local Primary = Color3.fromRGB(30, 30, 36)
+local Secondary = Color3.fromRGB(45, 45, 55)
+local Accent = Color3.fromRGB(0, 170, 255)
+local White = Color3.fromRGB(240, 240, 240)
+local Gray = Color3.fromRGB(160, 160, 160)
+
+-- // ฟังก์ชันสร้าง UI
+local function Create(class, props, parent)
+    local inst = Instance.new(class)
+    for k, v in pairs(props) do
+        if k ~= "Parent" then inst[k] = v end
+    end
+    inst.Parent = parent
+    return inst
+end
+
+-- ==========================================
+-- ปุ่มซ่อน/แสดง (มุมล่างขวา)
+-- ==========================================
+local ToggleBtn = Create("TextButton", {
+    Size = UDim2.fromOffset(50, 50),
+    Position = UDim2.new(1, -60, 1, -60),
+    BackgroundColor3 = Primary,
+    TextColor3 = Accent,
+    Text = "💻",
+    Font = Enum.Font.GothamBold,
+    TextSize = 28,
+    AutoButtonColor = true
+}, ScreenGui)
+Create("UICorner", {CornerRadius = UDim.new(0, 14)}, ToggleBtn)
+
+-- ==========================================
+-- หน้าต่างหลัก
+-- ==========================================
+local MainFrame = Create("Frame", {
+    Size = UDim2.fromOffset(260, 320),
+    Position = UDim2.fromScale(0.5, 0.5),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = BG,
+    Visible = true
+}, ScreenGui)
+Create("UICorner", {CornerRadius = UDim.new(0, 12)}, MainFrame)
+
+-- แถบหัวข้อ (ลากได้)
+local TitleBar = Create("Frame", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Primary
+}, MainFrame)
+Create("UICorner", {CornerRadius = UDim.new(0, 12)}, TitleBar)
+Create("Frame", {
+    Size = UDim2.new(1, 0, 0, 12),
+    Position = UDim2.fromScale(0, 1),
+    BackgroundColor3 = Primary
+}, TitleBar)
+
+Create("TextLabel", {
+    Size = UDim2.new(1, 0, 1, 0),
+    Position = UDim2.fromOffset(15, 0),
+    BackgroundTransparency = 1,
+    Text = "⚡ NINJA HUB",
+    TextColor3 = Accent,
+    Font = Enum.Font.GothamBold,
+    TextSize = 16,
+    TextXAlignment = Enum.TextXAlignment.Left
+}, TitleBar)
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+    ToggleBtn.Text = MainFrame.Visible and "💻" or "💻"
+end)
+
+-- ระบบลากหน้าต่าง
+local dragging = false
+local dragStart, startPos
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+
+TitleBar.InputChanged:Connect(function(input)
+    if (input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement) and dragging then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- ==========================================
+-- ระบบแท็บ (6 หมวด)
+-- ==========================================
+local TabHolder = Create("Frame", {
+    Size = UDim2.new(1, -20, 0, 30),
+    Position = UDim2.fromOffset(10, 45),
+    BackgroundTransparency = 1
+}, MainFrame)
+Create("UIListLayout", {
+    FillDirection = Enum.FillDirection.Horizontal,
+    Padding = UDim.new(0, 5),
+    SortOrder = Enum.SortOrder.LayoutOrder
+}, TabHolder)
+
+local ContentHolder = Create("Frame", {
+    Size = UDim2.new(1, -20, 1, -85),
+    Position = UDim2.fromOffset(10, 80),
+    BackgroundTransparency = 1,
+    ClipsDescendants = true
+}, MainFrame)
+
+local Tabs = {}
+local function CreateTab(name, layoutOrder)
+    local btn = Create("TextButton", {
+        Size = UDim2.new(1/6, -5, 1, 0),
+        BackgroundColor3 = Secondary,
+        TextColor3 = Gray,
+        Text = name,
+        Font = Enum.Font.GothamBold,
+        TextSize = 11,
+        LayoutOrder = layoutOrder,
+        AutoButtonColor = false
+    }, TabHolder)
+    Create("UICorner", {CornerRadius = UDim.new(0, 8)}, btn)
+    
+    local page = Create("ScrollingFrame", {
+        Size = UDim2.new(1, 0, 1, 0),
+        BackgroundTransparency = 1,
+        ScrollBarThickness = 2,
+        ScrollBarImageColor3 = Accent,
+        Visible = false,
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        AutomaticCanvasSize = Enum.AutomaticSize.Y
+    }, ContentHolder)
+    Create("UIListLayout", {
+        Padding = UDim.new(0, 6),
+        SortOrder = Enum.SortOrder.LayoutOrder
+    }, page)
+
+    Tabs[name] = {Button = btn, Page = page}
+
+    btn.MouseButton1Click:Connect(function()
+        for _, tab in pairs(Tabs) do
+            tab.Button.BackgroundColor3 = Secondary
+            tab.Button.TextColor3 = Gray
+            tab.Page.Visible = false
+        end
+        btn.BackgroundColor3 = Accent
+        btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        page.Visible = true
+    end)
+    return page
+end
+
+-- สร้าง 6 หมวด
+local TabMovement = CreateTab("Move", 1)
+local TabChat = CreateTab("Chat", 2)
+local TabTools = CreateTab("Tools", 3)
+local TabScripts = CreateTab("สคริป", 4)
+local TabCoord = CreateTab("พิกัด", 5)
+local TabClicker = CreateTab("AutoClick", 6)
+
+-- ตั้งค่าให้หมวดแรกเปิดอยู่
+Tabs["Move"].Button.BackgroundColor3 = Accent
+Tabs["Move"].Button.TextColor3 = Color3.fromRGB(0, 0, 0)
+Tabs["Move"].Page.Visible = true
+
+-- ==========================================
+-- STIFFDOLL SYSTEM
+-- ==========================================
+local thisIsTheLocalPlayerThatWillBeControllingTheSTIFFDOLLCharacterInThisExperience = Player
+local thePrimaryGameLoopServiceThatRunsEveryFrameAndHandlesAllThePhysicsAndRenderingUpdates = game:GetService("RunService")
+local theCurrentCameraThatViewsTheGameWorldFromThePlayersPerspective = workspace.CurrentCamera
+
+local theVerticalPropulsionForceAppliedWhenTheSTIFFDOLLJumpsUpwards = 10
+local theHorizontalMovementForceAppliedWhenTheSTIFFDOLLHopsForward = 30
+local theMinimumTimeIntervalInSecondsBetweenConsecutiveSTIFFDOLLMovementActions = 1
+local theCooldownPeriodInSecondsBetweenTogglingSTIFFDOLLStateToPreventSpamming = 1
+local theRotationalVelocityMagnitudeThatControlsHowFastTheSTIFFDOLLSpinsThroughTheAir = 12
+
+local aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot = false
+local theTimestampOfTheLastTimeTheSTIFFDOLLPerformedAHoppingMovementAction = 0
+local theTimestampOfTheLastTimeTheSTIFFDOLLStateWasToggledOnOrOff = 0
+local aReferenceToTheRenderSteppedConnectionThatHandlesContinuousSTIFFDOLLMovementUpdates = nil
+
+local function disableAllToolIdleAnimationsThatCouldInterfereWithSTIFFDOLLPhysicsBehavior()
+    local theCharacterModelAssociatedWithTheLocalPlayer = thisIsTheLocalPlayerThatWillBeControllingTheSTIFFDOLLCharacterInThisExperience.Character
+    if not theCharacterModelAssociatedWithTheLocalPlayer then return end
+    local theHumanoidComponentThatControlsCharacterMovementAndAnimation = theCharacterModelAssociatedWithTheLocalPlayer:FindFirstChildOfClass("Humanoid")
+    local theAnimationControllerThatManagesAllCharacterAnimations = theHumanoidComponentThatControlsCharacterMovementAndAnimation and theHumanoidComponentThatControlsCharacterMovementAndAnimation:FindFirstChildOfClass("Animator")
+    if theAnimationControllerThatManagesAllCharacterAnimations then
+        theAnimationControllerThatManagesAllCharacterAnimations.AnimationPlayed:Connect(function(animationTrack)
+            if animationTrack.Name:lower():match("toolnone") then 
+                animationTrack:Stop() 
+            end
+        end)
+    end
+end
+
+local function initializeSTIFFDOLLMovementSystemWithProperForwardSpinMechanics(theRootPartOfTheCharacter, theHumanoidComponent)
+    aReferenceToTheRenderSteppedConnectionThatHandlesContinuousSTIFFDOLLMovementUpdates = thePrimaryGameLoopServiceThatRunsEveryFrameAndHandlesAllThePhysicsAndRenderingUpdates.RenderStepped:Connect(function()
+        if not aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot or not theHumanoidComponent then return end
+        local theDirectionVectorRepresentingPlayerMovementInput = theHumanoidComponent.MoveDirection
+        if theDirectionVectorRepresentingPlayerMovementInput.Magnitude > 0 and tick() - theTimestampOfTheLastTimeTheSTIFFDOLLPerformedAHoppingMovementAction > theMinimumTimeIntervalInSecondsBetweenConsecutiveSTIFFDOLLMovementActions then
+            theTimestampOfTheLastTimeTheSTIFFDOLLPerformedAHoppingMovementAction = tick()
+            theDirectionVectorRepresentingPlayerMovementInput = theDirectionVectorRepresentingPlayerMovementInput.Unit
+
+            local theBodyVelocityInstanceThatAppliesLinearForcesToTheSTIFFDOLL = Instance.new("BodyVelocity")
+            theBodyVelocityInstanceThatAppliesLinearForcesToTheSTIFFDOLL.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+            theBodyVelocityInstanceThatAppliesLinearForcesToTheSTIFFDOLL.Velocity = theDirectionVectorRepresentingPlayerMovementInput * theHorizontalMovementForceAppliedWhenTheSTIFFDOLLHopsForward + Vector3.new(0, theVerticalPropulsionForceAppliedWhenTheSTIFFDOLLJumpsUpwards, 0)
+            theBodyVelocityInstanceThatAppliesLinearForcesToTheSTIFFDOLL.Parent = theRootPartOfTheCharacter
+            game.Debris:AddItem(theBodyVelocityInstanceThatAppliesLinearForcesToTheSTIFFDOLL, 0.3)
+
+            local theBodyAngularVelocityInstanceThatAppliesRotationalForcesToTheSTIFFDOLL = Instance.new("BodyAngularVelocity")
+            theBodyAngularVelocityInstanceThatAppliesRotationalForcesToTheSTIFFDOLL.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+
+            local theSpinAxisVectorCalculatedUsingCrossProduct = Vector3.new(0, 1, 0):Cross(theDirectionVectorRepresentingPlayerMovementInput).Unit
+            if theSpinAxisVectorCalculatedUsingCrossProduct.Magnitude < 0.1 then 
+                theSpinAxisVectorCalculatedUsingCrossProduct = Vector3.new(1, 0, 0) 
+            end
+
+            theBodyAngularVelocityInstanceThatAppliesRotationalForcesToTheSTIFFDOLL.AngularVelocity = theSpinAxisVectorCalculatedUsingCrossProduct * theRotationalVelocityMagnitudeThatControlsHowFastTheSTIFFDOLLSpinsThroughTheAir
+            theBodyAngularVelocityInstanceThatAppliesRotationalForcesToTheSTIFFDOLL.Parent = theRootPartOfTheCharacter
+            game.Debris:AddItem(theBodyAngularVelocityInstanceThatAppliesRotationalForcesToTheSTIFFDOLL, 0.4)
+        end
+    end)
+end
+
+local function terminateAllSTIFFDOLLMovementSystemsAndCleanUpResources()
+    if aReferenceToTheRenderSteppedConnectionThatHandlesContinuousSTIFFDOLLMovementUpdates then 
+        aReferenceToTheRenderSteppedConnectionThatHandlesContinuousSTIFFDOLLMovementUpdates:Disconnect() 
+        aReferenceToTheRenderSteppedConnectionThatHandlesContinuousSTIFFDOLLMovementUpdates = nil 
+    end
+end
+
+local function toggleSTIFFDOLLStateWithAllAppropriatePhysicsAndCameraAdjustments(desiredSTIFFDOLLState)
+    if tick() - theTimestampOfTheLastTimeTheSTIFFDOLLStateWasToggledOnOrOff < theCooldownPeriodInSecondsBetweenTogglingSTIFFDOLLStateToPreventSpamming then return end
+    theTimestampOfTheLastTimeTheSTIFFDOLLStateWasToggledOnOrOff = tick()
+
+    local theCharacterModelAssociatedWithTheLocalPlayer = thisIsTheLocalPlayerThatWillBeControllingTheSTIFFDOLLCharacterInThisExperience.Character
+    if not theCharacterModelAssociatedWithTheLocalPlayer then return end
+    local theHumanoidComponentThatControlsCharacterMovementAndAnimation = theCharacterModelAssociatedWithTheLocalPlayer:FindFirstChildOfClass("Humanoid")
+    local theRootPartThatAnchorsTheCharacterInTheWorld = theCharacterModelAssociatedWithTheLocalPlayer:FindFirstChild("HumanoidRootPart")
+    local theHeadPartThatWillBecomeTheCameraSubjectDuringSTIFFDOLL = theCharacterModelAssociatedWithTheLocalPlayer:FindFirstChild("Head")
+    if not theHumanoidComponentThatControlsCharacterMovementAndAnimation or not theRootPartThatAnchorsTheCharacterInTheWorld or not theHeadPartThatWillBecomeTheCameraSubjectDuringSTIFFDOLL then return end
+
+    if desiredSTIFFDOLLState and not aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot then
+        aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot = true
+        for _, humanoidStateType in ipairs(Enum.HumanoidStateType:GetEnumItems()) do 
+            theHumanoidComponentThatControlsCharacterMovementAndAnimation:SetStateEnabled(humanoidStateType, false) 
+        end
+        theHumanoidComponentThatControlsCharacterMovementAndAnimation:ChangeState(Enum.HumanoidStateType.Physics)
+        theHumanoidComponentThatControlsCharacterMovementAndAnimation.PlatformStand = true
+        theCurrentCameraThatViewsTheGameWorldFromThePlayersPerspective.CameraSubject = theHeadPartThatWillBecomeTheCameraSubjectDuringSTIFFDOLL
+        initializeSTIFFDOLLMovementSystemWithProperForwardSpinMechanics(theRootPartThatAnchorsTheCharacterInTheWorld, theHumanoidComponentThatControlsCharacterMovementAndAnimation)
+    else
+        aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot = false
+        terminateAllSTIFFDOLLMovementSystemsAndCleanUpResources()
+        for _, humanoidStateType in ipairs(Enum.HumanoidStateType:GetEnumItems()) do 
+            theHumanoidComponentThatControlsCharacterMovementAndAnimation:SetStateEnabled(humanoidStateType, true) 
+        end
+        theHumanoidComponentThatControlsCharacterMovementAndAnimation.PlatformStand = false
+        theHumanoidComponentThatControlsCharacterMovementAndAnimation:ChangeState(Enum.HumanoidStateType.GettingUp)
+
+        local theBodyVelocityInstanceThatProvidesUpwardBoostWhenExitingSTIFFDOLLState = Instance.new("BodyVelocity")
+        theBodyVelocityInstanceThatProvidesUpwardBoostWhenExitingSTIFFDOLLState.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+        theBodyVelocityInstanceThatProvidesUpwardBoostWhenExitingSTIFFDOLLState.Velocity = Vector3.new(0, theVerticalPropulsionForceAppliedWhenTheSTIFFDOLLJumpsUpwards, 0)
+        theBodyVelocityInstanceThatProvidesUpwardBoostWhenExitingSTIFFDOLLState.Parent = theRootPartThatAnchorsTheCharacterInTheWorld
+        game.Debris:AddItem(theBodyVelocityInstanceThatProvidesUpwardBoostWhenExitingSTIFFDOLLState, 0.3)
+
+        theCurrentCameraThatViewsTheGameWorldFromThePlayersPerspective.CameraSubject = theHumanoidComponentThatControlsCharacterMovementAndAnimation
+    end
+end
+
+disableAllToolIdleAnimationsThatCouldInterfereWithSTIFFDOLLPhysicsBehavior()
+
+-- ==========================================
+-- REWIND SYSTEM
+-- ==========================================
+local char = Player.Character or Player.CharacterAdded:Wait()
+local root = char:WaitForChild("HumanoidRootPart")
+
+local positions = {}
+local isRewinding = false
+local isRecording = true
+
+Player.CharacterAdded:Connect(function(newChar)
+    char = newChar
+    root = char:WaitForChild("HumanoidRootPart")
+    positions = {} 
+    isRewinding = false
+    if RewindToggle then
+        RewindToggle.Text = "⏪ REWIND"
+        RewindToggle.BackgroundColor3 = Secondary
+        RewindToggle.TextColor3 = White
+    end
+    if RecToggle then
+        RecToggle.Text = "REC: ON"
+        RecToggle.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        RecToggle.TextColor3 = White
+        isRecording = true
+    end
+    -- รีเซ็ต Seat Mode
+    if seatModeActive then
+        seatModeActive = false
+        if currentSeat then currentSeat:Destroy() end
+        currentSeat = nil
+        currentWeld = nil
+        if SeatModeBtn then
+            SeatModeBtn.Text = "🪑 Seat Mode: OFF"
+            SeatModeBtn.BackgroundColor3 = Secondary
+            SeatModeBtn.TextColor3 = White
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if isRecording and not isRewinding and root and root.Parent then
+            table.insert(positions, root.CFrame)
+            if #positions > 200 then table.remove(positions, 1) end
+        end
+    end
+end)
+
+-- ==========================================
+-- หมวด 1: Movement
+-- ==========================================
+local StiffDollToggle = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "🪆 STIFFDOLL: OFF",
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    AutoButtonColor = false,
+    LayoutOrder = 0
+}, TabMovement)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, StiffDollToggle)
+
+StiffDollToggle.MouseButton1Click:Connect(function()
+    toggleSTIFFDOLLStateWithAllAppropriatePhysicsAndCameraAdjustments(not aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot)
+    StiffDollToggle.Text = "🪆 STIFFDOLL: " .. (aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot and "ON" or "OFF")
+    StiffDollToggle.BackgroundColor3 = aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot and Accent or Secondary
+    StiffDollToggle.TextColor3 = aBooleanFlagIndicatingWhetherTheCharacterIsCurrentlyInSTIFFDOLLStateOrNot and Color3.fromRGB(0, 0, 0) or White
+end)
+
+local RewindToggle = Create("TextButton", {
+    Size = UDim2.new(0.6, -3, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "⏪ REWIND",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    AutoButtonColor = false,
+    LayoutOrder = 1
+}, TabMovement)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, RewindToggle)
+
+local RecToggle = Create("TextButton", {
+    Size = UDim2.new(0.4, -3, 0, 40),
+    BackgroundColor3 = Color3.fromRGB(50, 200, 50),
+    TextColor3 = White,
+    Text = "REC: ON",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    AutoButtonColor = false,
+    LayoutOrder = 2
+}, TabMovement)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, RecToggle)
+
+RewindToggle.MouseButton1Click:Connect(function()
+    if isRewinding or #positions == 0 or not root then return end
+    isRewinding = true
+    root.Anchored = true
+    RewindToggle.Text = "⏳ REWINDING..."
+    RewindToggle.BackgroundColor3 = Color3.fromRGB(255, 150, 0)
+    
+    task.spawn(function()
+        for i = #positions, 1, -2 do
+            if root and root.Parent then
+                root.CFrame = positions[i]
+            end
+            table.remove(positions, i)
+            task.wait(0.01)
+        end
+        
+        if root then root.Anchored = false end
+        isRewinding = false
+        RewindToggle.Text = "⏪ REWIND"
+        RewindToggle.BackgroundColor3 = Secondary
+    end)
+end)
+
+RecToggle.MouseButton1Click:Connect(function()
+    isRecording = not isRecording
+    RecToggle.Text = isRecording and "REC: ON" or "REC: OFF"
+    RecToggle.BackgroundColor3 = isRecording and Color3.fromRGB(50, 200, 50) or Color3.fromRGB(200, 150, 0)
+end)
+
+local flyEnabled = false
+local FlyToggle = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "Climb/Fly: OFF",
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    AutoButtonColor = false,
+    LayoutOrder = 3
+}, TabMovement)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, FlyToggle)
+
+FlyToggle.MouseButton1Click:Connect(function()
+    flyEnabled = not flyEnabled
+    FlyToggle.Text = "Climb/Fly: " .. (flyEnabled and "ON" or "OFF")
+    FlyToggle.BackgroundColor3 = flyEnabled and Accent or Secondary
+    FlyToggle.TextColor3 = flyEnabled and Color3.fromRGB(0, 0, 0) or White
+end)
+
+task.spawn(function()
+    while task.wait() do
+        if flyEnabled and Player.Character then
+            pcall(function()
+                local hrp = Player.Character.HumanoidRootPart
+                local hum = Player.Character.Humanoid
+                local result = workspace:Raycast(hrp.Position, hrp.CFrame.LookVector * 2, RaycastParams.new({Player.Character}, Enum.RaycastFilterType.Blacklist))
+                if result then
+                    hum:ChangeState(Enum.HumanoidStateType.Climbing)
+                    hrp.Velocity = Vector3.new(0, 25, 0)
+                end
+            end)
+        end
+    end
+end)
+
+-- ==========================================
+-- หมวด 2: Chat
+-- ==========================================
+local chatElements = {"Hello!", "Hi!", "Hey!", "What's up?", "Welcome!", "How are you?", "Bye!", "See you later!", "I have to go now.", "Want to play with me?", "Yes", "No", "Good", "Bad", "Okay", "Thank you!", "Sorry!", "Please!", "Wow!", "Haha!", "LOL", "That's so cool!", "No way!", "Yay!", "Oops!", "Follow me!", "Come here!", "Let's go!", "Where are you?", "Over here!", "Wait for me!", "I'm ready!", "Watch this!", "Help!", "Nice outfit!", "I like it", "I don't like it", "Uh oh!", "Go away!", "Stop", "67"}
+
+for i, element in chatElements do
+    local btn = Create("TextButton", {
+        Size = UDim2.new(1, 0, 0, 30),
+        BackgroundColor3 = Primary,
+        TextColor3 = White,
+        Text = element,
+        Font = Enum.Font.Gotham,
+        TextSize = 12,
+        LayoutOrder = i,
+        AutoButtonColor = true
+    }, TabChat)
+    Create("UICorner", {CornerRadius = UDim.new(0, 6)}, btn)
+
+    btn.MouseButton1Click:Connect(function()
+        pcall(function()
+            TextChatService.TextChannels.RBXGeneral:SendAsync(element)
+        end)
+    end)
+end
+
+-- ==========================================
+-- หมวด 3: Tools (Orbit, Destroyer, Seat Mode)
+-- ==========================================
+local orbitToolCreated = false
+local GetToolBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "Get Orbit Tool",
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    AutoButtonColor = false,
+    LayoutOrder = 1
+}, TabTools)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, GetToolBtn)
+
+GetToolBtn.MouseButton1Click:Connect(function()
+    if orbitToolCreated then return end
+    orbitToolCreated = true
+    GetToolBtn.Text = "Orbit Tool Added!"
+    GetToolBtn.BackgroundColor3 = Accent
+    GetToolBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+
+    local orbit_tool = Instance.new("Tool")
+    orbit_tool.Name = "Orbit tool"
+    orbit_tool.RequiresHandle = false
+    orbit_tool.Parent = Player:WaitForChild("Backpack")
+
+    local mouse_connection
+    local orbiting = false
+
+    orbit_tool.Equipped:Connect(function()
+        local mouse = Player:GetMouse()
+        orbiting = true
+
+        mouse_connection = mouse.Button1Down:Connect(function()
+            local part = mouse.Target
+            if not part or not part:IsA("BasePart") then return end
+            
+            if part.Anchored then 
+                warn("Part is anchored, cannot orbit.")
+                return
+            end
+            
+            local hrp = Player.Character:WaitForChild("HumanoidRootPart")
+            part.CanCollide = false
+            part.CanTouch = false
+            part.CanQuery = false
+            part.Massless = true
+
+            local radius = 5
+            local angle = 0
+            local height = 0.5
+            local speed = 0.05
+
+            task.spawn(function()
+                while orbiting and hrp and hrp.Parent do
+                    angle += speed
+                    local offset = Vector3.new(math.cos(angle) * radius, height, math.sin(angle) * radius)
+                    part.CFrame = CFrame.new(hrp.Position + offset, hrp.Position)
+                    task.wait()
+                end
+            end)
+        end)
+    end)
+
+    orbit_tool.Unequipped:Connect(function()
+        if mouse_connection then mouse_connection:Disconnect() end
+        orbiting = false
+    end)
+end)
+
+-- Destroyer Tool
+local destroyerToolCreated = false
+local DestroyerBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "💥 Get Destroyer Tool",
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    AutoButtonColor = false,
+    LayoutOrder = 2
+}, TabTools)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, DestroyerBtn)
+
+DestroyerBtn.MouseButton1Click:Connect(function()
+    if destroyerToolCreated then return end
+    
+    local backpack = Player:FindFirstChild("Backpack")
+    local character = Player.Character
+    local existing = (backpack and backpack:FindFirstChild("Destroyer")) or (character and character:FindFirstChild("Destroyer"))
+    if existing then
+        DestroyerBtn.Text = "⚠️ Already have!"
+        task.wait(1)
+        DestroyerBtn.Text = "💥 Get Destroyer Tool"
+        return
+    end
+    
+    destroyerToolCreated = true
+    DestroyerBtn.Text = "✅ Destroyer Added!"
+    DestroyerBtn.BackgroundColor3 = Accent
+    DestroyerBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+    
+    local destroyerTool = Instance.new("Tool")
+    destroyerTool.Name = "Destroyer"
+    destroyerTool.RequiresHandle = false
+    destroyerTool.Parent = backpack or Player.Backpack
+    
+    local mouseConnection
+    local toolEquipped = false
+    local mouse = Player:GetMouse()
+    
+    destroyerTool.Equipped:Connect(function()
+        toolEquipped = true
+        print("Destroyer Tool Equipped - Click any part to delete it (except yourself)")
+        
+        mouseConnection = mouse.Button1Down:Connect(function()
+            if not toolEquipped then return end
+            local target = mouse.Target
+            if target and target:IsA("BasePart") then
+                if not target:IsDescendantOf(Player.Character) then
+                    pcall(function()
+                        target:Destroy()
+                        print("Destroyer: Deleted " .. target.Name)
+                    end)
+                else
+                    warn("Destroyer: Cannot delete your own character parts")
+                end
+            end
+        end)
+    end)
+    
+    destroyerTool.Unequipped:Connect(function()
+        toolEquipped = false
+        if mouseConnection then
+            mouseConnection:Disconnect()
+            mouseConnection = nil
+        end
+    end)
+    
+    destroyerTool.AncestryChanged:Connect(function()
+        if not destroyerTool.Parent then
+            destroyerToolCreated = false
+            DestroyerBtn.Text = "💥 Get Destroyer Tool"
+            DestroyerBtn.BackgroundColor3 = Secondary
+            DestroyerBtn.TextColor3 = White
+            if mouseConnection then mouseConnection:Disconnect() end
+        end
+    end)
+end)
+
+-- Seat Mode (Invisible Seat)
+local seatModeActive = false
+local currentSeat = nil
+local currentWeld = nil
+
+local SeatModeBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "🪑 Seat Mode: OFF",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    AutoButtonColor = false,
+    LayoutOrder = 3
+}, TabTools)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, SeatModeBtn)
+
+SeatModeBtn.MouseButton1Click:Connect(function()
+    seatModeActive = not seatModeActive
+    
+    if seatModeActive then
+        SeatModeBtn.Text = "🪑 Seat Mode: ON"
+        SeatModeBtn.BackgroundColor3 = Accent
+        SeatModeBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        
+        local character = Player.Character
+        if not character then
+            seatModeActive = false
+            SeatModeBtn.Text = "🪑 Seat Mode: OFF"
+            SeatModeBtn.BackgroundColor3 = Secondary
+            SeatModeBtn.TextColor3 = White
+            return
+        end
+        local hrp = character:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        
+        local savedPos = hrp.CFrame
+        
+        character:MoveTo(Vector3.new(0, 1e6, 0))
+        task.wait(1)
+        
+        currentSeat = Instance.new("Seat")
+        currentSeat.Anchored = false
+        currentSeat.CanCollide = false
+        currentSeat.Transparency = 1
+        currentSeat.CFrame = CFrame.new(0, 1e6, 0)
+        currentSeat.Parent = workspace
+        
+        local torso = character:FindFirstChild("Torso") or character:FindFirstChild("UpperTorso")
+        if torso then
+            currentWeld = Instance.new("Weld")
+            currentWeld.Part0 = currentSeat
+            currentWeld.Part1 = torso
+            currentWeld.Parent = currentSeat
+        end
+        
+        currentSeat.CFrame = savedPos
+        
+        for _, part in ipairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 0.7
+            end
+        end
+    else
+        SeatModeBtn.Text = "🪑 Seat Mode: OFF"
+        SeatModeBtn.BackgroundColor3 = Secondary
+        SeatModeBtn.TextColor3 = White
+        
+        if currentSeat then
+            currentSeat:Destroy()
+            currentSeat = nil
+        end
+        currentWeld = nil
+        
+        local character = Player.Character
+        if character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Transparency = 0
+                end
+            end
+        end
+    end
+end)
+
+-- ==========================================
+-- หมวด 4: สคริปเสริม (พร้อมปุ่มใหม่)
+-- ==========================================
+
+-- ปุ่มที่ 1: สคริปอีโมตภาษาไทย (LayoutOrder 1)
+local ThaiEmoteBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "🚀 สคริปอีโมตภาษาไทย",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    AutoButtonColor = false,
+    LayoutOrder = 1
+}, TabScripts)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, ThaiEmoteBtn)
+
+ThaiEmoteBtn.MouseButton1Click:Connect(function()
+    ThaiEmoteBtn.Text = "⏳ กำลังโหลด..."
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/thanyathonbuthong-ai/-/refs/heads/main/%E0%B8%AA%E0%B8%84%E0%B8%A3%E0%B8%B4%E0%B8%9B%E0%B8%AD%E0%B8%B5%E0%B9%82%E0%B8%A1%E0%B8%94%E0%B8%A0%E0%B8%B2%E0%B8%A9%E0%B8%B2%E0%B9%84%E0%B8%97%E0%B8%A2.lua"))()
+        ThaiEmoteBtn.Text = "✅ โหลดสำเร็จแล้ว!"
+    end)
+    task.wait(2)
+    ThaiEmoteBtn.Text = "🚀 สคริปอีโมตภาษาไทย"
+end)
+
+-- ปุ่มที่ 2: Fake Gamepasses (LayoutOrder 2)
+local FakeGPBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "🎮 Fake Gamepasses",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    AutoButtonColor = false,
+    LayoutOrder = 2
+}, TabScripts)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, FakeGPBtn)
+
+FakeGPBtn.MouseButton1Click:Connect(function()
+    FakeGPBtn.Text = "⏳ กำลังโหลด..."
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Ahma174/Fake-Gamepasses/refs/heads/main/V6.lua"))()
+        FakeGPBtn.Text = "✅ โหลดสำเร็จ!"
+    end)
+    task.wait(2)
+    FakeGPBtn.Text = "🎮 Fake Gamepasses"
+end)
+
+-- ปุ่มที่ 3: YouTube Music Player (LayoutOrder 3)
+local YoutubeBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "🎵 YouTube Music Player",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    AutoButtonColor = false,
+    LayoutOrder = 3
+}, TabScripts)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, YoutubeBtn)
+
+YoutubeBtn.MouseButton1Click:Connect(function()
+    YoutubeBtn.Text = "⏳ กำลังโหลด..."
+    pcall(function()
+        loadstring(game:HttpGet(('https://raw.githubusercontent.com/Dan41/Roblox-Scripts/refs/heads/main/Youtube%20Music%20Player/YoutubeMusicPlayer.lua'),true))()
+        YoutubeBtn.Text = "✅ โหลดสำเร็จ!"
+    end)
+    task.wait(2)
+    YoutubeBtn.Text = "🎵 YouTube Music Player"
+end)
+
+-- ส่วนที่เหลือ (ช่องใส่ลิงก์และปุ่มรันสคริป) ปรับ LayoutOrder ต่อ
+Create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 20),
+    BackgroundTransparency = 1,
+    Text = "ใส่ลิงก์สคริปอื่นๆ:",
+    TextColor3 = Gray,
+    Font = Enum.Font.Gotham,
+    TextSize = 11,
+    TextXAlignment = Enum.TextXAlignment.Left,
+    LayoutOrder = 4
+}, TabScripts)
+
+local UrlBox = Create("TextBox", {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundColor3 = Primary,
+    TextColor3 = White,
+    PlaceholderText = "วางลิงก์ (https://...)",
+    Font = Enum.Font.Gotham,
+    TextSize = 12,
+    ClearTextOnFocus = false,
+    LayoutOrder = 5
+}, TabScripts)
+Create("UICorner", {CornerRadius = UDim.new(0, 6)}, UrlBox)
+
+local RunCustomBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 35),
+    BackgroundColor3 = Accent,
+    TextColor3 = Color3.fromRGB(0,0,0),
+    Text = "▶ รันสคริปที่ใส่",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    AutoButtonColor = true,
+    LayoutOrder = 6
+}, TabScripts)
+Create("UICorner", {CornerRadius = UDim.new(0, 6)}, RunCustomBtn)
+
+RunCustomBtn.MouseButton1Click:Connect(function()
+    local url = UrlBox.Text
+    if url and url ~= "" and url ~= "วางลิงก์ (https://...)" then
+        RunCustomBtn.Text = "⏳ กำลังโหลด..."
+        pcall(function()
+            loadstring(game:HttpGet(url))()
+            RunCustomBtn.Text = "✅ โหลดสำเร็จ!"
+        end)
+        task.wait(2)
+        RunCustomBtn.Text = "▶ รันสคริปที่ใส่"
+    else
+        RunCustomBtn.Text = "❌ ไม่พบลิงก์!"
+        task.wait(1.5)
+        RunCustomBtn.Text = "▶ รันสคริปที่ใส่"
+    end
+end)
+
+-- ==========================================
+-- หมวด 5: พิกัด (CoordTracker)
+-- ==========================================
+local CoordDisplay = Create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 80),
+    BackgroundColor3 = Primary,
+    TextColor3 = Color3.fromRGB(0, 255, 150),
+    Font = Enum.Font.Code,
+    TextSize = 18,
+    Text = "X: 0.00\nY: 0.00\nZ: 0.00",
+    LayoutOrder = 1
+}, TabCoord)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, CoordDisplay)
+
+local CopyCoordBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 35),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "📋 คัดลอกพิกัด",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    LayoutOrder = 2
+}, TabCoord)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, CopyCoordBtn)
+
+local function updateCoordDisplay()
+    local character = Player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local pos = character.HumanoidRootPart.Position
+        CoordDisplay.Text = string.format("X: %.2f\nY: %.2f\nZ: %.2f", pos.X, pos.Y, pos.Z)
+    else
+        CoordDisplay.Text = "⏳ รอ Character..."
+    end
+end
+
+RunService.RenderStepped:Connect(updateCoordDisplay)
+
+CopyCoordBtn.MouseButton1Click:Connect(function()
+    local character = Player.Character
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local pos = character.HumanoidRootPart.Position
+        local coordText = string.format("%.2f, %.2f, %.2f", pos.X, pos.Y, pos.Z)
+        local success, err = pcall(function()
+            setclipboard(coordText)
+        end)
+        if success then
+            CopyCoordBtn.Text = "✅ คัดลอกแล้ว!"
+        else
+            CopyCoordBtn.Text = "⚠️ คัดลอกไม่สำเร็จ"
+        end
+        task.wait(1.5)
+        CopyCoordBtn.Text = "📋 คัดลอกพิกัด"
+    else
+        CopyCoordBtn.Text = "❌ ไม่พบตัวละคร"
+        task.wait(1)
+        CopyCoordBtn.Text = "📋 คัดลอกพิกัด"
+    end
+end)
+
+-- ==========================================
+-- หมวด 6: Auto Clicker (HilosHAX Ultra)
+-- ==========================================
+local clicking = false
+local cps = 10
+local maxCPS = 3000
+local totalClicks = 0
+local keybind = Enum.KeyCode.F
+local unstoppable = false
+local settingBind = false
+local accumulator = 0
+local runningClicker = true
+
+local CPSInput = Create("TextBox", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Primary,
+    Text = "10",
+    TextColor3 = White,
+    Font = Enum.Font.Code,
+    TextSize = 14,
+    ClearTextOnFocus = false,
+    LayoutOrder = 1
+}, TabClicker)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, CPSInput)
+
+local Tooltip = Create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 20),
+    BackgroundTransparency = 1,
+    Text = "⚠️ LAGGING WARNING !! (CPS ≥ 500)",
+    TextColor3 = Color3.fromRGB(255, 50, 50),
+    TextSize = 11,
+    Font = Enum.Font.GothamBold,
+    Visible = false,
+    LayoutOrder = 2
+}, TabClicker)
+
+local StartBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 50),
+    BackgroundColor3 = Color3.fromRGB(80, 0, 180),
+    TextColor3 = White,
+    Text = "START",
+    Font = Enum.Font.GothamBold,
+    TextSize = 14,
+    AutoButtonColor = false,
+    LayoutOrder = 3
+}, TabClicker)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, StartBtn)
+
+local BindBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Secondary,
+    TextColor3 = White,
+    Text = "Bind: F",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    AutoButtonColor = false,
+    LayoutOrder = 4
+}, TabClicker)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, BindBtn)
+
+local UnstopBtn = Create("TextButton", {
+    Size = UDim2.new(1, 0, 0, 40),
+    BackgroundColor3 = Color3.fromRGB(150, 0, 100),
+    TextColor3 = White,
+    Text = "UNSTOPPABLE MODE",
+    Font = Enum.Font.GothamBold,
+    TextSize = 13,
+    BackgroundTransparency = 0.5,
+    AutoButtonColor = false,
+    LayoutOrder = 5
+}, TabClicker)
+Create("UICorner", {CornerRadius = UDim.new(0, 8)}, UnstopBtn)
+
+local ClickDisplay = Create("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 30),
+    BackgroundTransparency = 1,
+    Text = "CLICKS: 0",
+    TextColor3 = White,
+    Font = Enum.Font.GothamBold,
+    TextSize = 12,
+    LayoutOrder = 6
+}, TabClicker)
+
+local WarnFrame = Create("Frame", {
+    Size = UDim2.fromOffset(220, 120),
+    Position = UDim2.new(0.5, -110, 0.5, -60),
+    BackgroundColor3 = Color3.fromRGB(10, 10, 10),
+    Visible = false,
+    ZIndex = 20
+}, ScreenGui)
+Create("UICorner", {CornerRadius = UDim.new(0, 10)}, WarnFrame)
+local WStroke = Instance.new("UIStroke", WarnFrame)
+WStroke.Color = Color3.new(1, 0, 0)
+WStroke.Thickness = 2
+
+local WarnLabel = Create("TextLabel", {
+    Size = UDim2.new(1, 0, 0.6, 0),
+    Position = UDim2.new(0, 0, 0, 5),
+    BackgroundTransparency = 1,
+    Text = "Are you sure you want to do this?\n(No CPS Limit)",
+    TextColor3 = Color3.new(1, 1, 1),
+    TextSize = 14,
+    Font = Enum.Font.GothamBold,
+    ZIndex = 21
+}, WarnFrame)
+
+local Yes = Create("TextButton", {
+    Size = UDim2.new(0.4, 0, 0.25, 0),
+    Position = UDim2.new(0.05, 0, 0.65, 0),
+    BackgroundColor3 = Color3.fromRGB(0, 120, 0),
+    Text = "YES",
+    TextColor3 = Color3.new(1,1,1),
+    Font = Enum.Font.GothamBold,
+    ZIndex = 21
+}, WarnFrame)
+Create("UICorner", {CornerRadius = UDim.new(0, 6)}, Yes)
+
+local No = Create("TextButton", {
+    Size = UDim2.new(0.4, 0, 0.25, 0),
+    Position = UDim2.new(0.55, 0, 0.65, 0),
+    BackgroundColor3 = Color3.fromRGB(120, 0, 0),
+    Text = "NO",
+    TextColor3 = Color3.new(1,1,1),
+    Font = Enum.Font.GothamBold,
+    ZIndex = 21
+}, WarnFrame)
+Create("UICorner", {CornerRadius = UDim.new(0, 6)}, No)
+
+local function toggleClicker()
+    clicking = not clicking
+    StartBtn.Text = clicking and "STOP" or "START"
+    StartBtn.BackgroundColor3 = clicking and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(80, 0, 180)
+end
+
+local function updateCPS()
+    local val = tonumber(CPSInput.Text)
+    if val then
+        if not unstoppable then
+            val = math.clamp(val, 1, maxCPS)
+            CPSInput.Text = tostring(val)
+        end
+        cps = val
+        Tooltip.Visible = (val >= 500)
+    end
+end
+
+CPSInput.FocusLost:Connect(updateCPS)
+StartBtn.MouseButton1Click:Connect(toggleClicker)
+
+BindBtn.MouseButton1Click:Connect(function()
+    settingBind = true
+    BindBtn.Text = "..."
+end)
+
+UIS.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if settingBind and input.UserInputType == Enum.UserInputType.Keyboard then
+        keybind = input.KeyCode
+        BindBtn.Text = "Bind: " .. keybind.Name
+        settingBind = false
+    elseif input.KeyCode == keybind then
+        toggleClicker()
+    end
+end)
+
+UnstopBtn.MouseButton1Click:Connect(function() WarnFrame.Visible = true end)
+No.MouseButton1Click:Connect(function() WarnFrame.Visible = false end)
+Yes.MouseButton1Click:Connect(function()
+    unstoppable = true
+    UnstopBtn.BackgroundTransparency = 0
+    UnstopBtn.Text = "UNSTOPPABLE ON"
+    WarnFrame.Visible = false
+    updateCPS()
+end)
+
+RunService.Heartbeat:Connect(function(dt)
+    if not runningClicker then return end
+    if clicking then
+        local interval = 1 / cps
+        accumulator = accumulator + dt
+        while accumulator >= interval do
+            pcall(function()
+                if mouse1click then mouse1click() end
+            end)
+            totalClicks = totalClicks + 1
+            ClickDisplay.Text = "CLICKS: " .. totalClicks
+            accumulator = accumulator - interval
+            if not clicking or interval <= 0 then break end
+        end
+    else
+        accumulator = 0
+    end
+end)
+
+-- ==========================================
+-- จบสคริป
+-- ==========================================
