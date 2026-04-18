@@ -1,5 +1,15 @@
 export default function handler(req, res) {
-  // === วางสคริปต์ Lua ของคุณไว้ข้างล่างนี้ ===
+  // 1. ตั้งรหัสผ่านของคุณตรงนี้ (เปลี่ยนคำว่า mykey123 เป็นอะไรก็ได้ที่คุณจำได้)
+  const secretKey = "mykey123"; 
+
+  // 2. ตรวจสอบรหัสผ่านจากลิงก์
+  const { key } = req.query;
+
+  if (key !== secretKey) {
+    return res.status(403).send("Error: Access Denied. รหัสผ่านไม่ถูกต้อง!");
+  }
+
+  // 3. สคริปต์ Lua (Invisible Script ของคุณ)
   const myLuaScript = `
 --[[
  .____                  ________ ___.    _____                           __                
@@ -177,10 +187,9 @@ events[3] = player.CharacterAdded:Connect(function()
 end)
 
 _G.InvisScript = events
-print("Invisible Script by GG script loaded")
+print("Invisible Script by GG script loaded and PROTECTED")
   `;
 
-  // ส่งค่ากลับไปหาคนเรียกใช้
-  res.setHeader('Content-Type', 'text/plain');
+  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.status(200).send(myLuaScript);
 }
