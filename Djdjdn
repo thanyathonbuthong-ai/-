@@ -1,4 +1,0 @@
-/usr/bin/lua5.4: Main.lua:2: attempt to index a nil value (global 'game')
-stack traceback:
-	Main.lua:2: in main chunk
-	[C]: in ?
