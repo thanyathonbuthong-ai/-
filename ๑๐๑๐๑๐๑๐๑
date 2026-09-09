@@ -1,0 +1,4723 @@
+-- تم فك ريكسم من قبل malik + اعتبرها ردة فعل
+
+local t1 = {}
+local v2 = unpack or table.unpack
+game:GetService("MarketplaceService")
+t1.value1 = game:GetService("UserInputService")
+t1.value2 = game:GetService("TweenService")
+t1.value3 = game:GetService("HttpService")
+t1.value4 = game:GetService("RunService")
+
+local CoreGui = game:GetService("CoreGui")
+
+t1.value5 = game:GetService("Players").LocalPlayer
+t1.value5:GetMouse()
+local colorSequence = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 0, 0)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(40, 5, 5)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 10, 10))
+})
+local color3 = Color3.fromRGB(10, 0, 0)
+local color3_2 = Color3.fromRGB(255, 0, 0)
+local color3_3 = Color3.fromRGB(180, 0, 0)
+local color3_4 = Color3.fromRGB(255, 255, 255)
+local color3_5 = Color3.fromRGB(255, 150, 150)
+local color3_6 = Color3.fromRGB(40, 5, 5)
+local color3_7 = Color3.fromRGB(45, 10, 10)
+local t2 = {
+	["Color Hub 1"] = colorSequence,
+	["Color Hub 2"] = color3,
+	["Color Stroke"] = color3_2,
+	["Color Theme"] = color3_3,
+	["Color Text"] = color3_4,
+	["Color Dark Text"] = color3_5,
+	["Color Button"] = color3_6,
+	["Color TextBox"] = color3_7
+}
+local colorSequence2 = ColorSequence.new({
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(20, 0, 0)),
+	ColorSequenceKeypoint.new(0.5, Color3.fromRGB(35, 3, 3)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 8, 8))
+})
+local color3_8 = Color3.fromRGB(5, 0, 0)
+local color3_9 = Color3.fromRGB(255, 0, 0)
+local color3_10 = Color3.fromRGB(200, 0, 0)
+local color3_11 = Color3.fromRGB(255, 255, 255)
+local color3_12 = Color3.fromRGB(255, 180, 180)
+local color3_13 = Color3.fromRGB(50, 5, 5)
+local color3_14 = Color3.fromRGB(55, 10, 10)
+local t3 = {
+	Darker = t2,
+	Dark = {
+		["Color Hub 1"] = colorSequence2,
+		["Color Hub 2"] = color3_8,
+		["Color Stroke"] = color3_9,
+		["Color Theme"] = color3_10,
+		["Color Text"] = color3_11,
+		["Color Dark Text"] = color3_12,
+		["Color Button"] = color3_13,
+		["Color TextBox"] = color3_14
+	}
+}
+local t4 = {
+	Version = "1.2.0"
+}
+local t5 = {
+	UISize = {
+		550,
+		380
+	},
+	TabSize = 160,
+	Theme = "Dark"
+}
+local v24 = (function()
+    return {
+		["إمكانية الوصول"] = "rbxassetid://10709751939",
+		["نشاط"] = "rbxassetid://10709752035",
+		["مجرى هواء"] = "rbxassetid://10709752131",
+		["ايربلاي"] = "rbxassetid://10709752254",
+		["فحص المنبه"] = "rbxassetid://10709752405",
+		["منبه"] = "rbxassetid://10709752630",
+		["إيقاف المنبه"] = "rbxassetid://10709752508",
+		["نقص المنبه"] = "rbxassetid://10709752732",
+		["زيادة المنبه"] = "rbxassetid://10709752825",
+		["ألبوم"] = "rbxassetid://10709752906",
+		["دائرة تنبيه"] = "rbxassetid://10709752996",
+		["ثماني تنبيه"] = "rbxassetid://10709753064",
+		["مثلث تنبيه"] = "rbxassetid://10709753149",
+		["توسيط"] = "rbxassetid://10709753570",
+		["محاذاة أفقية للوسط"] = "rbxassetid://10709753272",
+		["محاذاة رأسية للوسط"] = "rbxassetid://10709753421",
+		["محاذاة النهاية أفقياً"] = "rbxassetid://10709753692",
+		["محاذاة النهاية رأسياً"] = "rbxassetid://10709753808",
+		["توزيع أفقي للوسط"] = "rbxassetid://10747779791",
+		["توزيع أفقي للنهاية"] = "rbxassetid://10747784534",
+		["توزيع أفقي للبداية"] = "rbxassetid://10709754118",
+		["محاذاة أفقية مبررة للوسط"] = "rbxassetid://10709754204",
+		["محاذاة أفقية مبررة للنهاية"] = "rbxassetid://10709754317",
+		["محاذاة أفقية مبررة للبداية"] = "rbxassetid://10709754436",
+		["مساحة أفقية حول"] = "rbxassetid://10709754590",
+		["مسافة أفقية بين"] = "rbxassetid://10709754749",
+		["محاذاة مبررة"] = "rbxassetid://10709759610",
+		["محاذاة لليسار"] = "rbxassetid://10709759764",
+		["محاذاة لليمين"] = "rbxassetid://10709759895",
+		["محاذاة البداية أفقياً"] = "rbxassetid://10709760051",
+		["محاذاة البداية رأسياً"] = "rbxassetid://10709760244",
+		["توزيع رأسي للوسط"] = "rbxassetid://10709760351",
+		["توزيع رأسي للنهاية"] = "rbxassetid://10709760434",
+		["توزيع رأسي للبداية"] = "rbxassetid://10709760612",
+		["محاذاة رأسية مبررة للوسط"] = "rbxassetid://10709760814",
+		["محاذاة رأسية مبررة للنهاية"] = "rbxassetid://10709761003",
+		["محاذاة رأسية مبررة للبداية"] = "rbxassetid://10709761176",
+		["مساحة رأسية حول"] = "rbxassetid://10709761324",
+		["مسافة رأسية بين"] = "rbxassetid://10709761434",
+		["مرساة"] = "rbxassetid://10709761530",
+		["غاضب"] = "rbxassetid://10709761629",
+		["منزعج"] = "rbxassetid://10709761722",
+		["فتحة عدسة"] = "rbxassetid://10709761813",
+		["تفاحة"] = "rbxassetid://10709761889",
+		["أرشيف"] = "rbxassetid://10709762233",
+		["استعادة الأرشيف"] = "rbxassetid://10709762058",
+		["كرسي بذراعين"] = "rbxassetid://10709762327",
+		["سهم كبير للأسفل"] = "rbxassetid://10747796644",
+		["سهم كبير لليسار"] = "rbxassetid://10709762574",
+		["سهم كبير لليمين"] = "rbxassetid://10709762727",
+		["سهم كبير للأعلى"] = "rbxassetid://10709762879",
+		["إضافة"] = "rbxassetid://10709762962",
+		["الجانب"] = "rbxassetid://10709763046",
+		["الرجوع للخلف"] = "rbxassetid://10709763132",
+		["إعادة التدوير"] = "rbxassetid://10709763215",
+		["كوب"] = "rbxassetid://10709763307",
+		["كاميرا"] = "rbxassetid://10709763385",
+		["مشغل"] = "rbxassetid://10709763470",
+		["بطاقة"] = "rbxassetid://10709763554",
+		["صندوق بريد"] = "rbxassetid://10709763641",
+		["مكبر صوت"] = "rbxassetid://10709763718",
+		["غيتار"] = "rbxassetid://10709763798",
+		["مفتاح"] = "rbxassetid://10709763886",
+		["كرة"] = "rbxassetid://10709763969",
+		["مصباح"] = "rbxassetid://10709764057",
+		["خريطة"] = "rbxassetid://10709764141",
+		["مذكرات"] = "rbxassetid://10709764224",
+		["ميكروفون"] = "rbxassetid://10709764312",
+		["هاتف"] = "rbxassetid://10709764399",
+		["نظارة"] = "rbxassetid://10709764488",
+		["أداة"] = "rbxassetid://10709764574",
+		["عجلة"] = "rbxassetid://10709764657",
+		["مطرقة"] = "rbxassetid://10709764742",
+		["مفتاح ربط"] = "rbxassetid://10709764827",
+		["نجمة"] = "rbxassetid://10709764910",
+		["مظلة"] = "rbxassetid://10709764998",
+		["مقص"] = "rbxassetid://10709765082",
+		["ساعة"] = "rbxassetid://10709765170",
+		["قلب"] = "rbxassetid://10709765255",
+		["آلة تصوير"] = "rbxassetid://10709765342",
+		["حذاء"] = "rbxassetid://10709765428",
+		["مكعب"] = "rbxassetid://10709765517",
+		["قلم"] = "rbxassetid://10709765600",
+		["ورقة"] = "rbxassetid://10709765685",
+		["سيارة"] = "rbxassetid://10709765772",
+		["حقيبة"] = "rbxassetid://10709765859",
+		["شجرة"] = "rbxassetid://10709765947",
+		["مبنى"] = "rbxassetid://10709766033",
+		["مطبخ"] = "rbxassetid://10709766120",
+		["طاولة"] = "rbxassetid://10709766206",
+		["كرسي"] = "rbxassetid://10709766291",
+		["نافذة"] = "rbxassetid://10709766378",
+		["باب"] = "rbxassetid://10709766463",
+		["كمبيوتر"] = "rbxassetid://10709766548",
+		["لوحة مفاتيح"] = "rbxassetid://10709766634",
+		["ماوس"] = "rbxassetid://10709766720",
+		["ملف"] = "rbxassetid://10709766798",
+		["مجلد"] = "rbxassetid://10709766884",
+		["ملاحظات"] = "rbxassetid://10709766968",
+		["قلم رصاص"] = "rbxassetid://10709767053",
+		["مسطرة"] = "rbxassetid://10709767139",
+		["مثلث"] = "rbxassetid://10709767225",
+		["دائرة"] = "rbxassetid://10709767312",
+		["مربع"] = "rbxassetid://10709767398",
+		["نجمة مضلعة"] = "rbxassetid://10709767485",
+		["شمس"] = "rbxassetid://10709767570",
+		["قمر"] = "rbxassetid://10709767658",
+		["سحابة"] = "rbxassetid://10709767742",
+		["مطر"] = "rbxassetid://10709767827",
+		["ثلج"] = "rbxassetid://10709767914",
+		["رعد"] = "rbxassetid://10709768000",
+		["برق"] = "rbxassetid://10709768085",
+		["موجة"] = "rbxassetid://10709768171",
+		["شجرة صنوبر"] = "rbxassetid://10709768256",
+		["زهرة"] = "rbxassetid://10709768342",
+		["ورقة شجر"] = "rbxassetid://10709768427",
+		["جبل"] = "rbxassetid://10709768512",
+		["نهر"] = "rbxassetid://10709768600",
+		["مسبح"] = "rbxassetid://10709768685",
+		["بحر"] = "rbxassetid://10709768771",
+		["محرك"] = "rbxassetid://10709768858",
+		["تروس"] = "rbxassetid://10709768942",
+		["مقياس"] = "rbxassetid://10709769028",
+		["بطارية"] = "rbxassetid://10709769115",
+		["مقبس كهرباء"] = "rbxassetid://10709769201",
+		["مصباح كهربائي"] = "rbxassetid://10709769287",
+		["مروحة"] = "rbxassetid://10709769372",
+		["مكيف هواء"] = "rbxassetid://10709769458",
+		["سخان"] = "rbxassetid://10709769545",
+		["باب دوار"] = "rbxassetid://10709769630",
+		["سلم"] = "rbxassetid://10709769716",
+		["سلالم متدرجة"] = "rbxassetid://10709769802",
+		["مصعد"] = "rbxassetid://10709769888",
+		["نافذة كبيرة"] = "rbxassetid://10709769973",
+		["ستارة"] = "rbxassetid://10709770060",
+		["ستارة رول"] = "rbxassetid://10709770146",
+		["مظلة شاطئ"] = "rbxassetid://10709770232",
+		["كرسي شاطئ"] = "rbxassetid://10709770318",
+		["بركة سباحة"] = "rbxassetid://10709770405",
+		["صندوق أدوات"] = "rbxassetid://10709770491",
+		["مطرقة صغيرة"] = "rbxassetid://10709770577",
+		["مفتاح ربط صغير"] = "rbxassetid://10709770664",
+		["أداة كهربائية"] = "rbxassetid://10709770750",
+		["مقياس حرارة"] = "rbxassetid://10709770836",
+		["ساعة حائط"] = "rbxassetid://10709770922",
+		["ساعة منبهة"] = "rbxassetid://10709771008",
+		["جهاز استقبال"] = "rbxassetid://10709771094",
+		["راديو"] = "rbxassetid://10709771180",
+		["تلفاز"] = "rbxassetid://10709771266",
+		["جهاز فيديو"] = "rbxassetid://10709771352",
+		["مشغل أقراص"] = "rbxassetid://10709771438",
+		["ميكروويف"] = "rbxassetid://10709771524",
+		["فرن"] = "rbxassetid://10709771610",
+		["ثلاجة"] = "rbxassetid://10709771696",
+		["غسالة"] = "rbxassetid://10709771782",
+		["مجفف ملابس"] = "rbxassetid://10709771868",
+		["ماء"] = "rbxassetid://10709771954",
+		["كأس ماء"] = "rbxassetid://10709772040",
+		["قهوة"] = "rbxassetid://10709772126",
+		["شاي"] = "rbxassetid://10709772212",
+		["عصير"] = "rbxassetid://10709772298",
+		["زجاجة"] = "rbxassetid://10709772384",
+		["علبة"] = "rbxassetid://10709772470",
+		["سلة"] = "rbxassetid://10709772556",
+		["حقيبة ظهر"] = "rbxassetid://10709772642",
+		["حقيبة يد"] = "rbxassetid://10709772728",
+		["حزام"] = "rbxassetid://10709772814",
+		["قبعة"] = "rbxassetid://10709772900",
+		["نظارات شمسية"] = "rbxassetid://10709772986",
+		["سماعة"] = "rbxassetid://10709773072",
+		["كمبيوتر محمول"] = "rbxassetid://10709773158",
+		["لوحة رسم"] = "rbxassetid://10709773244",
+		["جهاز لوحي"] = "rbxassetid://10709773330",
+		["قلم لوحي"] = "rbxassetid://10709773416",
+		["لوحة مفاتيح صغيرة"] = "rbxassetid://10709773502",
+		["ماوس صغير"] = "rbxassetid://10709773588",
+		["لوحة مفاتيح موسيقية"] = "rbxassetid://10709773674",
+		["طبلة"] = "rbxassetid://10709773760",
+		["غيتار كهربائي"] = "rbxassetid://10709773846",
+		["مكبر صوت صغير"] = "rbxassetid://10709773932",
+		["ميكروفون صغير"] = "rbxassetid://10709774018",
+		["كتاب"] = "rbxassetid://10709774104",
+		["دفتر"] = "rbxassetid://10709774190",
+		["مذكرة صغيرة"] = "rbxassetid://10709774276",
+		["قلم حبر"] = "rbxassetid://10709774362",
+		["قلم رصاص صغير"] = "rbxassetid://10709774448",
+		["ممحاة"] = "rbxassetid://10709774534",
+		["مبراة"] = "rbxassetid://10709774620",
+		["مسطرة صغيرة"] = "rbxassetid://10709774706",
+		["منقلة"] = "rbxassetid://10709774792",
+		["كرة قدم"] = "rbxassetid://10709774878",
+		["كرة سلة"] = "rbxassetid://10709774964",
+		["كرة طائرة"] = "rbxassetid://10709775050",
+		["كرة تنس"] = "rbxassetid://10709775136",
+		["كرة جولف"] = "rbxassetid://10709775222",
+		["مضرب تنس"] = "rbxassetid://10709775308",
+		["مضرب جولف"] = "rbxassetid://10709775394",
+		["خوذة"] = "rbxassetid://10709775480",
+		["قفازات"] = "rbxassetid://10709775566",
+		["حذاء رياضي"] = "rbxassetid://10709775652",
+		["حذاء كرة قدم"] = "rbxassetid://10709775738",
+		["ملابس سباحة"] = "rbxassetid://10709775824",
+		["قبعة سباحة"] = "rbxassetid://10709775910",
+		["نظارات سباحة"] = "rbxassetid://10709775996",
+		["قفازات سباحة"] = "rbxassetid://10709776082",
+		["لوح تزلج"] = "rbxassetid://10709776168",
+		["مزلقة"] = "rbxassetid://10709776254",
+		["دراجة هوائية"] = "rbxassetid://10709776340",
+		["خوذة دراجة"] = "rbxassetid://10709776426",
+		["سكوتر"] = "rbxassetid://10709776512",
+		["سكوتر كهربائي"] = "rbxassetid://10709776598",
+		["سيارة صغيرة"] = "rbxassetid://10709776684",
+		["شاحنة"] = "rbxassetid://10709776770",
+		["حافلة"] = "rbxassetid://10709776856",
+		["دراجة نارية"] = "rbxassetid://10709776942",
+		["مركبة فضائية"] = "rbxassetid://10709777028",
+		["صاروخ صغير"] = "rbxassetid://10709777114",
+		["طيارة"] = "rbxassetid://10709777200",
+		["هليكوبتر"] = "rbxassetid://10709777286",
+		["مظلة"] = "rbxassetid://10709777372",
+		["بالون هواء"] = "rbxassetid://10709777458",
+		["قارب صغير"] = "rbxassetid://10709777544",
+		["يخت"] = "rbxassetid://10709777630",
+		["زورق"] = "rbxassetid://10709777716",
+		["مجموعة أدوات صيد"] = "rbxassetid://10709777802",
+		["سنارة صيد"] = "rbxassetid://10709777888",
+		["صندوق صيد"] = "rbxassetid://10709777974",
+		["دلو صغير"] = "rbxassetid://10709778060",
+		["شباك صيد"] = "rbxassetid://10709778146",
+		["خيمة"] = "rbxassetid://10709778232",
+		["حقيبة نوم"] = "rbxassetid://10709778318",
+		["موقد"] = "rbxassetid://10709778404",
+		["فانوس"] = "rbxassetid://10709778490",
+		["قفازات تزلج"] = "rbxassetid://10709778576",
+		["حذاء تزلج"] = "rbxassetid://10709778662",
+		["زلاجات ثلج"] = "rbxassetid://10709778748",
+		["منظار"] = "rbxassetid://10709778834",
+		["كاميرا صغيرة"] = "rbxassetid://10709778920",
+		["كاميرا فيديو صغيرة"] = "rbxassetid://10709779006",
+		["ميكروفون محمول"] = "rbxassetid://10709779092",
+		["سماعة رأس"] = "rbxassetid://10709779178",
+		["جهاز تسجيل صوتي"] = "rbxassetid://10709779264",
+		["سماعات أذن"] = "rbxassetid://10709779350",
+		["بطاقة ذاكرة"] = "rbxassetid://10709779436",
+		["هارد ديسك صغير"] = "rbxassetid://10709779522",
+		["فلاش USB"] = "rbxassetid://10709779608",
+		["لوحة دوائر"] = "rbxassetid://10709779694",
+		["أسلاك"] = "rbxassetid://10709779780",
+		["مفتاح كهربائي"] = "rbxassetid://10709779866",
+		["مصباح LED"] = "rbxassetid://10709779952",
+		["موتور كهربائي صغير"] = "rbxassetid://10709780038",
+		["مروحة صغيرة"] = "rbxassetid://10709780124",
+		["جهاز تحكم عن بعد"] = "rbxassetid://10709780210",
+		["روبوت صغير"] = "rbxassetid://10709780296",
+		["دبابة صغيرة"] = "rbxassetid://10709780382",
+		["مدفع صغير"] = "rbxassetid://10709780468",
+		["سيف صغير"] = "rbxassetid://10709780554",
+		["درع صغير"] = "rbxassetid://10709780640",
+		["رمح"] = "rbxassetid://10709780726",
+		["قوس وسهم"] = "rbxassetid://10709780812",
+		["سهم واحد"] = "rbxassetid://10709780898",
+		["حقيبة أسلحة"] = "rbxassetid://10709780984",
+		["خوذة محارب"] = "rbxassetid://10709781070",
+		["درع حديدي"] = "rbxassetid://10709781156",
+		["درع معدني صغير"] = "rbxassetid://10709781242",
+		["سيف حاد"] = "rbxassetid://10709781328",
+		["مسدس صغير"] = "rbxassetid://10709781414",
+		["رصاصة"] = "rbxassetid://10709781500",
+		["قنبلة صغيرة"] = "rbxassetid://10709781586",
+		["صاروخ صغير"] = "rbxassetid://10709781672",
+		["لوحة مفاتيح ألعاب"] = "rbxassetid://10709781758",
+		["ماوس ألعاب"] = "rbxassetid://10709781844",
+		["شاشة ألعاب"] = "rbxassetid://10709781930",
+		["كرسي ألعاب"] = "rbxassetid://10709782016",
+		["مراقب صغير"] = "rbxassetid://10709782102",
+		["لوحة مفاتيح كمبيوتر"] = "rbxassetid://10709782188",
+		["ماوس كمبيوتر"] = "rbxassetid://10709782274",
+		["شاشة كمبيوتر"] = "rbxassetid://10709782360",
+		["كمبيوتر مكتبي"] = "rbxassetid://10709782446",
+		["طابعة صغيرة"] = "rbxassetid://10709782532",
+		["ماسح ضوئي"] = "rbxassetid://10709782618",
+		["كتاب"] = "rbxassetid://10709782704",
+		["دفتر"] = "rbxassetid://10709782790",
+		["قلم رصاص"] = "rbxassetid://10709782876",
+		["قلم حبر"] = "rbxassetid://10709782962",
+		["ممحاة"] = "rbxassetid://10709783048",
+		["مسطرة"] = "rbxassetid://10709783134",
+		["ألوان خشبية"] = "rbxassetid://10709783220",
+		["فرشاة رسم"] = "rbxassetid://10709783306",
+		["ألوان مائية"] = "rbxassetid://10709783392",
+		["لوحة فنية"] = "rbxassetid://10709783478",
+		["دفتر ملاحظات"] = "rbxassetid://10709783564",
+		["حقيبة مدرسية"] = "rbxassetid://10709783650",
+		["آلة حاسبة"] = "rbxassetid://10709783736",
+		["ساعة منبه"] = "rbxassetid://10709783822",
+		["مفكرة"] = "rbxassetid://10709783908",
+		["خريطة"] = "rbxassetid://10709783994",
+		["موسوعة"] = "rbxassetid://10709784080",
+		["مجلد ملفات"] = "rbxassetid://10709784166",
+		["مستند"] = "rbxassetid://10709784252",
+		["ظرف"] = "rbxassetid://10709784338",
+		["مغلف بريد"] = "rbxassetid://10709784424",
+		["طابعة"] = "rbxassetid://10709784510",
+		["حافظة مستندات"] = "rbxassetid://10709784596",
+		["أختام"] = "rbxassetid://10709784682",
+		["مشبك ورق"] = "rbxassetid://10709784768",
+		["مقص"] = "rbxassetid://10709784854",
+		["شريط لاصق"] = "rbxassetid://10709784940",
+		["لاصق الغراء"] = "rbxassetid://10709785026",
+		["دباسة"] = "rbxassetid://10709785112",
+		["مقياس زاوية"] = "rbxassetid://10709785198",
+		["منقلة"] = "rbxassetid://10709785284",
+		["براية"] = "rbxassetid://10709785370",
+		["مسطرة معدنية"] = "rbxassetid://10709785456",
+		["آلة كتابة"] = "rbxassetid://10709785542",
+		["آلة تصوير"] = "rbxassetid://10709785628",
+		["كاميرا فورية"] = "rbxassetid://10709785714",
+		["شريط فيلم"] = "rbxassetid://10709785800",
+		["مكبر صوت"] = "rbxassetid://10709785886",
+		["ميكروفون"] = "rbxassetid://10709785972",
+		["سماعة رأس"] = "rbxassetid://10709786058",
+		["مسجل صوت"] = "rbxassetid://10709786144",
+		["قرص مضغوط"] = "rbxassetid://10709786230",
+		["قرص DVD"] = "rbxassetid://10709786316",
+		["هارد ديسك"] = "rbxassetid://10709786402",
+		["فلاش ميموري"] = "rbxassetid://10709786488",
+		["لوحة مفاتيح"] = "rbxassetid://10709786574",
+		["ماوس"] = "rbxassetid://10709786660",
+		["شاشة كمبيوتر"] = "rbxassetid://10709786746",
+		["كمبيوتر محمول"] = "rbxassetid://10709786832",
+		["كمبيوتر مكتبي"] = "rbxassetid://10709786918",
+		["سماعات كمبيوتر"] = "rbxassetid://10709787004",
+		["كاميرا ويب"] = "rbxassetid://10709787090",
+		["راوتر"] = "rbxassetid://10709787176",
+		["مودم"] = "rbxassetid://10709787262",
+		["هاتف ذكي"] = "rbxassetid://10709787348",
+		["هاتف قديم"] = "rbxassetid://10709787434",
+		["لوح تابلت"] = "rbxassetid://10709787520",
+		["ساعة ذكية"] = "rbxassetid://10709787606",
+		["سماعة بلوتوث"] = "rbxassetid://10709787692",
+		["شاحن"] = "rbxassetid://10709787778",
+		["كابل USB"] = "rbxassetid://10709787864",
+		["بطارية"] = "rbxassetid://10709787950",
+		["مصباح يدوي"] = "rbxassetid://10709788036",
+		["مصباح مكتبي"] = "rbxassetid://10709788122",
+		["شمعة"] = "rbxassetid://10709788208",
+		["كشاف ضوء"] = "rbxassetid://10709788294",
+		["منبه صغير"] = "rbxassetid://10709788380",
+		["مذكرة صوتية"] = "rbxassetid://10709788466",
+		["دفتر رسم"] = "rbxassetid://10709788552",
+		["لوحة بيضاء"] = "rbxassetid://10709788638",
+		["سبورة"] = "rbxassetid://10709788724",
+		["لوحة إعلانات"] = "rbxassetid://10709788810",
+		["علامة طريق"] = "rbxassetid://10709788896",
+		["إشارة مرور"] = "rbxassetid://10709788982",
+		["سهم توجيه"] = "rbxassetid://10709789068",
+		["بوابة"] = "rbxassetid://10709789154",
+		["باب"] = "rbxassetid://10709789240",
+		["نافذة"] = "rbxassetid://10709789326",
+		["سقف"] = "rbxassetid://10709789412",
+		["حائط"] = "rbxassetid://10709789498",
+		["أرضية"] = "rbxassetid://10709789584",
+		["سلم"] = "rbxassetid://10709789670",
+		["سور"] = "rbxassetid://10709789756",
+		["عمود"] = "rbxassetid://10709789842",
+		["مصعد"] = "rbxassetid://10709789928",
+		["باب دوار"] = "rbxassetid://10709790014",
+		["نافورة"] = "rbxassetid://10709790100",
+		["تمثال"] = "rbxassetid://10709790186",
+		["بركة"] = "rbxassetid://10709790272",
+		["شجرة"] = "rbxassetid://10709790358",
+		["زهرة"] = "rbxassetid://10709790444",
+		["حشائش"] = "rbxassetid://10709790530",
+		["صخرة"] = "rbxassetid://10709790616",
+		["جسر"] = "rbxassetid://10709790702",
+		["نهر"] = "rbxassetid://10709790788",
+		["بحيرة"] = "rbxassetid://10709790874",
+		["شاطئ"] = "rbxassetid://10709790960",
+		["قارب"] = "rbxassetid://10709791046",
+		["يخت"] = "rbxassetid://10709791132",
+		["زورق مطاطي"] = "rbxassetid://10709791218",
+		["سفينة شراعية"] = "rbxassetid://10709791304",
+		["طائرة"] = "rbxassetid://10709791390",
+		["مروحية"] = "rbxassetid://10709791476",
+		["طائرة هليكوبتر صغيرة"] = "rbxassetid://10709791562",
+		["طائرة ورقية"] = "rbxassetid://10709791648",
+		["منطاد"] = "rbxassetid://10709791734",
+		["طائرة نفاثة"] = "rbxassetid://10709791820",
+		["سيارة"] = "rbxassetid://10709791906",
+		["دراجة نارية"] = "rbxassetid://10709791992",
+		["دراجة هوائية"] = "rbxassetid://10709792078",
+		["سكوتر"] = "rbxassetid://10709792164",
+		["شاحنة"] = "rbxassetid://10709792250",
+		["شاحنة صغيرة"] = "rbxassetid://10709792336",
+		["حافلة"] = "rbxassetid://10709792422",
+		["قطار"] = "rbxassetid://10709792508",
+		["ترامواي"] = "rbxassetid://10709792594",
+		["دراجة كهربائية"] = "rbxassetid://10709792680",
+		["سكوتر كهربائي"] = "rbxassetid://10709792766",
+		["درّاجة جبلية"] = "rbxassetid://10709792852",
+		["قارب شراعي صغير"] = "rbxassetid://10709792938",
+		["مركبة فضائية"] = "rbxassetid://10709793024",
+		["روبوت"] = "rbxassetid://10709793110",
+		["روبوت صغير"] = "rbxassetid://10709793196",
+		["درون"] = "rbxassetid://10709793282",
+		["صاروخ"] = "rbxassetid://10709793368",
+		["قمر صناعي"] = "rbxassetid://10709793454",
+		["منظار"] = "rbxassetid://10709793540",
+		["تلسكوب"] = "rbxassetid://10709793626",
+		["مجهر"] = "rbxassetid://10709793712",
+		["مطرقة"] = "rbxassetid://10709793798",
+		["مفك براغي"] = "rbxassetid://10709793884",
+		["كماشة"] = "rbxassetid://10709793970",
+		["منشار"] = "rbxassetid://10709794056",
+		["مفتاح إنجليزي"] = "rbxassetid://10709794142",
+		["مفتاح ربط"] = "rbxassetid://10709794228",
+		["مفتاح براغي"] = "rbxassetid://10709794314",
+		["مقياس حرارة"] = "rbxassetid://10709794400",
+		["ميزان"] = "rbxassetid://10709794486",
+		["ساعة حائط"] = "rbxassetid://10709794572",
+		["ساعة رملية"] = "rbxassetid://10709794658",
+		["مصباح علوي"] = "rbxassetid://10709794744",
+		["قنديل"] = "rbxassetid://10709794830",
+		["فانوس"] = "rbxassetid://10709794916",
+		["بطارية صغيرة"] = "rbxassetid://10709795002",
+		["كابل كهرباء"] = "rbxassetid://10709795088",
+		["محول كهرباء"] = "rbxassetid://10709795174",
+		["لوحة مفاتيح موسيقية"] = "rbxassetid://10709795260",
+		["بيانو"] = "rbxassetid://10709795346",
+		["غيتار"] = "rbxassetid://10709795432",
+		["كمان"] = "rbxassetid://10709795518",
+		["تشيللو"] = "rbxassetid://10709795604",
+		["درامز"] = "rbxassetid://10709795690",
+		["طبلة صغيرة"] = "rbxassetid://10709795776",
+		["ناي"] = "rbxassetid://10709795862",
+		["فلوت"] = "rbxassetid://10709795948",
+		["ساكسفون"] = "rbxassetid://10709796034",
+		["ترومبيت"] = "rbxassetid://10709796120",
+		["هارمونيكا"] = "rbxassetid://10709796206",
+		["ميكروفون غنائي"] = "rbxassetid://10709796292",
+		["سماعة صغيرة"] = "rbxassetid://10709796378",
+		["سماعة كبيرة"] = "rbxassetid://10709796464",
+		["كاسيت"] = "rbxassetid://10709796550",
+		["راديو"] = "rbxassetid://10709796636",
+		["سماعات ستيريو"] = "rbxassetid://10709796722",
+		["مضخم صوت"] = "rbxassetid://10709796808",
+		["ميكسر صوت"] = "rbxassetid://10709796894",
+		["لوحة DJ"] = "rbxassetid://10709796980",
+		["أضواء مسرح"] = "rbxassetid://10709797066",
+		["ستارة مسرح"] = "rbxassetid://10709797152",
+		["منصة"] = "rbxassetid://10709797238",
+		["كرسي"] = "rbxassetid://10709797324",
+		["طاولة"] = "rbxassetid://10709797410",
+		["أريكة"] = "rbxassetid://10709797496",
+		["سرير"] = "rbxassetid://10709797582",
+		["خزانة"] = "rbxassetid://10709797668",
+		["رف كتب"] = "rbxassetid://10709797754",
+		["منضدة صغيرة"] = "rbxassetid://10709797840",
+		["ستارة"] = "rbxassetid://10709797926",
+		["سجادة"] = "rbxassetid://10709798012",
+		["وسادة"] = "rbxassetid://10709798098"
+	}
+end)()
+t1.value6 = {
+	Themes = t3,
+	Info = t4,
+	Save = t5,
+	Settings = {},
+	Connection = {},
+	Instances = {},
+	Elements = {},
+	Options = {},
+	Flags = {},
+	Tabs = {},
+	Icons = v24
+}
+t1.value7 = workspace.CurrentCamera.ViewportSize
+t1.value8 = t1.value7.Y / 450
+t1.value9 = t1.value6.Settings
+t1.value10 = t1.value6.Flags
+t1.value11 = nil
+t1.value12 = nil
+function t1.value13(p1, p2)
+    table.insert(t1.value6.Instances, {
+		Instance = p1,
+		Type = p2
+	})
+
+    return p1
+end
+function t1.value12(p3, p4)
+    if p4 then
+        table.foreach(p4, function(_, p6)
+            p6.Parent = p3
+        end)
+    end
+
+    return p3
+end
+function t1.value11(p7, p8)
+    if p8 then
+        table.foreach(p8, function(p9, p10)
+            p7[p9] = p10
+        end)
+    end
+
+    return p7
+end
+function t1.value14(...)
+    local t6 = { ... }
+
+    if type(t6) ~= "table" then
+        return
+    end
+
+    local v40 = Instance.new(t6[1])
+
+    if type(t6[2]) == "table" then
+        local v41 = t6[2]
+
+        t1.value11(v40, v41)
+        t1.value12(v40, t6[3])
+
+        if t6[3] then
+            return v40
+        end
+    elseif typeof(t6[2]) == "Instance" then
+        v40.Parent = t6[2]
+
+        local v42 = t6[3]
+
+        t1.value11(v40, v42)
+        t1.value12(v40, t6[4])
+
+        if not t6[4] then
+        end
+    end
+
+    return v40
+end
+pcall(function(p11)
+    local _readfile = readfile
+
+    if _readfile then
+        _readfile = isfile and isfile(p11)
+    end
+
+    if _readfile then
+        local data = t1.value3:JSONDecode(readfile(p11))
+
+        if type(data) == "table" then
+            if rawget(data, "UISize") then
+                t1.value6.Save.UISize = data.UISize
+            end
+
+            if rawget(data, "TabSize") then
+                t1.value6.Save.TabSize = data.TabSize
+            end
+
+            local v32 = rawget(data, "Theme")
+
+            if v32 then
+                v32 = VerifyTheme(data.Theme)
+            end
+
+            if v32 then
+                t1.value6.Save.Theme = data.Theme
+            end
+        end
+    end
+end, "Nexus library V1.json")
+t1.value15 = {}
+function t1.value15.InsertCallback(_, p13, p14)
+    if type(p14) == "function" then
+        table.insert(p13, p14)
+    end
+
+    return p14
+end
+function t1.value15.FireCallback(_, p16, ...)
+    for _, v in ipairs(p16) do
+        if type(v) == "function" then
+            task.spawn(v, ...)
+        end
+    end
+end
+function t1.value15.ToggleVisible(_, p18, p19)
+    p18.Visible = p19 ~= nil and p19 or p18.Visible
+end
+function t1.value15.ToggleParent(_, p21, p22)
+    if Bool ~= nil then
+        p21.Parent = Bool
+
+        return
+    end
+
+    p21.Parent = not p21.Parent and p22
+end
+function t1.value15.GetConnectionFunctions(_, p24, p25)
+    return {
+		Function = p25,
+		Connected = true,
+		Disconnect = function(p26)
+        if p26.Connected then
+            table.remove(p24, table.find(p24, p26.Function))
+            p26.Connected = false
+        end
+    end,
+		Fire = function(p27, ...)
+        if p27.Connected then
+            task.spawn(p27.Function, ...)
+        end
+    end
+	}
+end
+function t1.value15.GetCallback(_, p29, p30)
+    local v62 = p29[p30]
+
+    if not v62 then
+        v62 = p29.Callback or function()
+        end
+    end
+
+    local v63 = v62
+
+    if type(v63) == "table" then
+        return { function(p31)
+            v63[1][v63[2]] = p31
+        end }
+    end
+
+    return { v63 }
+end
+local Connection = t1.value6.Connection
+t1.value16 = {}
+t1.value17 = Connection
+function t1.value17.FireConnection(_, p33, ...)
+    local v66 = type(p33) == "string" and t1.value16[p33]
+
+    if not v66 then
+        v66 = t1.value16[p33.Name]
+    end
+
+    for _, v in pairs(v66) do
+        task.spawn(v, ...)
+    end
+end;
+(function(p34)
+    if type(p34) ~= "table" then
+        return
+    end
+
+    for _, v in ipairs(p34) do
+        local t7 = {}
+        local t8 = {}
+
+        t1.value17[v] = t8
+        t1.value16[v] = t7
+        t8.Name = v
+
+        function t8.Connect(_, p36)
+            if type(p36) == "function" then
+                table.insert(t7, p36)
+
+                return t1.value15:GetConnectionFunctions(t7, p36)
+            end
+        end
+        function t8.Once(_, p38)
+            if type(p38) == "function" then
+                return (t1.value15:GetConnectionFunctions(t7, function(...)
+                    task.spawn(p38, ...);
+                    (nil):Disconnect()
+                end))
+            end
+        end
+    end
+end)({
+	"FlagsChanged",
+	"ThemeChanged",
+	"FileSaved",
+	"ThemeChanging",
+	"OptionAdded"
+})
+function t1.value18(p39)
+    return type(p39) == "string" and t1.value10[p39]
+end
+function t1.value19(p40, p41)
+    local v76 = p40
+
+    if p40 then
+        v76 = p41 ~= t1.value10[p40]
+
+        if not v76 then
+            v76 = type(p41) == "table"
+        end
+    end
+
+    if v76 then
+        t1.value10[p40] = p41
+        t1.value17:FireConnection("FlagsChanged", p40, p41)
+    end
+end
+t1.value20 = nil
+t1.value17.FlagsChanged:Connect(function(_, _)
+    local ScriptFile = t1.value9.ScriptFile
+    local v82 = not t1.value20
+
+    if v82 then
+        v82 = ScriptFile and writefile
+    end
+
+    if v82 then
+        task.wait(0.1)
+
+        local ok, result = pcall(function()
+            return t1.value3:JSONEncode(t1.value10)
+        end)
+
+        if ok and pcall(writefile, ScriptFile, result) then
+            t1.value17:FireConnection("FileSaved", "Script-Flags", ScriptFile, result)
+        end
+    end
+end)
+t1.value21 = t1.value14("ScreenGui", CoreGui, {
+	Name = "Nexus Library V1"
+}, { t1.value14("UIScale", {
+	Scale = t1.value8,
+	Name = "Scale"
+}) })
+t1.value22 = Instance.new("Sound", t1.value21)
+t1.value22.SoundId = "rbxassetid://129338574094673"
+t1.value22.Volume = 0.5
+t1.value22.Looped = true
+function t1.value23()
+    local value22 = t1.value22
+
+    if value22 then
+        value22 = t1.value22.IsPlaying
+    end
+
+    if value22 then
+        t1.value22:Stop()
+    end
+end
+t1.value22.Loaded:Connect(function()
+    local _MainFrame = MainFrame
+
+    if _MainFrame then
+        _MainFrame = MainFrame.Visible
+    end
+
+    if _MainFrame then
+        local value22 = t1.value22
+
+        if value22 then
+            value22 = not t1.value22.IsPlaying
+        end
+
+        if value22 then
+            t1.value22:Play()
+        end
+    end
+end)
+t1.value24 = Instance.new("Sound", t1.value21)
+t1.value24.SoundId = "rbxassetid://135028606914792"
+t1.value24.Volume = 0.5
+function t1.value25()
+    t1.value24:Play()
+end
+task.spawn(function()
+    task.wait(2)
+
+    for _, descendant in pairs(t1.value21:GetDescendants()) do
+        local v91 = descendant:IsA("TextButton")
+
+        if not v91 then
+            v91 = descendant:IsA("ImageButton")
+        end
+
+        if v91 then
+            descendant.Activated:Connect(t1.value25)
+        end
+    end
+
+    t1.value21.DescendantAdded:Connect(function(descendant)
+        local v300 = descendant:IsA("TextButton")
+
+        if not v300 then
+            v300 = descendant:IsA("ImageButton")
+        end
+
+        if v300 then
+            task.wait(0.1)
+            descendant.Activated:Connect(t1.value25)
+        end
+    end)
+end)
+
+local t1value21Name = CoreGui:FindFirstChild(t1.value21.Name)
+
+if t1value21Name and t1value21Name ~= t1.value21 then
+    t1value21Name:Destroy()
+end
+function t1.value26(p44)
+    if type(p44) == "function" then
+        return p44()
+    end
+
+    return p44
+end
+function t1.value27(p45, p46)
+    p45.InputBegan:Connect(function(input)
+        local v302 = input.UserInputType == Enum.UserInputType.MouseButton1
+
+        if not v302 then
+            v302 = input.UserInputType == Enum.UserInputType.Touch
+        end
+
+        if v302 then
+            while t1.value1:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
+                task.wait()
+            end
+        end
+
+        p46()
+    end)
+end
+t1.value28 = nil
+function t1.value28(p47)
+    local v94 = p47[1] or p47.Instance
+    local v95 = p47[2] or p47.Prop
+    local v96 = p47[3] or p47.NewVal
+    local v97 = p47[4] or (p47.Time or 0.5)
+    local v98 = p47[5] or (p47.wait or false)
+    local tweenInfo = TweenInfo.new(v97, Enum.EasingStyle.Quint)
+    local v100 = t1.value2:Create(v94, tweenInfo, {
+		[v95] = v96
+	})
+
+    v100:Play()
+
+    if v98 then
+        v100.Completed:Wait()
+    end
+
+    return v100
+end
+function t1.value29(p48)
+    -- Smooth, responsive drag system.
+    -- Uses the actual pointer delta instead of creating a Tween every frame,
+    -- which prevents the UI from feeling delayed or getting stuck when dragged quickly.
+    local UserInputService = game:GetService("UserInputService")
+    local dragging = false
+    local dragStart
+    local startPosition
+    local activeInput
+
+    p48.Active = true
+    p48.AutoButtonColor = false
+
+    local function isPointerInput(input)
+        return input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch
+    end
+
+    p48.InputBegan:Connect(function(input)
+        if not isPointerInput(input) then
+            return
+        end
+
+        dragging = true
+        activeInput = input
+        dragStart = input.Position
+        startPosition = p48.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                if activeInput == input then
+                    dragging = false
+                    activeInput = nil
+                end
+            end
+        end)
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging or not activeInput then
+            return
+        end
+
+        local isMouseMove = input.UserInputType == Enum.UserInputType.MouseMovement
+        local isTouchMove = input.UserInputType == Enum.UserInputType.Touch
+
+        if not isMouseMove and not isTouchMove then
+            return
+        end
+
+        local delta = input.Position - dragStart
+        local scale = t1.value8
+        if type(scale) ~= "number" or scale <= 0 then
+            scale = 1
+        end
+
+        -- Set the position directly so it follows the finger/mouse with no Tween lag.
+        p48.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X / scale,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y / scale
+        )
+    end)
+
+    return p48
+end
+
+function t1.value30(p50)
+    for k, _ in pairs(t1.value6.Themes) do
+        if k == p50 then
+            return true
+        end
+    end
+end
+function t1.value31(p51, p52)
+    if writefile then
+        local json = t1.value3:JSONEncode(p52)
+
+        writefile(p51, json)
+    end
+end
+function t1.value32(p53)
+    local value14 = t1.value14
+    local color3_15 = Color3.fromRGB(255, 0, 0)
+    local Border = Enum.ApplyStrokeMode.Border
+    local v114 = value14("UIStroke", p53, {
+		Color = color3_15,
+		Thickness = 2,
+		ApplyStrokeMode = Border
+	})
+    local v115 = t1.value14("UIGradient", v114, {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 0)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+		}),
+		Rotation = 0
+	})
+
+    task.spawn(function()
+        while true do
+            local v306 = p53
+
+            if v306 then
+                v306 = p53.Parent
+            end
+
+            if not v306 then
+                break
+            end
+
+            v115.Rotation = v115.Rotation + 4
+
+            if v115.Rotation >= 360 then
+                v115.Rotation = 0
+            end
+
+            task.wait(0.03)
+        end
+    end)
+
+    return v114, v115
+end
+t1.value33 = t1.value6.Themes[t1.value6.Save.Theme]
+
+local function v27(p54, p55)
+    t1.value6.Elements[p54] = p55
+end
+function t1.value34(p56, p57, p58, ...)
+    return (t1.value6.Elements[p56](p57, p58, ...))
+end
+v27("Corner", function(p59, p60)
+    local value11 = t1.value11
+    local value14 = t1.value14
+
+    if not p60 then
+        p60 = UDim.new(0, 15)
+    end
+
+    return (value11(value14("UICorner", p59, {
+		CornerRadius = p60
+	}), props))
+end)
+v27("Stroke", function(p61, p62, ...)
+    local v127, v128 = ...
+    local value13 = t1.value13
+    local value11 = t1.value11
+    local value14 = t1.value14
+
+    if not v127 then
+        v127 = t1.value33["Color Stroke"]
+    end
+
+    local v132 = v128 or 1
+
+    return (value13(value11(value14("UIStroke", p61, {
+		Color = v127,
+		Thickness = v132,
+		ApplyStrokeMode = "Border"
+	}), p62), "Stroke"))
+end)
+v27("Button", function(p63, p64, ...)
+    local t9 = { ... }
+    local value13 = t1.value13
+    local value11 = t1.value11
+    local value14 = t1.value14
+    local uDim2 = UDim2.fromScale(1, 1)
+    local v140 = t1.value33["Color Hub 2"]
+    local v141 = value13(value11(value14("TextButton", p63, {
+		Text = "",
+		Size = uDim2,
+		BackgroundColor3 = v140,
+		AutoButtonColor = false
+	}), p64), "Frame")
+
+    v141.MouseEnter:Connect(function()
+        v141.BackgroundTransparency = 0.4
+    end)
+    v141.MouseLeave:Connect(function()
+        v141.BackgroundTransparency = 0
+    end)
+
+    if t9[1] then
+        v141.Activated:Connect(t9[1])
+    end
+
+    return v141
+end)
+v27("Gradient", function(p65, p66, ...)
+    return (t1.value13(t1.value11(t1.value14("UIGradient", p65, {
+		Color = t1.value33["Color Hub 1"]
+	}), p66), "Gradient"))
+end)
+
+local function v28(p67, p68, p69, p70)
+    local value13 = t1.value13
+    local value14 = t1.value14
+    local GothamMedium = Enum.Font.GothamMedium
+    local v152 = t1.value33["Color Text"]
+    local uDim2 = UDim2.new(1, -20)
+    local uDim2_2 = UDim2.new(0, 0, 0.5)
+    local vector2 = Vector2.new(0, 0.5)
+    local v156 = value13(value14("TextLabel", {
+		Font = GothamMedium,
+		TextColor3 = v152,
+		Size = uDim2,
+		AutomaticSize = "Y",
+		Position = uDim2_2,
+		AnchorPoint = vector2,
+		BackgroundTransparency = 1,
+		TextTruncate = "AtEnd",
+		TextSize = 10,
+		TextXAlignment = "Left",
+		Text = "",
+		RichText = true
+	}), "Text")
+    local value13_2 = t1.value13
+    local value14_2 = t1.value14
+    local Gotham = Enum.Font.Gotham
+    local v160 = t1.value33["Color Dark Text"]
+    local uDim2_3 = UDim2.new(1, -20)
+    local uDim2_4 = UDim2.new(0, 12, 0, 15)
+    local v163 = value13_2(value14_2("TextLabel", {
+		Font = Gotham,
+		TextColor3 = v160,
+		Size = uDim2_3,
+		AutomaticSize = "Y",
+		Position = uDim2_4,
+		BackgroundTransparency = 1,
+		TextWrapped = true,
+		TextSize = 8,
+		TextXAlignment = "Left",
+		Text = "",
+		RichText = true
+	}), "DarkText")
+    local v164 = t1.value34("Button", p67, {
+		Size = UDim2.new(1, 0, 0, 25),
+		AutomaticSize = "Y",
+		Name = "Option"
+	})
+
+    t1.value34("Corner", v164, UDim.new(0, 6))
+    t1.value32(v164)
+
+    local value14_3 = t1.value14
+    local uDim2_5 = UDim2.new(0, 10, 0)
+    local vector2_2 = Vector2.new(0, 0)
+    local t10 = {
+		AutomaticSize = "Y",
+		BackgroundTransparency = 1,
+		Size = p70,
+		Position = uDim2_5,
+		AnchorPoint = vector2_2
+	}
+    local value14_4 = t1.value14
+    local uDim = UDim.new(0, 2)
+    local v171 = value14_4("UIListLayout", {
+		SortOrder = "LayoutOrder",
+		VerticalAlignment = "Center",
+		Padding = uDim
+	})
+    local value14_5 = t1.value14
+    local uDim3 = UDim.new(0, 5)
+    local uDim4 = UDim.new(0, 5)
+
+    LabelHolder = value14_3("Frame", v164, t10, {
+		v171,
+		value14_5("UIPadding", {
+			PaddingBottom = uDim3,
+			PaddingTop = uDim4
+		}),
+		v156,
+		v163
+	})
+
+    local t11 = {
+		SetTitle = function(_, p72)
+        local v309 = type(p72) == "string"
+
+        if v309 then
+            v309 = p72:gsub(" ", ""):len() > 0
+        end
+
+        if v309 then
+            v156.Text = p72
+        end
+    end,
+		SetDesc = function(_, p74)
+        local v312 = type(p74) == "string"
+
+        if v312 then
+            v312 = p74:gsub(" ", ""):len() > 0
+        end
+
+        if v312 then
+            v163.Visible = true
+            v163.Text = p74
+            LabelHolder.Position = UDim2.new(0, 10, 0)
+            LabelHolder.AnchorPoint = Vector2.new(0, 0)
+
+            return
+        end
+
+        v163.Visible = false
+        v163.Text = ""
+        LabelHolder.Position = UDim2.new(0, 10, 0.5)
+        LabelHolder.AnchorPoint = Vector2.new(0, 0.5)
+    end
+	}
+
+    t11:SetTitle(p68)
+    t11:SetDesc(p69)
+
+    return v164, t11
+end
+function t1.value35(p75)
+    if p75:IsA("Frame") then
+        return "BackgroundColor3"
+    end
+
+    if p75:IsA("ImageLabel") then
+        return "ImageColor3"
+    end
+
+    if p75:IsA("TextLabel") then
+        return "TextColor3"
+    end
+
+    if p75:IsA("ScrollingFrame") then
+        return "ScrollBarImageColor3"
+    end
+
+    if p75:IsA("UIStroke") then
+        return "Color"
+    end
+
+    return ""
+end
+function t1.value6.GetIcon(p76, p77)
+    local v178 = type(p77) ~= "string"
+    if not v178 then
+        v178 = p77:find("rbxassetid://") or #p77 == 0
+    end
+    if v178 then
+        return p77
+    end
+    local v179
+    local v180 = string.lower(p77):gsub("lucide", ""):gsub("-", "")
+    if p76.Icons[v180] then
+        return p76.Icons[v180]
+    end
+    local Icons = p76.Icons
+    local v182
+    while true do
+        local v183
+
+        v182, v183 = Icons(nil, v182)
+
+        if not v182 then
+            break
+        end
+
+        if v182 == v180 then
+            return v183
+        end
+
+        if not v179 and v182:find(v180, 1, true) then
+            v179 = v183
+        end
+    end
+
+    return v179 or v180
+end
+function t1.value6.SetTheme(_, p79)
+    if not t1.value30(p79) then
+        return
+    end
+
+    t1.value6.Save.Theme = p79
+    t1.value31("Nexus library V1.json", t1.value6.Save)
+    t1.value33 = t1.value6.Themes[p79]
+    t1.value17:FireConnection("ThemeChanged", p79)
+    table.foreach(t1.value6.Instances, function(_, p81)
+        if p81.Type == "Gradient" then
+            p81.Instance.Color = t1.value33["Color Hub 1"]
+
+            return
+        end
+
+        if p81.Type == "Frame" then
+            p81.Instance.BackgroundColor3 = t1.value33["Color Hub 2"]
+
+            return
+        end
+
+        if p81.Type == "Stroke" then
+            p81.Instance[t1.value35(p81.Instance)] = t1.value33["Color Stroke"]
+
+            return
+        end
+
+        if p81.Type == "Theme" then
+            p81.Instance[t1.value35(p81.Instance)] = t1.value33["Color Theme"]
+
+            return
+        end
+
+        if p81.Type == "Text" then
+            p81.Instance[t1.value35(p81.Instance)] = t1.value33["Color Text"]
+
+            return
+        end
+
+        if p81.Type == "DarkText" then
+            p81.Instance[t1.value35(p81.Instance)] = t1.value33["Color Dark Text"]
+
+            return
+        end
+
+        if p81.Type == "ScrollBar" then
+            p81.Instance[t1.value35(p81.Instance)] = t1.value33["Color Theme"]
+        end
+    end)
+end
+function t1.value6.SetScale(_, p83)
+    local v188 = t1.value7.Y / math.clamp(p83, 300, 2000)
+    local value21Scale = t1.value21.Scale
+
+    t1.value8 = v188
+    value21Scale.Scale = v188
+end
+function t1.value6.MakeWindow(_, p85)
+    local v192 = p85[1]
+    if not v192 then
+        v192 = p85.Name
+
+        if not v192 then
+            v192 = p85.Title or "redz Library V5"
+        end
+    end
+    local v193 = p85[2]
+    if not v193 then
+        v193 = p85.SubTitle or "by : redz9999"
+    end
+    t1.value9.ScriptFile = p85[3] or (p85.SaveFolder or false);
+    (function()
+        local ScriptFile = t1.value9.ScriptFile
+
+        if type(ScriptFile) ~= "string" then
+            return
+        end
+
+        if not readfile or not isfile then
+            return
+        end
+
+        local ok, result = pcall(isfile, ScriptFile)
+
+        if ok and result then
+            local ok2, result2 = pcall(readfile, ScriptFile)
+            local v320 = result2
+
+            if ok2 then
+                ok2 = type(v320) == "string"
+            end
+
+            if ok2 then
+                local ok3, result3 = pcall(function()
+                    return t1.value3:JSONDecode(v320)
+                end)
+
+                if not (ok3 and result3) then
+                end
+            end
+        end
+    end)()
+    local value13 = t1.value13
+    local value14 = t1.value14
+    local value21 = t1.value21
+    local uDim2 = UDim2.new(0, 460, 0, 290)
+    local uDim2_6 = UDim2.new(0.5, -250, 0.5, -135)
+    local v199 = value13(value14("ImageButton", value21, {
+		Size = uDim2,
+		Position = uDim2_6,
+		BackgroundTransparency = 1,
+		Name = "Hub"
+	}), "Main")
+    -- Minimize/restore state. Keep the last real UI size so rapid toggles are safe.
+    local u285 = false
+    local LastFullSize = v199.Size
+    do
+        local savedSize = t1.value6.Save.UISize
+        if type(savedSize) == "table" and tonumber(savedSize[1]) and tonumber(savedSize[2]) then
+            LastFullSize = UDim2.fromOffset(tonumber(savedSize[1]), tonumber(savedSize[2]))
+            v199.Size = LastFullSize
+        end
+    end
+
+    v199:GetPropertyChangedSignal("Visible"):Connect(function()
+        if v199.Visible then
+            local value22 = t1.value22
+
+            if value22 then
+                value22 = not t1.value22.IsPlaying
+            end
+
+            if value22 then
+                t1.value22:Play()
+
+                return
+            end
+        else
+            t1.value23()
+        end
+    end)
+    task.spawn(function()
+        task.wait(0.1)
+
+        local value22 = t1.value22
+
+        if value22 then
+            value22 = not t1.value22.IsPlaying
+        end
+
+        if value22 then
+            t1.value22:Play()
+        end
+    end)
+    local value14_6 = t1.value14
+    local uDim2_7 = UDim2.new(1, 0, 1, 0)
+    local uDim2_8 = UDim2.new(0, 0, 0, 0)
+    local Crop = Enum.ScaleType.Crop
+    local v204 = value14_6("ImageLabel", v199, {
+		Name = "WindowBackground",
+		Size = uDim2_7,
+		Position = uDim2_8,
+		BackgroundTransparency = 1,
+		Image = "rbxassetid://135445558434589",
+		ImageTransparency = 0,
+		ScaleType = Crop,
+		ZIndex = 0
+	})
+    t1.value34("Corner", v204)
+    local value14_7 = t1.value14
+    local color3_16 = Color3.fromRGB(255, 0, 0)
+    local Border = Enum.ApplyStrokeMode.Border
+    local v208 = value14_7("UIStroke", v199, {
+		Color = color3_16,
+		Thickness = 2.5,
+		ApplyStrokeMode = Border
+	})
+    local v209 = t1.value14("UIGradient", v208, {
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 0, 0)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+		}),
+		Rotation = 0
+	})
+    game:GetService("TweenService")
+    task.spawn(function()
+        while true do
+            v209.Rotation = v209.Rotation + 4
+
+            if v209.Rotation >= 360 then
+                v209.Rotation = 0
+            end
+
+            task.wait(0.03)
+        end
+    end)
+    t1.value34("Gradient", v199, {
+		Rotation = 45
+	})
+    t1.value29(v199)
+    local v210 = t1.value34("Corner", v199)
+    local v211 = t1.value14("Folder", v199, {
+		Name = "Components"
+	})
+    local v212 = t1.value14("Folder", t1.value21, {
+		Name = "Dropdown"
+	})
+    local value14_8 = t1.value14
+    local uDim2_9 = UDim2.fromOffset(20, 20)
+    local uDim2_10 = UDim2.new(0, 2, 0, 0)
+    value14_8("ImageLabel", v199, {
+		Name = "TopLeftGlow",
+		Size = uDim2_9,
+		Position = uDim2_10,
+		BackgroundTransparency = 1,
+		Image = "rbxassetid://83393559671411",
+		ImageTransparency = 0,
+		ZIndex = 10
+	})
+    local value14_9 = t1.value14
+    local uDim2_11 = UDim2.fromOffset(150, 150)
+    local uDim2_12 = UDim2.fromScale(0.5, 0.5)
+    local vector2 = Vector2.new(0.5, 0.5)
+    local v220 = value14_9("ImageLabel", v199, {
+		Name = "GlowCircle",
+		Size = uDim2_11,
+		Position = uDim2_12,
+		AnchorPoint = vector2,
+		BackgroundTransparency = 1,
+		Image = "rbxassetid://128061238052829",
+		ImageTransparency = 0,
+		ZIndex = 0
+	})
+    t1.value4.Heartbeat:Connect(function(dt)
+        v220.Rotation = v220.Rotation + 90 * dt
+    end)
+    local v221 = t1.value14("Frame", v211, {
+		Size = UDim2.new(1, 0, 0, 28),
+		BackgroundTransparency = 1,
+		Name = "Top Bar"
+	})
+    local value13_3 = t1.value13
+    local value14_10 = t1.value14
+    local uDim2_13 = UDim2.new(0, 30, 0.5)
+    local vector2_3 = Vector2.new(0, 0.5)
+    local v226 = "<font family=\"12187370000\">" .. v192 .. "</font>"
+    local v227 = t1.value33["Color Text"]
+    local t12 = {
+		Position = uDim2_13,
+		AnchorPoint = vector2_3,
+		AutomaticSize = "XY",
+		Text = v226,
+		RichText = true,
+		TextXAlignment = "Left",
+		TextSize = 12,
+		TextColor3 = v227,
+		BackgroundTransparency = 1,
+		Name = "Title"
+	}
+    local value13_4 = t1.value13
+    local value14_11 = t1.value14
+    local uDim2_14 = UDim2.fromScale(0, 1)
+    local vector2_4 = Vector2.new(0, 1)
+    local uDim2_15 = UDim2.new(1, 5, 0.9)
+    local v234 = "<font family=\"12187370000\">" .. v193 .. "</font>"
+    local v235 = t1.value33["Color Dark Text"]
+    local v236 = value13_3(value14_10("TextLabel", v221, t12, { value13_4(value14_11("TextLabel", {
+		Size = uDim2_14,
+		AutomaticSize = "X",
+		AnchorPoint = vector2_4,
+		Position = uDim2_15,
+		Text = v234,
+		RichText = true,
+		TextColor3 = v235,
+		BackgroundTransparency = 1,
+		TextXAlignment = "Left",
+		TextYAlignment = "Bottom",
+		TextSize = 8,
+		Name = "SubTitle"
+	}), "DarkText") }), "Text")
+    local value13_5 = t1.value13
+    local value14_12 = t1.value14
+    local uDim2_16 = UDim2.new(0, t1.value6.Save.TabSize, 1, -v221.Size.Y.Offset)
+    local v240 = t1.value33["Color Theme"]
+    local uDim2_17 = UDim2.new(0, 0, 1, 0)
+    local vector2_5 = Vector2.new(0, 1)
+    local uDim2_18 = UDim2.new()
+    local t13 = {
+		Size = uDim2_16,
+		ScrollBarImageColor3 = v240,
+		Position = uDim2_17,
+		AnchorPoint = vector2_5,
+		ScrollBarThickness = 1.5,
+		BackgroundTransparency = 1,
+		ScrollBarImageTransparency = 0.2,
+		CanvasSize = uDim2_18,
+		AutomaticCanvasSize = "Y",
+		ScrollingDirection = "Y",
+		BorderSizePixel = 0,
+		Name = "Tab Scroll"
+	}
+    local value14_13 = t1.value14
+    local uDim = UDim.new(0, 10)
+    local uDim5 = UDim.new(0, 10)
+    local uDim6 = UDim.new(0, 10)
+    local uDim7 = UDim.new(0, 10)
+    local v250 = value13_5(value14_12("ScrollingFrame", v211, t13, {
+		value14_13("UIPadding", {
+			PaddingLeft = uDim,
+			PaddingRight = uDim5,
+			PaddingTop = uDim6,
+			PaddingBottom = uDim7
+		}),
+		t1.value14("UIListLayout", {
+			Padding = UDim.new(0, 5)
+		})
+	}), "ScrollBar")
+    local value14_14 = t1.value14
+    local uDim2_19 = UDim2.new(1, -v250.Size.X.Offset, 1, -v221.Size.Y.Offset)
+    local vector2_6 = Vector2.new(1, 1)
+    local uDim2_20 = UDim2.new(1, 0, 1, 0)
+    local v255 = value14_14("Frame", v211, {
+		Size = uDim2_19,
+		AnchorPoint = vector2_6,
+		Position = uDim2_20,
+		BackgroundTransparency = 1,
+		ClipsDescendants = true,
+		Name = "Containers"
+	})
+    local v256 = t1.value14("Frame", v255, {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		Name = "ThemeParticles",
+		ZIndex = -5,
+		ClipsDescendants = true
+	})
+    local t14 = {
+		Min = 6,
+		Max = 10
+	}
+    local t15 = {
+		Min = 15,
+		Max = 25
+	}
+    local t16 = {
+		MaxParticles = 30,
+		SpawnRate = 0.1,
+		ParticleSize = t14,
+		ParticleSpeed = t15,
+		ParticleLifetime = 6
+	}
+    local t17 = {}
+    local function v261()
+        if #t17 >= t16.MaxParticles then
+            return
+        end
+
+        local AbsoluteSize = v256.AbsoluteSize
+        local v327 = math.random(10, AbsoluteSize.X - 10)
+        local v328 = AbsoluteSize.Y + 20
+        local v329 = math.random(t16.ParticleSize.Min, t16.ParticleSize.Max)
+        local v330 = math.random(t16.ParticleSpeed.Min, t16.ParticleSpeed.Max)
+        local v331 = t1.value33["Color Theme"]
+        local value14_15 = t1.value14
+        local v333 = v256
+        local uDim2_21 = UDim2.fromOffset(v329, v329)
+        local uDim2_22 = UDim2.fromOffset(v327, v328)
+        local v336 = value14_15("Frame", v333, {
+			Size = uDim2_21,
+			Position = uDim2_22,
+			BackgroundColor3 = v331,
+			BackgroundTransparency = 0.2,
+			BorderSizePixel = 0
+		})
+
+        t1.value14("UICorner", v336, {
+			CornerRadius = UDim.new(0.5, 0)
+		})
+
+        local value14_16 = t1.value14
+        local uDim2_23 = UDim2.new(1, 6, 1, 6)
+        local uDim2_24 = UDim2.new(0.5, 0, 0.5, 0)
+        local vector2_7 = Vector2.new(0.5, 0.5)
+        local v341 = value14_16("Frame", v336, {
+			Size = uDim2_23,
+			Position = uDim2_24,
+			AnchorPoint = vector2_7,
+			BackgroundColor3 = v331,
+			BackgroundTransparency = 0.7,
+			ZIndex = -1
+		})
+
+        t1.value14("UICorner", v341, {
+			CornerRadius = UDim.new(0.5, 0)
+		})
+
+        local timestamp = tick()
+        local vector2_8 = Vector2.new(0, -v330)
+        local t18 = {
+			Frame = v336,
+			Glow = v341,
+			StartTime = timestamp,
+			Speed = v330,
+			Direction = vector2_8,
+			OriginalColor = v331
+		}
+
+        v336.BackgroundTransparency = 1
+        v341.BackgroundTransparency = 1
+        t1.value28({
+			v336,
+			"BackgroundTransparency",
+			0.2,
+			0.8
+		})
+        t1.value28({
+			v341,
+			"BackgroundTransparency",
+			0.7,
+			0.8
+		})
+        table.insert(t17, t18)
+    end
+    local function v262()
+        local _ = v256.AbsoluteSize
+
+        for i = #t17, 1, -1 do
+            local v347 = i
+            local v348 = t17[v347]
+            local v349 = tick() - v348.StartTime
+            local v350 = v349 >= t16.ParticleLifetime
+
+            if not v350 then
+                v350 = v348.Frame.Position.Y.Offset < -20
+            end
+
+            if v350 then
+                t1.value28({
+					v348.Frame,
+					"BackgroundTransparency",
+					1,
+					0.5
+				})
+                t1.value28({
+					v348.Glow,
+					"BackgroundTransparency",
+					1,
+					0.5
+				})
+                task.spawn(function()
+                    task.wait(0.5)
+
+                    local Frame = v348.Frame
+
+                    if Frame then
+                        Frame = v348.Frame.Parent
+                    end
+
+                    if Frame then
+                        v348.Frame:Destroy()
+                    end
+                end)
+                table.remove(t17, v347)
+            else
+                local FramePosition = v348.Frame.Position
+                local v352 = FramePosition.Y.Offset + v348.Direction.Y * 0.016
+
+                v348.Frame.Position = UDim2.fromOffset(FramePosition.X.Offset, v352)
+
+                local v353 = v349 / t16.ParticleLifetime
+
+                if v353 > 0.8 then
+                    local v354 = 0.2 * (1 - (v353 - 0.8) / 0.2)
+
+                    v348.Frame.BackgroundTransparency = math.max(1 - v354, 0.95)
+                end
+            end
+        end
+    end
+    t1.value4.Heartbeat:Connect(function()
+        v262()
+
+        local v356 = tick() - 0 >= t16.SpawnRate
+
+        if v356 then
+            v356 = v199.Visible
+        end
+
+        if v356 then
+            v261()
+            tick()
+        end
+    end)
+    local value29 = t1.value29
+    local value14_17 = t1.value14
+    local uDim2_25 = UDim2.new(0, 35, 0, 35)
+    local Size = v199.Size
+    local vector2_9 = Vector2.new(0.8, 0.8)
+    local v268 = value29(value14_17("ImageButton", v199, {
+		Size = uDim2_25,
+		Position = Size,
+		Active = true,
+		AnchorPoint = vector2_9,
+		BackgroundTransparency = 1,
+		Name = "Control Hub Size"
+	}))
+    local value29_2 = t1.value29
+    local value14_18 = t1.value14
+    local uDim2_26 = UDim2.new(0, 20, 1, -30)
+    local uDim2_27 = UDim2.new(0, v250.Size.X.Offset, 1, 0)
+    local vector2_10 = Vector2.new(0.5, 1)
+    local v274 = value29_2(value14_18("ImageButton", v199, {
+		Size = uDim2_26,
+		Position = uDim2_27,
+		AnchorPoint = vector2_10,
+		Active = true,
+		BackgroundTransparency = 1,
+		Name = "Control Tab Size"
+	}))
+    local v276 = v268
+    local u275 = v274
+    local function v277()
+        local Position = v276.Position
+        local Position2 = u275.Position
+
+        v276.Position = UDim2.fromOffset(math.clamp(Position.X.Offset, 430, 1000), (math.clamp(Position.Y.Offset, 200, 500)))
+        u275.Position = UDim2.new(0, math.clamp(Position2.X.Offset, 135, 250), 1, 0)
+        v250.Size = UDim2.new(0, u275.Position.X.Offset, 1, -v221.Size.Y.Offset)
+        v255.Size = UDim2.new(1, -v250.Size.X.Offset, 1, -v221.Size.Y.Offset)
+        v199.Size = v276.Position
+    end
+    v276:GetPropertyChangedSignal("Position"):Connect(v277)
+    u275:GetPropertyChangedSignal("Position"):Connect(v277)
+    t1.value27(v276, function()
+        if not u285 then
+            LastFullSize = v199.Size
+            t1.value6.Save.UISize = {
+				v199.Size.X.Offset,
+				v199.Size.Y.Offset
+			}
+            t1.value31("Nexus library V5.json", t1.value6.Save)
+        end
+    end)
+    t1.value27(u275, function()
+        t1.value6.Save.TabSize = v250.Size.X.Offset
+        t1.value31("Nexus library V5.json", t1.value6.Save)
+    end)
+    local v278 = t1.value14("Folder", v221, {
+		Name = "Buttons"
+	})
+    local value14_19 = t1.value14
+    local uDim2_28 = UDim2.new(0, 21, 0, 21)
+    local uDim2_29 = UDim2.new(1, -10, 0.5)
+    local vector2_11 = Vector2.new(1, 0.5)
+    local v283 = value14_19("ImageButton", {
+		Size = uDim2_28,
+		Position = uDim2_29,
+		AnchorPoint = vector2_11,
+		BackgroundTransparency = 1,
+		Image = "rbxassetid://10747384394",
+		AutoButtonColor = false,
+		Name = "Close"
+	})
+    local v284 = t1.value11(v283:Clone(), {
+		Position = UDim2.new(1, -35, 0.5),
+		Image = "rbxassetid://10734896206",
+		Name = "Minimize"
+	})
+    t1.value12(v278, {
+		v283,
+		v284
+	})
+    local activeMinimizeTween
+    local t19 = {}
+    function t19.CloseBtn(_)
+        t19:Dialog({
+			Title = "اقفال السكربت",
+			Text = "ليه تبي تقفل سكربت REXM HUB",
+			Options = {
+				{
+					"نعم",
+					function()
+            t1.value23()
+            t1.value21:Destroy()
+        end
+				},
+				{ "لا" }
+			}
+		})
+    end
+    function t19.MinimizeBtn(_)
+        -- Cancel the previous transition so spam-clicking never leaves a stale tween running.
+        if activeMinimizeTween then
+            activeMinimizeTween:Cancel()
+            activeMinimizeTween = nil
+        end
+
+        if u285 then
+            -- RESTORE
+            u285 = false
+            v284.Image = "rbxassetid://10734896206"
+            v276.Visible = true
+            u275.Visible = true
+            v220.Visible = true
+
+            activeMinimizeTween = t1.value28({
+                v199,
+                "Size",
+                LastFullSize,
+                0.25,
+                false
+            })
+
+            local tween = activeMinimizeTween
+            tween.Completed:Connect(function()
+                if activeMinimizeTween == tween then
+                    activeMinimizeTween = nil
+                end
+            end)
+
+            local value22 = t1.value22
+            if value22 then
+                value22 = not t1.value22.IsPlaying
+            end
+            if value22 then
+                t1.value22:Play()
+            end
+        else
+            -- MINIMIZE: capture the exact full size before shrinking.
+            LastFullSize = v199.Size
+            u285 = true
+            v284.Image = "rbxassetid://10734924532"
+            v276.Visible = false
+            u275.Visible = false
+            -- Hide the decorative 150x150 circle so it cannot stick out of the 28px bar.
+            v220.Visible = false
+
+            activeMinimizeTween = t1.value28({
+                v199,
+                "Size",
+                UDim2.fromOffset(LastFullSize.X.Offset, 28),
+                0.25,
+                false
+            })
+
+            local tween = activeMinimizeTween
+            tween.Completed:Connect(function()
+                if activeMinimizeTween == tween then
+                    activeMinimizeTween = nil
+                end
+            end)
+
+            t1.value23()
+        end
+    end
+    function t19.Minimize(_)
+        v199.Visible = not v199.Visible
+    end
+    function t19.AddMinimizeButton(_, p90)
+        local value29_3 = t1.value29
+        local value14_20 = t1.value14
+        local value21_2 = t1.value21
+        local uDim2_30 = UDim2.fromOffset(35, 35)
+        local uDim2_31 = UDim2.fromScale(0.15, 0.15)
+        local v371 = t1.value33["Color Hub 2"]
+        local v372 = value29_3(value14_20("ImageButton", value21_2, {
+			Size = uDim2_30,
+			Position = uDim2_31,
+			BackgroundTransparency = 1,
+			BackgroundColor3 = v371,
+			AutoButtonColor = false
+		}))
+        local v373
+        local v374
+        if p90.Corner then
+            v374 = t1.value34("Corner", v372)
+            t1.value11(v374, p90.Corner)
+        end
+        if p90.Stroke then
+            v373 = t1.value34("Stroke", v372)
+            t1.value11(v373, p90.Corner)
+        end
+        t1.value11(v372, p90.Button)
+        v372.Activated:Connect(t19.Minimize)
+
+        return {
+			Stroke = v373,
+			Corner = v374,
+			Button = v372
+		}
+    end
+    function t19.Set(_, p92, p93)
+        local v378 = type(p92) == "string"
+
+        if v378 then
+            v378 = type(p93) == "string"
+        end
+
+        if v378 then
+            v236.Text = p92
+            v236.SubTitle.Text = p93
+
+            return
+        end
+
+        if type(p92) == "string" then
+            v236.Text = p92
+        end
+    end
+    function t19.Dialog(_, p95)
+        if v199:FindFirstChild("Dialog") then
+            return
+        end
+
+        if u285 then
+            t19:MinimizeBtn()
+        end
+
+        local v381 = p95[1]
+
+        if not v381 then
+            v381 = p95.Title or "Dialog"
+        end
+
+        local v382 = p95[2]
+
+        if not v382 then
+            v382 = p95.Text or "This is a Dialog"
+        end
+
+        local v383 = p95[3]
+
+        if not v383 then
+            v383 = p95.Options or {}
+        end
+
+        local value14_21 = t1.value14
+        local uDim2_32 = UDim2.fromOffset(270, 162)
+        local uDim2_33 = UDim2.fromScale(0.5, 0.5)
+        local vector2_12 = Vector2.new(0.5, 0.5)
+        local t20 = {
+			Active = true,
+			Size = uDim2_32,
+			Position = uDim2_33,
+			AnchorPoint = vector2_12
+		}
+        local value13_6 = t1.value13
+        local value14_22 = t1.value14
+        local GothamBold = Enum.Font.GothamBold
+        local uDim2_34 = UDim2.new(1, 0, 0, 20)
+        local v393 = t1.value33["Color Text"]
+        local uDim2_35 = UDim2.fromOffset(15, 5)
+        local v395 = value13_6(value14_22("TextLabel", {
+			Font = GothamBold,
+			Size = uDim2_34,
+			Text = v381,
+			TextXAlignment = "Left",
+			TextColor3 = v393,
+			TextSize = 15,
+			Position = uDim2_35,
+			BackgroundTransparency = 1
+		}), "Text")
+        local value13_7 = t1.value13
+        local value14_23 = t1.value14
+        local GothamMedium = Enum.Font.GothamMedium
+        local uDim2_36 = UDim2.new(1, -25)
+        local v400 = t1.value33["Color Dark Text"]
+        local uDim2_37 = UDim2.fromOffset(15, 25)
+        local v402 = value14_21("Frame", t20, {
+			v395,
+			value13_7(value14_23("TextLabel", {
+				Font = GothamMedium,
+				Size = uDim2_36,
+				AutomaticSize = "Y",
+				Text = v382,
+				TextXAlignment = "Left",
+				TextColor3 = v400,
+				TextSize = 12,
+				Position = uDim2_37,
+				BackgroundTransparency = 1,
+				TextWrapped = true
+			}), "DarkText")
+		})
+
+        t1.value34("Gradient", v402, {
+			Rotation = 270
+		})
+        t1.value34("Corner", v402)
+
+        local value14_24 = t1.value14
+        local uDim2_38 = UDim2.fromScale(1, 0.35)
+        local uDim2_39 = UDim2.fromScale(0, 1)
+        local vector2_13 = Vector2.new(0, 1)
+        local v407 = t1.value33["Color Hub 2"]
+        local v408 = value14_24("Frame", v402, {
+			Size = uDim2_38,
+			Position = uDim2_39,
+			AnchorPoint = vector2_13,
+			BackgroundColor3 = v407,
+			BackgroundTransparency = 1
+		}, { t1.value14("UIListLayout", {
+			Padding = UDim.new(0, 10),
+			VerticalAlignment = "Center",
+			FillDirection = "Horizontal",
+			HorizontalAlignment = "Center"
+		}) })
+        local value13_8 = t1.value13
+        local value14_25 = t1.value14
+        local v411 = v199
+        local v412 = t1.value33["Color Hub 2"]
+        local uDim2_40 = UDim2.new(1, 0, 1, 0)
+        local v414 = t1.value33["Color Stroke"]
+        local v415 = value13_8(value14_25("Frame", v411, {
+			BackgroundTransparency = 0.6,
+			Active = true,
+			BackgroundColor3 = v412,
+			Size = uDim2_40,
+			BackgroundColor3 = v414,
+			Name = "Dialog"
+		}), "Stroke")
+
+        v210:Clone().Parent = v415
+        v402.Parent = v415
+        t1.value28({
+			v402,
+			"Size",
+			UDim2.fromOffset(250, 150),
+			0.2
+		})
+        t1.value28({
+			v402,
+			"Transparency",
+			0,
+			0.15
+		})
+        t1.value28({
+			v415,
+			"Transparency",
+			0.3,
+			0.15
+		})
+
+        local n1 = 1
+        local t21 = {}
+
+        function t21.Button(_, p97)
+            local v478 = p97[1]
+
+            if not v478 then
+                v478 = p97.Name
+
+                if not v478 then
+                    v478 = p97.Title or ""
+                end
+            end
+
+            local v479 = p97[2]
+
+            if not v479 then
+                v479 = p97.Callback or function()
+                end
+            end
+
+            n1 += 1
+
+            local v480 = t1.value34("Button", v408)
+
+            t1.value34("Corner", v480)
+
+            local value11 = t1.value11
+            local GothamBold2 = Enum.Font.GothamBold
+            local v483 = t1.value33["Color Text"]
+
+            value11(v480, {
+				Text = v478,
+				Font = GothamBold2,
+				TextColor3 = v483,
+				TextSize = 12
+			})
+
+            for _, child in pairs(v408:GetChildren()) do
+                if child:IsA("TextButton") then
+                    child.Size = UDim2.new(1 / n1, -((n1 - 1) * 20 / n1), 0, 32)
+                end
+            end
+
+            v480.Activated:Connect(t21.Close)
+            v480.Activated:Connect(v479)
+        end
+        function t21.Close(_)
+            t1.value28({
+				v402,
+				"Size",
+				UDim2.fromOffset(270, 162),
+				0.2
+			})
+            t1.value28({
+				v415,
+				"Transparency",
+				1,
+				0.15
+			})
+            t1.value28({
+				v402,
+				"Transparency",
+				1,
+				0.15,
+				true
+			})
+            v415:Destroy()
+        end
+
+        table.foreach(v383, function(_, p100)
+            t21:Button(p100)
+        end)
+
+        return t21
+    end
+    function t19.SelectTab(_, p102)
+        if type(p102) == "number" then
+            t1.value6.Tabs[p102].func:Enable()
+
+            return
+        end
+
+        for _, v in pairs(t1.value6.Tabs) do
+            if v.Cont == p102.Cont then
+                v.func:Enable()
+            end
+        end
+    end
+    local t22 = {}
+    function t19.MakeTab(_, p104, p105)
+        if type(p104) == "table" then
+            p105 = p104
+        end
+
+        local v425 = p105[1]
+
+        if not v425 then
+            v425 = p105.Title or "Tab!"
+        end
+
+        local v426 = p105[2]
+
+        if not v426 then
+            v426 = p105.Icon or ""
+        end
+
+        local Icon = t1.value6:GetIcon(v426)
+        local v428 = not Icon:find("rbxassetid://")
+
+        if not v428 then
+            v428 = Icon:gsub("rbxassetid://", ""):len() < 6
+        end
+
+        if v428 then
+            Icon = false
+        end
+
+        local v429 = t1.value34("Button", v250, {
+			Size = UDim2.new(1, 0, 0, 24)
+		})
+
+        t1.value34("Corner", v429)
+        t1.value32(v429)
+
+        local value13_9 = t1.value13
+        local value14_26 = t1.value14
+        local uDim2_41 = UDim2.new(1, not Icon and -15 or -25, 1)
+        local uDim2_42 = UDim2.fromOffset(not Icon and 15 or 25)
+        local GothamMedium = Enum.Font.GothamMedium
+        local v435 = t1.value33["Color Text"]
+        local Left = Enum.TextXAlignment.Left
+        local v437 = value13_9(value14_26("TextLabel", v429, {
+			Size = uDim2_41,
+			Position = uDim2_42,
+			BackgroundTransparency = 1,
+			Font = GothamMedium,
+			Text = v425,
+			TextColor3 = v435,
+			TextSize = 10,
+			TextXAlignment = Left,
+			TextTransparency = 0,
+			TextTruncate = "AtEnd"
+		}), "Text")
+        local value13_10 = t1.value13
+        local value14_27 = t1.value14
+        local uDim2_43 = UDim2.new(0, 8, 0.5)
+        local uDim2_44 = UDim2.new(0, 13, 0, 13)
+        local vector2_14 = Vector2.new(0, 0.5)
+        local v443 = Icon or ""
+        local v444 = value13_10(value14_27("ImageLabel", v429, {
+			Position = uDim2_43,
+			Size = uDim2_44,
+			AnchorPoint = vector2_14,
+			Image = v443,
+			BackgroundTransparency = 1,
+			ImageTransparency = 0
+		}), "Text")
+        local value13_11 = t1.value13
+        local value14_28 = t1.value14
+        local v447 = false
+
+        if v447 then
+            v447 = UDim2.new(0, 4, 0, 4)
+        end
+
+        if not v447 then
+            v447 = UDim2.new(0, 4, 0, 13)
+        end
+
+        local uDim2_45 = UDim2.new(0, 1, 0.5)
+        local vector2_15 = Vector2.new(0, 0.5)
+        local v450 = t1.value33["Color Theme"]
+        local v451 = value13_11(value14_28("Frame", v429, {
+			Size = v447,
+			Position = uDim2_45,
+			AnchorPoint = vector2_15,
+			BackgroundColor3 = v450,
+			BackgroundTransparency = 0
+		}), "Theme")
+
+        t1.value34("Corner", v451, UDim.new(0.5, 0))
+
+        local value13_12 = t1.value13
+        local value14_29 = t1.value14
+        local uDim2_46 = UDim2.new(1, 0, 1, 0)
+        local uDim2_47 = UDim2.new(0, 0, 1)
+        local vector2_16 = Vector2.new(0, 1)
+        local v457 = t1.value33["Color Theme"]
+        local uDim2_48 = UDim2.new()
+        local v459 = ("Container %i [ %s ]"):format(#t22 + 1, v425)
+        local t23 = {
+			Size = uDim2_46,
+			Position = uDim2_47,
+			AnchorPoint = vector2_16,
+			ScrollBarThickness = 1.5,
+			BackgroundTransparency = 1,
+			ScrollBarImageTransparency = 0.2,
+			ScrollBarImageColor3 = v457,
+			AutomaticCanvasSize = "Y",
+			ScrollingDirection = "Y",
+			BorderSizePixel = 0,
+			CanvasSize = uDim2_48,
+			Name = v459
+		}
+        local value14_30 = t1.value14
+        local uDim8 = UDim.new(0, 10)
+        local uDim9 = UDim.new(0, 10)
+        local uDim10 = UDim.new(0, 10)
+        local uDim11 = UDim.new(0, 10)
+        local v466 = value13_12(value14_29("ScrollingFrame", t23, {
+			value14_30("UIPadding", {
+				PaddingLeft = uDim8,
+				PaddingRight = uDim9,
+				PaddingTop = uDim10,
+				PaddingBottom = uDim11
+			}),
+			t1.value14("UIListLayout", {
+				Padding = UDim.new(0, 5)
+			})
+		}), "ScrollBar")
+
+        table.insert(t22, v466)
+
+        -- Keep only the first tab visible initially.
+        -- Every other tab starts detached and is shown by v467 when selected.
+        if #t22 == 1 then
+            v466.Parent = v255
+        else
+            v466.Parent = nil
+        end
+
+        local function v467()
+            -- Switch tabs deterministically: hide every other container first.
+            for _, v in ipairs(t22) do
+                if v ~= v466 and v:IsA("ScrollingFrame") then
+                    v.Parent = nil
+                end
+            end
+
+            v466.Parent = v255
+            v466.Size = UDim2.new(1, 0, 1, 150)
+            table.foreach(t1.value6.Tabs, function(_, p107)
+                if p107.Cont ~= v466 then
+                    p107.func:Disable()
+                end
+            end)
+            t1.value28({
+				v466,
+				"Size",
+				UDim2.new(1, 0, 1, 0),
+				0.3
+			})
+            t1.value28({
+				v437,
+				"TextTransparency",
+				0,
+				0.35
+			})
+            t1.value28({
+				v444,
+				"ImageTransparency",
+				0,
+				0.35
+			})
+            t1.value28({
+				v451,
+				"Size",
+				UDim2.new(0, 4, 0, 13),
+				0.35
+			})
+            t1.value28({
+				v451,
+				"BackgroundTransparency",
+				0,
+				0.35
+			})
+        end
+
+        v429.Activated:Connect(v467)
+
+        local t24 = {}
+
+        table.insert(t1.value6.Tabs, {
+			TabInfo = {
+				Name = v425,
+				Icon = Icon
+			},
+			func = t24,
+			Cont = v466
+		})
+        t24.Cont = v466
+
+        function t24.Disable(_)
+            v466.Parent = nil
+            t1.value28({
+				v437,
+				"TextTransparency",
+				0.3,
+				0.35
+			})
+            t1.value28({
+				v444,
+				"ImageTransparency",
+				0.3,
+				0.35
+			})
+            t1.value28({
+				v451,
+				"Size",
+				UDim2.new(0, 4, 0, 4),
+				0.35
+			})
+            t1.value28({
+				v451,
+				"BackgroundTransparency",
+				1,
+				0.35
+			})
+        end
+        function t24.Enable(_)
+            v467()
+        end
+        function t24.Visible(_, p111)
+            t1.value15:ToggleVisible(v429, p111)
+            t1.value15:ToggleParent(v466, p111, v255)
+        end
+        function t24.Destroy(_)
+            v429:Destroy()
+            v466:Destroy()
+        end
+        function t24.AddSection(_, p114)
+            local v499 = type(p114) == "string" and p114
+
+            if not v499 then
+                v499 = p114[1]
+
+                if not v499 then
+                    v499 = p114.Name
+
+                    if not v499 then
+                        v499 = p114.Title or p114.Section
+                    end
+                end
+            end
+
+            local v500 = t1.value14("Frame", v466, {
+				Size = UDim2.new(1, 0, 0, 20),
+				BackgroundTransparency = 1,
+				Name = "Option"
+			})
+            local value13_13 = t1.value13
+            local value14_31 = t1.value14
+            local GothamBold = Enum.Font.GothamBold
+            local v504 = t1.value33["Color Text"]
+            local uDim2_49 = UDim2.new(1, -25, 1, 0)
+            local uDim2_50 = UDim2.new(0, 5)
+            local v507 = value13_13(value14_31("TextLabel", v500, {
+				Font = GothamBold,
+				Text = v499,
+				TextColor3 = v504,
+				Size = uDim2_49,
+				Position = uDim2_50,
+				BackgroundTransparency = 1,
+				TextTruncate = "AtEnd",
+				TextSize = 14,
+				TextXAlignment = "Left"
+			}), "Text")
+            local t25 = {}
+
+            table.insert(t1.value6.Options, {
+				type = "Section",
+				Name = v499,
+				func = t25
+			})
+
+            function t25.Visible(_, p116)
+                if p116 == nil then
+                    v500.Visible = not v500.Visible
+
+                    return
+                end
+
+                v500.Visible = p116
+            end
+            function t25.Destroy(_)
+                v500:Destroy()
+            end
+            function t25.Set(_, p119)
+                if p119 then
+                    v507.Text = t1.value26(p119)
+                end
+            end
+
+            return t25
+        end
+        function t24.AddParagraph(_, p121)
+            local v511 = p121[1]
+
+            if not v511 then
+                v511 = p121.Title or "Paragraph"
+            end
+
+            local v512 = p121[2]
+
+            if not v512 then
+                v512 = p121.Text or ""
+            end
+
+            local v513, v514 = v28(v466, v511, v512, UDim2.new(1, -20))
+            local v515 = v513
+            local v516 = v514
+
+            return {
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(v515, ...)
+            end,
+				Destroy = function(_)
+                v515:Destroy()
+            end,
+				SetTitle = function(_, p125)
+                local v907 = v516
+                local t26 = { t1.value26(p125) }
+
+                v907:SetTitle(v2(t26))
+            end,
+				SetDesc = function(_, p127)
+                v516:SetDesc(t1.value26(p127))
+            end,
+				Set = function(_, p129, p130)
+                if p129 and p130 then
+                    local v914 = v516
+                    local t27 = { t1.value26(p129) }
+
+                    v914:SetTitle(v2(t27))
+                    v516:SetDesc(t1.value26(p130))
+
+                    return
+                end
+
+                if p129 then
+                    v516:SetDesc(t1.value26(p129))
+                end
+            end
+			}
+        end
+        function t24.AddButton(_, p132)
+            local v519 = p132[1]
+
+            if not v519 then
+                v519 = p132.Name
+
+                if not v519 then
+                    v519 = p132.Title or "Button!"
+                end
+            end
+
+            local Desc = p132.Desc
+
+            if not Desc then
+                Desc = p132.Description or ""
+            end
+
+            local Callback = t1.value15:GetCallback(p132, 2)
+            local v522, v523 = v28(v466, v519, Desc, UDim2.new(1, -20))
+            local v524 = v522
+            local v525 = v523
+            local value14_32 = t1.value14
+            local uDim2_51 = UDim2.new(0, 14, 0, 14)
+            local uDim2_52 = UDim2.new(1, -10, 0.5)
+            local vector2_17 = Vector2.new(1, 0.5)
+
+            value14_32("ImageLabel", v524, {
+				Size = uDim2_51,
+				Position = uDim2_52,
+				AnchorPoint = vector2_17,
+				BackgroundTransparency = 1,
+				Image = "rbxassetid://10709791437"
+			})
+            v524.Activated:Connect(function()
+                t1.value15:FireCallback(Callback)
+            end)
+
+            return {
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(v524, ...)
+            end,
+				Destroy = function(_)
+                v524:Destroy()
+            end,
+				Callback = function(_, ...)
+                t1.value15:InsertCallback(Callback, ...)
+            end,
+				Set = function(_, p137, p138)
+                local v922 = type(p137) == "string"
+
+                if v922 then
+                    v922 = type(p138) == "string"
+                end
+
+                if v922 then
+                    v525:SetTitle(p137)
+                    v525:SetDesc(p138)
+
+                    return
+                end
+
+                if type(p137) == "string" then
+                    v525:SetTitle(p137)
+
+                    return
+                end
+
+                if type(p137) ~= "function" then
+                end
+            end
+			}
+        end
+        function t24.AddToggle(_, p140)
+            local v532 = p140[1]
+            if not v532 then
+                v532 = p140.Name
+
+                if not v532 then
+                    v532 = p140.Title or "Toggle"
+                end
+            end
+            local Desc = p140.Desc
+            if not Desc then
+                Desc = p140.Description or ""
+            end
+            local Callback = t1.value15:GetCallback(p140, 3)
+            local v535 = p140[4] or (p140.Flag or false)
+            local u536 = p140[2] or (p140.Default or false)
+            if type(v535) == "string" and t1.value10[v535] ~= nil then
+                u536 = t1.value18(v535)
+            end
+            local v537, v538 = v28(v466, v532, Desc, UDim2.new(1, -38))
+            local v539 = v537
+            local v540 = v538
+            local value13_14 = t1.value13
+            local value14_33 = t1.value14
+            local uDim2_53 = UDim2.new(0, 35, 0, 18)
+            local uDim2_54 = UDim2.new(1, -10, 0.5)
+            local vector2_18 = Vector2.new(1, 0.5)
+            local v546 = t1.value33["Color Stroke"]
+            local v547 = value13_14(value14_33("Frame", v539, {
+				Size = uDim2_53,
+				Position = uDim2_54,
+				AnchorPoint = vector2_18,
+				BackgroundColor3 = v546
+			}), "Stroke")
+            t1.value34("Corner", v547, UDim.new(0.5, 0))
+            t1.value32(v547)
+            local value14_34 = t1.value14
+            local uDim2_55 = UDim2.new(0.8, 0, 0.8, 0)
+            local uDim2_56 = UDim2.new(0.5, 0, 0.5, 0)
+            local vector2_19 = Vector2.new(0.5, 0.5)
+            local v552 = value14_34("Frame", v547, {
+				BackgroundTransparency = 1,
+				Size = uDim2_55,
+				Position = uDim2_56,
+				AnchorPoint = vector2_19
+			})
+            local value13_15 = t1.value13
+            local value14_35 = t1.value14
+            local uDim2_57 = UDim2.new(0, 12, 0, 12)
+            local uDim2_58 = UDim2.new(0, 0, 0.5)
+            local vector2_20 = Vector2.new(0, 0.5)
+            local v558 = t1.value33["Color Theme"]
+            local v559 = value13_15(value14_35("Frame", v552, {
+				Size = uDim2_57,
+				Position = uDim2_58,
+				AnchorPoint = vector2_20,
+				BackgroundColor3 = v558
+			}), "Theme")
+            t1.value34("Corner", v559, UDim.new(0.5, 0))
+            local u560
+            local function v561(p141)
+                if u560 then
+                    return
+                end
+
+                u536 = p141
+                t1.value19(v535, u536)
+                t1.value15:FireCallback(Callback, u536)
+
+                if u536 then
+                    t1.value28({
+						v559,
+						"Position",
+						UDim2.new(1, 0, 0.5),
+						0.25
+					})
+                    t1.value28({
+						v559,
+						"BackgroundTransparency",
+						0,
+						0.25
+					})
+                    t1.value28({
+						v559,
+						"AnchorPoint",
+						Vector2.new(1, 0.5),
+						0.25,
+						Wait or false
+					})
+                else
+                    t1.value28({
+						v559,
+						"Position",
+						UDim2.new(0, 0, 0.5),
+						0.25
+					})
+                    t1.value28({
+						v559,
+						"BackgroundTransparency",
+						0.8,
+						0.25
+					})
+                    t1.value28({
+						v559,
+						"AnchorPoint",
+						Vector2.new(0, 0.5),
+						0.25,
+						Wait or false
+					})
+                end
+
+                u560 = false
+            end
+            task.spawn(v561, u536)
+            v539.Activated:Connect(function()
+                v561(not u536)
+            end)
+
+            return {
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(v539, ...)
+            end,
+				Destroy = function(_)
+                v539:Destroy()
+            end,
+				Callback = function(_, ...)
+                t1.value15:InsertCallback(Callback, ...)()
+            end,
+				Set = function(_, p146, p147)
+                local v930 = type(p146) == "string"
+
+                if v930 then
+                    v930 = type(p147) == "string"
+                end
+
+                if v930 then
+                    v540:SetTitle(p146)
+                    v540:SetDesc(p147)
+
+                    return
+                end
+
+                if type(p146) == "string" then
+                    v540:SetTitle(p146, false, true)
+
+                    return
+                end
+
+                if type(p146) == "boolean" then
+                    if u560 and p147 then
+
+                        repeat
+                            task.wait()
+                        until not u560
+                    end
+
+                    task.spawn(v561, p146)
+
+                    return
+                end
+
+                if type(p146) ~= "function" then
+                end
+            end
+			}
+        end
+        function t24.AddDropdown(_, p149)
+            local t28 = {}
+            local v565 = p149[1]
+
+            if not v565 then
+                v565 = p149.Name
+
+                if not v565 then
+                    v565 = p149.Title or "Dropdown"
+                end
+            end
+
+            local Desc = p149.Desc
+
+            if not Desc then
+                Desc = p149.Description or ""
+            end
+
+            local v567 = p149[2]
+
+            if not v567 then
+                v567 = p149.Options or {}
+            end
+
+            local v568 = p149[3]
+
+            if not v568 then
+                v568 = p149.Default or {}
+            end
+
+            t28.value1 = p149[5] or (p149.Flag or false)
+
+            local v569 = p149.MultiSelect or false
+
+            t28.value2 = t1.value15:GetCallback(p149, 4)
+
+            local v570, _ = v28(v466, v565, Desc, UDim2.new(1, -180))
+
+            t28.value3 = v570
+
+            local value13_16 = t1.value13
+            local value14_36 = t1.value14
+            local value3 = t28.value3
+            local uDim2_59 = UDim2.new(0, 150, 0, 18)
+            local uDim2_60 = UDim2.new(1, -10, 0.5)
+            local vector2_21 = Vector2.new(1, 0.5)
+            local v578 = t1.value33["Color Stroke"]
+
+            t28.value4 = value13_16(value14_36("Frame", value3, {
+				Size = uDim2_59,
+				Position = uDim2_60,
+				AnchorPoint = vector2_21,
+				BackgroundColor3 = v578
+			}), "Stroke")
+            t1.value34("Corner", t28.value4, UDim.new(0, 4))
+            t1.value32(t28.value4)
+
+            local value13_17 = t1.value13
+            local value14_37 = t1.value14
+            local value4 = t28.value4
+            local uDim2_61 = UDim2.new(0.85, 0, 0.85, 0)
+            local vector2_22 = Vector2.new(0.5, 0.5)
+            local uDim2_62 = UDim2.new(0.5, 0, 0.5, 0)
+            local GothamBold = Enum.Font.GothamBold
+            local v586 = t1.value33["Color Text"]
+
+            t28.value5 = value13_17(value14_37("TextLabel", value4, {
+				Size = uDim2_61,
+				AnchorPoint = vector2_22,
+				Position = uDim2_62,
+				BackgroundTransparency = 1,
+				Font = GothamBold,
+				TextScaled = true,
+				TextColor3 = v586,
+				Text = "..."
+			}), "Text")
+
+            local value14_38 = t1.value14
+            local value4_2 = t28.value4
+            local uDim2_63 = UDim2.new(0, 15, 0, 15)
+            local uDim2_64 = UDim2.new(0, -5, 0.5)
+            local vector2_23 = Vector2.new(1, 0.5)
+
+            t28.value6 = value14_38("ImageLabel", value4_2, {
+				Size = uDim2_63,
+				Position = uDim2_64,
+				AnchorPoint = vector2_23,
+				Image = "rbxassetid://10709791523",
+				BackgroundTransparency = 1
+			})
+
+            local value14_39 = t1.value14
+            local v593 = v212
+            local uDim2_65 = UDim2.new(1, 0, 1, 0)
+
+            t28.value7 = value14_39("TextButton", v593, {
+				Name = "AntiClick",
+				Size = uDim2_65,
+				BackgroundTransparency = 1,
+				Visible = false,
+				Text = ""
+			})
+
+            local value14_40 = t1.value14
+            local value7 = t28.value7
+            local uDim2_66 = UDim2.new(t28.value4.Size.X, 0, 0)
+            local color3_17 = Color3.fromRGB(255, 0, 0)
+            local vector2_24 = Vector2.new(0, 1)
+
+            t28.value8 = value14_40("Frame", value7, {
+				Size = uDim2_66,
+				BackgroundTransparency = 0.1,
+				BackgroundColor3 = color3_17,
+				AnchorPoint = vector2_24,
+				Name = "DropdownFrame",
+				ClipsDescendants = true,
+				Active = true
+			})
+            t1.value34("Corner", t28.value8)
+            t1.value34("Stroke", t28.value8)
+            t1.value34("Gradient", t28.value8, {
+				Rotation = 60
+			})
+            t1.value32(t28.value8)
+
+            local value13_18 = t1.value13
+            local value14_41 = t1.value14
+            local value8 = t28.value8
+            local v603 = t1.value33["Color Theme"]
+            local uDim2_67 = UDim2.new(1, 0, 1, 0)
+            local uDim2_68 = UDim2.new()
+            local t29 = {
+				ScrollBarImageColor3 = v603,
+				Size = uDim2_67,
+				ScrollBarThickness = 1.5,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				CanvasSize = uDim2_68,
+				ScrollingDirection = "Y",
+				AutomaticCanvasSize = "Y",
+				Active = true
+			}
+            local value14_42 = t1.value14
+            local uDim12 = UDim.new(0, 8)
+            local uDim13 = UDim.new(0, 8)
+            local uDim14 = UDim.new(0, 5)
+            local uDim15 = UDim.new(0, 5)
+
+            t28.value9 = value13_18(value14_41("ScrollingFrame", value8, t29, {
+				value14_42("UIPadding", {
+					PaddingLeft = uDim12,
+					PaddingRight = uDim13,
+					PaddingTop = uDim14,
+					PaddingBottom = uDim15
+				}),
+				t1.value14("UIListLayout", {
+					Padding = UDim.new(0, 4)
+				})
+			}), "ScrollBar")
+            t28.value10 = nil
+            t28.value11 = 5
+            t28.value10 = nil
+
+            local function v612()
+                t1.value28({
+					t28.value6,
+					"Rotation",
+					0,
+					0.2
+				})
+                t1.value28({
+					t28.value8,
+					"Size",
+					UDim2.new(0, 152, 0, 0),
+					0.2,
+					true
+				})
+                t1.value28({
+					t28.value6,
+					"ImageColor3",
+					Color3.fromRGB(255, 255, 255),
+					0.2
+				})
+                t28.value6.Image = "rbxassetid://10709791523"
+                t28.value7.Visible = false
+                t28.value10 = false
+            end
+
+            function t28.value12()
+                return UDim2.fromOffset(152, t28.value11)
+            end
+
+            local function v613()
+                local n2 = 0
+
+                for _, child in pairs(t28.value9:GetChildren()) do
+                    local v935 = child:IsA("Frame")
+
+                    if not v935 then
+                        v935 = child.Name == "Option"
+                    end
+
+                    if v935 then
+                        n2 += 1
+                    end
+                end
+
+                t28.value11 = math.clamp(n2, 0, 10) * 25 + 10
+
+                if t28.value7.Visible then
+                    t28.value7.Visible = true
+                    t1.value28({
+						t28.value8,
+						"Size",
+						t28.value12(),
+						0.2,
+						true
+					})
+                end
+            end
+            local function v614()
+                local AbsolutePosition = t28.value4.AbsolutePosition
+                local AbsoluteSize = t1.value21.AbsoluteSize
+                local v938 = math.clamp(AbsolutePosition.X / t1.value8, 0, AbsoluteSize.X / t1.value8 - t28.value8.Size.X.Offset)
+                local v939 = math.clamp(AbsolutePosition.Y / t1.value8, 0, AbsoluteSize.Y / t1.value8)
+                local uDim2_69 = UDim2.fromOffset(v938, v939)
+                local v941 = if not (AbsolutePosition.Y > AbsoluteSize.Y / 1.4) then not (t28.value11 > 80) and 0 or 0.5 else 1
+
+                t28.value8.AnchorPoint = Vector2.new(0, v941)
+                t1.value28({
+					t28.value8,
+					"Position",
+					uDim2_69,
+					0.1
+				})
+            end
+
+            t28.value13 = nil
+
+            local v615 = type(v568) ~= "table" and { v568 } or v568
+
+            t28.value14 = v569
+            t28.value15 = {}
+
+            local v616 = t28.value14 and {}
+
+            if not v616 then
+                local value1 = t28.value1
+
+                v616 = type(value1) == "string" and t1.value10[value1] ~= nil and t1.value18(t28.value1) or v615[1]
+            end
+
+            t28.value16 = v616
+
+            if t28.value14 then
+                local _pairs = pairs
+                local value1 = t28.value1
+
+                for v620, v621 in _pairs(type(value1) == "string" and t1.value10[value1] ~= nil and t1.value18(t28.value1) or v615) do
+                    local v622 = v620
+                    local v623 = type(v622) == "string"
+
+                    if v623 then
+                        v623 = v567[v622]
+
+                        if not v623 then
+                            v623 = table.find(v567, v622)
+                        end
+                    end
+
+                    if v623 then
+                        t28.value16[v622] = v621
+                    elseif v567[v621] then
+                        t28.value16[v621] = true
+                    end
+                end
+            end
+
+            function t28.value17()
+                t1.value19(t28.value1, t28.value14 and t28.value16 or tostring(t28.value16))
+                t1.value15:FireCallback(t28.value2, t28.value16)
+            end
+            function t28.value18()
+                if t28.value14 then
+                    local t30 = {}
+
+                    for k, v in pairs(t28.value16) do
+                        if v then
+                            table.insert(t30, k)
+                        end
+                    end
+
+                    local value5 = t28.value5
+                    local v946 = #t30 > 0
+
+                    if v946 then
+                        v946 = table.concat(t30, ", ")
+                    end
+
+                    value5.Text = v946 or "..."
+
+                    return
+                end
+
+                t28.value5.Text = tostring(t28.value16 or "...")
+            end
+
+            local function v624()
+                if t28.value14 then
+                    for _, v in pairs(t28.value15) do
+                        local nodes = v.nodes
+                        local Stats = v.Stats
+
+                        t1.value28({
+							nodes[2],
+							"BackgroundTransparency",
+							not Stats and 0.8 or 0,
+							0.35
+						})
+
+                        local value28 = t1.value28
+                        local v952 = nodes[2]
+                        local v953 = Stats
+
+                        if Stats then
+                            v953 = UDim2.fromOffset(4, 12)
+                        end
+
+                        if not v953 then
+                            v953 = UDim2.fromOffset(4, 4)
+                        end
+
+                        value28({
+							v952,
+							"Size",
+							v953,
+							0.35
+						})
+                        t1.value28({
+							nodes[3],
+							"TextTransparency",
+							not Stats and 0.4 or 0,
+							0.35
+						})
+                    end
+                else
+                    for _, v in pairs(t28.value15) do
+                        local v956 = v.Value == t28.value16
+                        local nodes = v.nodes
+
+                        t1.value28({
+							nodes[2],
+							"BackgroundTransparency",
+							not v956 and 1 or 0,
+							0.35
+						})
+
+                        local value28 = t1.value28
+                        local v959 = nodes[2]
+                        local v960 = v956
+
+                        if v956 then
+                            v960 = UDim2.fromOffset(4, 14)
+                        end
+
+                        if not v960 then
+                            v960 = UDim2.fromOffset(4, 4)
+                        end
+
+                        value28({
+							v959,
+							"Size",
+							v960,
+							0.35
+						})
+                        t1.value28({
+							nodes[3],
+							"TextTransparency",
+							not v956 and 0.4 or 0,
+							0.35
+						})
+                    end
+                end
+
+                t28.value18()
+            end
+            local function v625(p150)
+                if t28.value14 then
+                    p150.Stats = not p150.Stats
+                    p150.LastCB = tick()
+                    t28.value16[p150.Name] = p150.Stats
+                    t28.value17()
+                else
+                    p150.LastCB = tick()
+                    t28.value16 = p150.Value
+                    t28.value17()
+                end
+
+                v624()
+            end
+            local function v626(p151, p152)
+                local str = tostring(type(p151) == "string" and p151 or p152)
+
+                if t28.value15[str] then
+                    return
+                end
+
+                t28.value15[str] = {
+					index = p151,
+					Value = p152,
+					Name = str,
+					Stats = false,
+					LastCB = 0
+				}
+
+                if t28.value14 then
+                    local v968 = t28.value16[str]
+
+                    t28.value16[str] = v968 or false
+                    t28.value15[str].Stats = v968
+                end
+
+                local value34 = t1.value34
+                local value9 = t28.value9
+                local uDim2_70 = UDim2.new(1, 0, 0, 21)
+                local uDim2_71 = UDim2.new(0, 0, 0.5)
+                local vector2_25 = Vector2.new(0, 0.5)
+                local v974 = value34("Button", value9, {
+					Name = "Option",
+					Size = uDim2_70,
+					Position = uDim2_71,
+					AnchorPoint = vector2_25
+				})
+
+                t1.value34("Corner", v974, UDim.new(0, 4))
+
+                local value13_19 = t1.value13
+                local value14_43 = t1.value14
+                local uDim2_72 = UDim2.new(0, 1, 0.5)
+                local uDim2_73 = UDim2.new(0, 4, 0, 4)
+                local v979 = t1.value33["Color Theme"]
+                local vector2_26 = Vector2.new(0, 0.5)
+                local v981 = value13_19(value14_43("Frame", v974, {
+					Position = uDim2_72,
+					Size = uDim2_73,
+					BackgroundColor3 = v979,
+					BackgroundTransparency = 1,
+					AnchorPoint = vector2_26
+				}), "Theme")
+
+                t1.value34("Corner", v981, UDim.new(0.5, 0))
+
+                local value13_20 = t1.value13
+                local value14_44 = t1.value14
+                local uDim2_74 = UDim2.new(1, 0, 1)
+                local uDim2_75 = UDim2.new(0, 10)
+                local v986 = t1.value33["Color Text"]
+                local GothamBold3 = Enum.Font.GothamBold
+                local v988 = value13_20(value14_44("TextLabel", v974, {
+					Size = uDim2_74,
+					Position = uDim2_75,
+					Text = str,
+					TextColor3 = v986,
+					Font = GothamBold3,
+					TextXAlignment = "Left",
+					BackgroundTransparency = 1,
+					TextTransparency = 0.4
+				}), "Text")
+
+                v974.Activated:Connect(function()
+                    local v1095 = t28.value15[str]
+
+                    v625(v1095)
+                end)
+                t28.value15[str].nodes = {
+					v974,
+					v981,
+					v988
+				}
+            end
+
+            function t28.value13(p153, p154)
+                local str = tostring(type(p153) == "string" and p153 or p154)
+
+                if t28.value15[str] then
+                    if t28.value14 then
+                        t28.value16[str] = nil
+                    else
+                        t28.value16 = nil
+                    end
+
+                    t28.value15[str].nodes[1]:Destroy()
+                    table.clear(t28.value15[str])
+                    t28.value15[str] = nil
+                end
+            end
+            function t28.value19()
+                return t28.value15
+            end
+            function t28.value20(p155, p156)
+                if p156 then
+                    table.foreach(t28.value15, t28.value13)
+                end
+
+                table.foreach(p155, v626)
+                t28.value17()
+                v624()
+            end
+
+            table.foreach(v567, v626)
+            t28.value17()
+            v624()
+            t28.value3.Activated:Connect(function()
+                if t28.value10 then
+                    return
+                end
+
+                if t28.value7.Visible then
+                    t28.value6.Image = "rbxassetid://10709791523"
+                    t1.value28({
+						t28.value6,
+						"ImageColor3",
+						Color3.fromRGB(255, 255, 255),
+						0.2
+					})
+                    t1.value28({
+						t28.value8,
+						"Size",
+						UDim2.new(0, 152, 0, 0),
+						0.2,
+						true
+					})
+                    t28.value7.Visible = false
+
+                    return
+                end
+
+                t28.value7.Visible = true
+                t28.value6.Image = "rbxassetid://10709790948"
+                t1.value28({
+					t28.value6,
+					"ImageColor3",
+					t1.value33["Color Theme"],
+					0.2
+				})
+                t1.value28({
+					t28.value8,
+					"Size",
+					t28.value12(),
+					0.2,
+					true
+				})
+            end)
+            t28.value7.MouseButton1Down:Connect(v612)
+            t28.value7.MouseButton1Click:Connect(v612)
+            v199:GetPropertyChangedSignal("Visible"):Connect(v612)
+            t28.value4:GetPropertyChangedSignal("AbsolutePosition"):Connect(v614)
+            t28.value3.Activated:Connect(v613)
+            t28.value9.ChildAdded:Connect(v613)
+            t28.value9.ChildRemoved:Connect(v613)
+            v614()
+            v613()
+
+            return {
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(t28.value3, ...)
+            end,
+				Destroy = function(_)
+                t28.value3:Destroy()
+            end,
+				Callback = function(_, ...)
+                t1.value15:InsertCallback(t28.value2, ...)(t28.value16)
+            end,
+				Add = function(_, ...)
+                local t31 = { ... }
+
+                if type(t31[1]) == "table" then
+                    table.foreach(Option, function(_, p162)
+                        v626(p162)
+                    end)
+
+                    return
+                end
+
+                table.foreach(t31, function(_, p164)
+                    v626(p164)
+                end)
+            end,
+				Remove = function(_, p166)
+                for k, v in pairs(t28.value19()) do
+                    local v1000 = k
+                    local v1001 = type(p166) == "number" and v1000 == p166
+
+                    if not v1001 then
+                        v1001 = v.Name == "Option"
+                    end
+
+                    if v1001 then
+                        t28.value13(v1000, v.Value)
+                    end
+                end
+            end,
+				Select = function(_, p168)
+                if type(p168) == "string" then
+                    for _, v in pairs(Options) do
+                        if p168 == v.Name then
+                            v.Active()
+                        end
+                    end
+
+                    return
+                end
+
+                if type(p168) == "number" then
+                    for k, v in pairs(Options) do
+                        if k == p168 then
+                            v.Active()
+                        end
+                    end
+                end
+            end,
+				Set = function(_, p170, p171)
+                if type(p170) == "table" then
+                    t28.value20(p170, not p171)
+
+                    return
+                end
+
+                if type(p170) ~= "function" then
+                end
+            end
+			}
+        end
+        function t24.Addsizedropdown(_)
+            return t24:AddDropdown({
+				Name = "اختار حجم الواجهة",
+				Options = {
+					"صغيرة",
+					"متوسطة",
+					"كبيرة"
+				},
+				Default = "كبيرة",
+				Callback = function(p173)
+                if p173 == "صغيرة" then
+                    v199.Size = UDim2.fromOffset(450, 300)
+
+                    return
+                end
+
+                if p173 == "متوسطة" then
+                    v199.Size = UDim2.fromOffset(550, 380)
+
+                    return
+                end
+
+                if p173 == "كبيرة" then
+                    v199.Size = UDim2.fromOffset(630, 440)
+                end
+            end
+			})
+        end
+        function t24.AddSideDropdown(_)
+            return t24:AddDropdown({
+				Name = "مكان قائمة التابات",
+				Options = {
+					"يسار",
+					"يمين"
+				},
+				Default = "يسار",
+				Callback = function(p175)
+                if p175 == "يسار" then
+                    v250.Position = UDim2.new(0, 0, 1, 0)
+                    v250.AnchorPoint = Vector2.new(0, 1)
+                    v255.Position = UDim2.new(1, 0, 1, 0)
+                    v255.AnchorPoint = Vector2.new(1, 1)
+
+                    return
+                end
+
+                if p175 == "يمين" then
+                    v250.Position = UDim2.new(1, 0, 1, 0)
+                    v250.AnchorPoint = Vector2.new(1, 1)
+                    v255.Position = UDim2.new(0, 0, 1, 0)
+                    v255.AnchorPoint = Vector2.new(0, 1)
+                end
+            end
+			})
+        end
+        function t24.AddSlider(_, p177)
+            local v631 = p177[1]
+
+            if not v631 then
+                v631 = p177.Name
+
+                if not v631 then
+                    v631 = p177.Title or "Slider!"
+                end
+            end
+
+            local Desc = p177.Desc
+
+            if not Desc then
+                Desc = p177.Description or ""
+            end
+
+            local v633 = p177[2]
+
+            if not v633 then
+                v633 = p177.MinValue or (p177.Min or 10)
+            end
+
+            local v634 = p177[3]
+
+            if not v634 then
+                v634 = p177.MaxValue or (p177.Max or 100)
+            end
+
+            local v635 = p177[4] or (p177.Increase or 1)
+            local Callback = t1.value15:GetCallback(p177, 6)
+            local v637 = p177[7] or (p177.Flag or false)
+            local u638 = p177[5] or (p177.Default or 25)
+
+            if type(v637) == "string" and t1.value10[v637] ~= nil then
+                u638 = t1.value18(v637)
+            end
+
+            local v639 = v633 / v635
+            local v640 = v634 / v635
+            local u641 = v639
+            local u642 = v640
+            local v643, v644 = v28(v466, v631, Desc, UDim2.new(1, -180))
+            local v645 = v643
+            local v646 = v644
+            local value14_45 = t1.value14
+            local uDim2_76 = UDim2.new(0.45, 0, 1)
+            local uDim2_77 = UDim2.new(1)
+            local vector2_27 = Vector2.new(1, 0)
+            local v651 = value14_45("TextButton", v645, {
+				Size = uDim2_76,
+				Position = uDim2_77,
+				AnchorPoint = vector2_27,
+				AutoButtonColor = false,
+				Text = "",
+				BackgroundTransparency = 1
+			})
+            local value13_21 = t1.value13
+            local value14_46 = t1.value14
+            local v654 = t1.value33["Color Stroke"]
+            local uDim2_78 = UDim2.new(1, -20, 0, 6)
+            local uDim2_79 = UDim2.new(0.5, 0, 0.5)
+            local vector2_28 = Vector2.new(0.5, 0.5)
+            local v658 = value13_21(value14_46("Frame", v651, {
+				BackgroundColor3 = v654,
+				Size = uDim2_78,
+				Position = uDim2_79,
+				AnchorPoint = vector2_28
+			}), "Stroke")
+
+            t1.value34("Corner", v658)
+            t1.value32(v658)
+
+            local value13_22 = t1.value13
+            local value14_47 = t1.value14
+            local v661 = t1.value33["Color Theme"]
+            local uDim2_80 = UDim2.fromScale(0.3, 1)
+            local v663 = value13_22(value14_47("Frame", v658, {
+				BackgroundColor3 = v661,
+				Size = uDim2_80,
+				BorderSizePixel = 0
+			}), "Theme")
+
+            t1.value34("Corner", v663)
+
+            local value14_48 = t1.value14
+            local uDim2_81 = UDim2.new(0, 6, 0, 12)
+            local color3_18 = Color3.fromRGB(255, 100, 100)
+            local uDim2_82 = UDim2.fromScale(0.3, 0.5)
+            local vector2_29 = Vector2.new(0.5, 0.5)
+            local v669 = value14_48("Frame", v658, {
+				Size = uDim2_81,
+				BackgroundColor3 = color3_18,
+				Position = uDim2_82,
+				AnchorPoint = vector2_29,
+				BackgroundTransparency = 0.2
+			})
+
+            t1.value34("Corner", v669)
+
+            local value13_23 = t1.value13
+            local value14_49 = t1.value14
+            local uDim2_83 = UDim2.new(0, 14, 0, 14)
+            local vector2_30 = Vector2.new(1, 0.5)
+            local uDim2_84 = UDim2.new(0, 0, 0.5)
+            local v675 = t1.value33["Color Text"]
+            local FredokaOne = Enum.Font.FredokaOne
+            local v677 = value13_23(value14_49("TextLabel", v651, {
+				Size = uDim2_83,
+				AnchorPoint = vector2_30,
+				Position = uDim2_84,
+				BackgroundTransparency = 1,
+				TextColor3 = v675,
+				Font = FredokaOne,
+				TextSize = 12
+			}), "Text")
+            local v678 = t1.value14("UIScale", v677)
+            local v679 = t1.value14("Frame", v658, {
+				Position = UDim2.new(0, 0, 0.5, 0),
+				Visible = false
+			})
+
+            local function v680(p178)
+                local v1014 = math.floor(tonumber(p178 * v635) * 100) / 100
+                local v1015 = v677
+                local str = tostring(v1014)
+
+                u638 = v1014
+                v1015.Text = str
+                t1.value15:FireCallback(Callback, u638)
+            end
+            local function v681()
+                local v1017 = (t1.value5:GetMouse().X - v679.AbsolutePosition.X) / v658.AbsoluteSize.X
+
+                v669.Position = UDim2.new(math.clamp(v1017, 0, 1), 0, 0.5, 0)
+            end
+            local function v682()
+                v663.Size = UDim2.new(v669.Position.X.Scale, 0, 1, 0)
+
+                local XScale = v669.Position.X.Scale
+                local floor = math.floor
+                local v1020 = u642 - u641
+                local v1021 = floor(XScale * u642 / u642 * v1020 + u641)
+
+                v680(v1021)
+            end
+
+            v651.MouseButton1Down:Connect(function()
+                t1.value28({
+					v669,
+					"Transparency",
+					0,
+					0.3
+				})
+                v466.ScrollingEnabled = false
+
+                while t1.value1:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
+                    task.wait()
+                    v681()
+                end
+
+                t1.value28({
+					v669,
+					"Transparency",
+					0.2,
+					0.3
+				})
+                v466.ScrollingEnabled = true
+                t1.value19(v637, u638)
+            end)
+            v677:GetPropertyChangedSignal("Text"):Connect(function()
+                v678.Scale = 0.3
+                t1.value28({
+					v678,
+					"Scale",
+					1.2,
+					0.1
+				})
+                t1.value28({
+					v677,
+					"Rotation",
+					math.random(-1, 1) * 5,
+					0.15,
+					true
+				})
+                t1.value28({
+					v678,
+					"Scale",
+					1,
+					0.2
+				})
+                t1.value28({
+					v677,
+					"Rotation",
+					0,
+					0.1
+				})
+            end)
+
+            function SetSlider(p179)
+                if type(p179) ~= "number" then
+                    return
+                end
+
+                local v1023 = u642 * v635
+                local v1024 = u641 * v635
+                local v1025 = (p179 - v1024) / (v1023 - v1024)
+
+                t1.value19(v637, p179)
+                t1.value28({
+					v669,
+					"Position",
+					UDim2.fromScale(math.clamp(v1025, 0, 1), 0.5),
+					0.3,
+					true
+				})
+            end
+
+            SetSlider(u638)
+            v669:GetPropertyChangedSignal("Position"):Connect(v682)
+            v682()
+
+            return {
+				Set = function(_, p181, p182)
+                if p181 and p182 then
+                    v646:SetTitle(p181)
+                    v646:SetDesc(p182)
+
+                    return
+                end
+
+                if type(p181) == "string" then
+                    v646:SetTitle(p181)
+
+                    return
+                end
+
+                if type(p181) == "function" then
+                    Callback = p181
+
+                    return
+                end
+
+                if type(p181) == "number" then
+                    SetSlider(p181)
+                end
+            end,
+				Callback = function(_, ...)
+                t1.value15:InsertCallback(Callback, ...)((tonumber(u638)))
+            end,
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(v645, ...)
+            end,
+				Destroy = function(_)
+                v645:Destroy()
+            end
+			}
+        end
+        function t24.AddTextBox(_, p187)
+            local v685 = p187[1]
+
+            if not v685 then
+                v685 = p187.Name
+
+                if not v685 then
+                    v685 = p187.Title or "Text Box"
+                end
+            end
+
+            local Desc = p187.Desc
+
+            if not Desc then
+                Desc = p187.Description or ""
+            end
+
+            local v687 = p187[2]
+
+            if not v687 then
+                v687 = p187.Default or ""
+            end
+
+            local v688 = p187[5]
+
+            if not v688 then
+                v688 = p187.PlaceholderText or "Input"
+            end
+
+            local v689 = p187[3] or (p187.ClearText or false)
+            local Callback = t1.value15:GetCallback(p187, 4)
+            local v691 = type(v687) ~= "string"
+
+            if not v691 then
+                v691 = v687:gsub(" ", ""):len() < 1
+            end
+
+            if not v691 then
+            end
+
+            local v692, _ = v28(v466, v685, Desc, UDim2.new(1, -38))
+            local v694 = v692
+            local value13_24 = t1.value13
+            local value14_50 = t1.value14
+            local uDim2_85 = UDim2.new(0, 150, 0, 18)
+            local uDim2_86 = UDim2.new(1, -10, 0.5)
+            local vector2_31 = Vector2.new(1, 0.5)
+            local v700 = t1.value33["Color Stroke"]
+            local v701 = value13_24(value14_50("Frame", v694, {
+				Size = uDim2_85,
+				Position = uDim2_86,
+				AnchorPoint = vector2_31,
+				BackgroundColor3 = v700
+			}), "Stroke")
+
+            t1.value34("Corner", v701, UDim.new(0, 4))
+            t1.value32(v701)
+
+            local value13_25 = t1.value13
+            local value14_51 = t1.value14
+            local uDim2_87 = UDim2.new(0.85, 0, 0.85, 0)
+            local vector2_32 = Vector2.new(0.5, 0.5)
+            local uDim2_88 = UDim2.new(0.5, 0, 0.5, 0)
+            local GothamBold = Enum.Font.GothamBold
+            local v708 = t1.value33["Color Text"]
+            local v709 = value13_25(value14_51("TextBox", v701, {
+				Size = uDim2_87,
+				AnchorPoint = vector2_32,
+				Position = uDim2_88,
+				BackgroundTransparency = 1,
+				Font = GothamBold,
+				TextScaled = true,
+				TextColor3 = v708,
+				ClearTextOnFocus = v689,
+				PlaceholderText = v688,
+				Text = ""
+			}), "Text")
+            local value14_52 = t1.value14
+            local uDim2_89 = UDim2.new(0, 12, 0, 12)
+            local uDim2_90 = UDim2.new(0, -5, 0.5)
+            local vector2_33 = Vector2.new(1, 0.5)
+            local v714 = value14_52("ImageLabel", v701, {
+				Size = uDim2_89,
+				Position = uDim2_90,
+				AnchorPoint = vector2_33,
+				Image = "rbxassetid://15637081879",
+				BackgroundTransparency = 1
+			})
+            local t32 = {}
+
+            local function v716()
+                local Text = v709.Text
+
+                if Text:gsub(" ", ""):len() > 0 then
+                    if t32.OnChanging then
+                        Text = t32.OnChanging(Text) or Text
+                    end
+
+                    t1.value15:FireCallback(Callback, Text)
+                    v709.Text = Text
+                end
+            end
+
+            v709.FocusLost:Connect(v716)
+            v716()
+            v709.FocusLost:Connect(function()
+                t1.value28({
+					v714,
+					"ImageColor3",
+					Color3.fromRGB(255, 255, 255),
+					0.2
+				})
+            end)
+            v709.Focused:Connect(function()
+                t1.value28({
+					v714,
+					"ImageColor3",
+					t1.value33["Color Theme"],
+					0.2
+				})
+            end)
+            t32.OnChanging = false
+
+            function t32.Visible(_, ...)
+                t1.value15:ToggleVisible(v694, ...)
+            end
+            function t32.Destroy(_)
+                v694:Destroy()
+            end
+
+            return t32
+        end
+        function t24.AddServerInfo(_, p191)
+            local LocalPlayer = game.Players.LocalPlayer
+            local timestamp = os.time()
+
+            if not p191.Name then
+            end
+
+            local BGColor = p191.BGColor
+
+            if not BGColor then
+                BGColor = Color3.fromRGB(20, 0, 0)
+            end
+
+            local FrameColor = p191.FrameColor
+
+            if not FrameColor then
+                FrameColor = Color3.fromRGB(40, 5, 5)
+            end
+
+            local TextColor = p191.TextColor
+
+            if not TextColor then
+                TextColor = Color3.fromRGB(255, 80, 80)
+            end
+
+            local v724 = t1.value14("Frame", v466, {
+				Size = UDim2.new(1, 0, 0, 220),
+				Name = "ServerInfo",
+				BackgroundColor3 = BGColor,
+				BackgroundTransparency = 0.3
+			})
+            local value14_53 = t1.value14
+            local uDim2_91 = UDim2.new(1, -10, 0, 210)
+            local uDim2_92 = UDim2.new(0, 5, 0, 5)
+            local v728 = value14_53("Frame", v724, {
+				Size = uDim2_91,
+				Position = uDim2_92,
+				BackgroundColor3 = FrameColor,
+				BackgroundTransparency = 0.2
+			})
+
+            t1.value34("Corner", v728, UDim.new(0, 8))
+            t1.value32(v728)
+
+            local t33 = {}
+
+            local function v730()
+                local players = game.Players:GetPlayers()
+                local _game = game
+                local v1037 = #players
+                local MaxPlayers = _game.Players.MaxPlayers
+                local JobId = game.JobId
+                local v1040 = not (MaxPlayers <= v1037) and "Active" or "Full"
+                local timestamp2 = os.time()
+                local _math = math
+                local v1043 = timestamp2 - timestamp
+                local v1044 = _math.floor(v1043 / 3600)
+                local v1045 = math.floor(v1043 % 3600 / 60)
+                local _string = string
+                local v1047 = v1043 % 60
+                local v1048 = _string.format("%02d:%02d:%02d", v1044, v1045, v1047)
+                local AccountAge = LocalPlayer.AccountAge
+                local v1050 = os.date("%H:%M:%S")
+
+                t33[1].Text = "Server: " .. game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+                t33[2].Text = "Players: " .. v1037 .. "/" .. MaxPlayers
+                t33[3].Text = "Server ID: " .. JobId
+                t33[4].Text = "Status: " .. v1040
+                t33[5].Text = "Time Joined: " .. v1048
+                t33[6].Text = "Account Name: " .. LocalPlayer.DisplayName
+                t33[7].Text = "Username: " .. LocalPlayer.Name
+                t33[8].Text = "Account Age (days): " .. AccountAge
+                t33[9].Text = "Current Time: " .. v1050
+            end
+
+            for i = 1, 9 do
+                local value14_54 = t1.value14
+                local uDim2_93 = UDim2.new(1, -10, 0, 18)
+                local uDim2_94 = UDim2.new(0, 5, 0, (i - 1) * 20 + 5)
+                local GothamBold = Enum.Font.GothamBold
+                local v736 = ({
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					"",
+					""
+				})[i]
+
+                t33[i] = value14_54("TextLabel", v728, {
+					Size = uDim2_93,
+					Position = uDim2_94,
+					Font = GothamBold,
+					TextColor3 = TextColor,
+					TextXAlignment = "Left",
+					BackgroundTransparency = 1,
+					TextSize = 12,
+					Text = v736
+				})
+            end
+
+            local value14_55 = t1.value14
+            local uDim2_95 = UDim2.new(1, -20, 0, 25)
+            local uDim2_96 = UDim2.new(0, 10, 1, -35)
+            local GothamBold = Enum.Font.GothamBold
+            local color3_19 = Color3.fromRGB(255, 150, 150)
+            local color3_20 = Color3.fromRGB(80, 10, 10)
+            local v743 = value14_55("TextButton", v728, {
+				Size = uDim2_95,
+				Position = uDim2_96,
+				Text = "Copy Info",
+				Font = GothamBold,
+				TextSize = 14,
+				TextColor3 = color3_19,
+				BackgroundColor3 = color3_20
+			})
+
+            t1.value34("Corner", v743, UDim.new(0, 6))
+            v743.Activated:Connect(function()
+                local s1 = ""
+
+                for i = 1, 9 do
+                    s1 ..= t33[i].Text .. "\n"
+                end
+
+                setclipboard(s1)
+
+                local value11 = t1.value11
+                local v1054 = v743
+                local color3_21 = Color3.fromRGB(50, 5, 5)
+                local color3_22 = Color3.fromRGB(255, 100, 100)
+
+                value11(v1054, {
+					Text = "Copied!",
+					BackgroundColor3 = color3_21,
+					TextColor3 = color3_22
+				})
+                task.wait(3)
+
+                local value11_2 = t1.value11
+                local v1058 = v743
+                local color3_23 = Color3.fromRGB(80, 10, 10)
+                local color3_24 = Color3.fromRGB(255, 150, 150)
+
+                value11_2(v1058, {
+					Text = "Copy Info",
+					BackgroundColor3 = color3_23,
+					TextColor3 = color3_24
+				})
+            end)
+            spawn(function()
+                while v724.Parent do
+                    v730()
+                    task.wait(1)
+                end
+            end)
+
+            return {
+				Destroy = function(_)
+                v724:Destroy()
+            end,
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(v724, ...)
+            end
+			}
+        end
+        function t24.AddPlayerSelector(_, p195)
+            if not p195.Title then
+            end
+
+            local v746 = p195.Placeholder or "اكتب اول 3 احرف..."
+            local v747 = p195.Callback or function()
+            end
+            local Players = game:GetService("Players")
+            local value14_56 = t1.value14
+            local v750 = v466
+            local uDim2_97 = UDim2.new(1, 0, 0, 95)
+            local color3_25 = Color3.fromRGB(20, 0, 0)
+            local v753 = value14_56("Frame", v750, {
+				Size = uDim2_97,
+				BackgroundColor3 = color3_25,
+				BackgroundTransparency = 0.3
+			})
+
+            t1.value34("Corner", v753, UDim.new(0, 12))
+            t1.value32(v753)
+
+            local value14_57 = t1.value14
+            local uDim2_98 = UDim2.new(0, 60, 0, 60)
+            local uDim2_99 = UDim2.new(0, 10, 0.5, -30)
+            local v757 = value14_57("ImageLabel", v753, {
+				Size = uDim2_98,
+				Position = uDim2_99,
+				BackgroundTransparency = 1,
+				Image = ""
+			})
+            local value14_58 = t1.value14
+            local uDim2_100 = UDim2.new(1, -90, 0, 35)
+            local uDim2_101 = UDim2.new(0, 80, 0, 15)
+            local color3_26 = Color3.fromRGB(40, 5, 5)
+            local color3_27 = Color3.fromRGB(255, 255, 255)
+            local GothamBold = Enum.Font.GothamBold
+            local v764 = value14_58("TextBox", v753, {
+				Size = uDim2_100,
+				Position = uDim2_101,
+				PlaceholderText = v746,
+				Text = "",
+				BackgroundColor3 = color3_26,
+				BackgroundTransparency = 0.2,
+				TextColor3 = color3_27,
+				ClearTextOnFocus = false,
+				Font = GothamBold,
+				TextSize = 14
+			})
+
+            t1.value34("Corner", v764, UDim.new(0, 8))
+
+            local value14_59 = t1.value14
+            local uDim2_102 = UDim2.new(1, -90, 0, 25)
+            local uDim2_103 = UDim2.new(0, 80, 0, 55)
+            local color3_28 = Color3.fromRGB(255, 255, 255)
+            local GothamBold4 = Enum.Font.GothamBold
+            local v770 = value14_59("TextLabel", v753, {
+				Size = uDim2_102,
+				Position = uDim2_103,
+				BackgroundTransparency = 1,
+				TextColor3 = color3_28,
+				Font = GothamBold4,
+				TextSize = 13,
+				Text = "لم يتم اختيار لاعب"
+			})
+
+            local function v771(p196)
+                local HeadShot = Enum.ThumbnailType.HeadShot
+                local Size420x420 = Enum.ThumbnailSize.Size420x420
+
+                v757.Image = Players:GetUserThumbnailAsync(p196.UserId, HeadShot, Size420x420)
+            end
+
+            v764:GetPropertyChangedSignal("Text"):Connect(function()
+                local v1066 = string.lower(v764.Text)
+
+                if #v1066 >= 3 then
+                    for _, player in pairs(Players:GetPlayers()) do
+                        if string.find(string.lower(player.Name), v1066, 1, true) then
+                            v771(player)
+                            v770.Text = "تم اختيار: " .. player.Name
+                            v747(player)
+
+                            return
+                        end
+                    end
+                end
+            end)
+
+            return v753
+        end
+        function t24.AddSkinCard(_, p198)
+            local v774 = p198[1]
+
+            if not v774 then
+                v774 = p198.Name or "Skin Name"
+            end
+
+            local v775 = v774
+            local v776 = p198[2]
+
+            if not v776 then
+                v776 = p198.Image or ""
+            end
+
+            local Callback = t1.value15:GetCallback(p198, 3)
+            local v778 = t1.value14("Frame", v466, {
+				Size = UDim2.new(1, 0, 0, 85),
+				Name = "SkinOption",
+				BackgroundTransparency = 1
+			})
+            local value14_60 = t1.value14
+            local uDim2_104 = UDim2.new(1, -10, 1, -5)
+            local uDim2_105 = UDim2.new(0.5, 0, 0.5, 0)
+            local vector2_34 = Vector2.new(0.5, 0.5)
+            local color3_29 = Color3.fromRGB(10, 0, 0)
+            local v784 = value14_60("Frame", v778, {
+				Size = uDim2_104,
+				Position = uDim2_105,
+				AnchorPoint = vector2_34,
+				BackgroundColor3 = color3_29,
+				BackgroundTransparency = 0
+			})
+
+            t1.value34("Corner", v784, UDim.new(0, 8))
+            t1.value34("Stroke", v784)
+            t1.value32(v784)
+
+            local value14_61 = t1.value14
+            local uDim2_106 = UDim2.new(0, 65, 0, 65)
+            local uDim2_107 = UDim2.new(0, 10, 0.5, 0)
+            local vector2_35 = Vector2.new(0, 0.5)
+            local v789 = value14_61("ImageLabel", v784, {
+				Image = v776,
+				Size = uDim2_106,
+				Position = uDim2_107,
+				AnchorPoint = vector2_35,
+				BackgroundTransparency = 1
+			})
+
+            t1.value34("Corner", v789, UDim.new(0, 6))
+
+            local value14_62 = t1.value14
+            local color3_30 = Color3.fromRGB(255, 255, 255)
+            local uDim2_108 = UDim2.new(1, -190, 0, 30)
+            local uDim2_109 = UDim2.new(0, 85, 0.5, -15)
+            local GothamBold = Enum.Font.GothamBold
+
+            value14_62("TextLabel", v784, {
+				TextSize = 15,
+				TextColor3 = color3_30,
+				Text = v775,
+				Size = uDim2_108,
+				Position = uDim2_109,
+				BackgroundTransparency = 1,
+				Font = GothamBold,
+				TextXAlignment = "Left"
+			})
+
+            local value14_63 = t1.value14
+            local uDim2_110 = UDim2.new(0, 80, 0, 30)
+            local uDim2_111 = UDim2.new(1, -10, 0.5, 0)
+            local vector2_36 = Vector2.new(1, 0.5)
+            local color3_31 = Color3.fromRGB(30, 0, 0)
+            local GothamBold5 = Enum.Font.GothamBold
+            local color3_32 = Color3.fromRGB(255, 255, 255)
+            local v802 = value14_63("TextButton", v784, {
+				Size = uDim2_110,
+				Position = uDim2_111,
+				AnchorPoint = vector2_36,
+				BackgroundColor3 = color3_31,
+				Text = "تفعيل سكن",
+				Font = GothamBold5,
+				TextSize = 11,
+				TextColor3 = color3_32
+			})
+
+            t1.value34("Corner", v802, UDim.new(0, 6))
+
+            local value14_64 = t1.value14
+            local color3_33 = Color3.fromRGB(255, 0, 0)
+            local Border2 = Enum.ApplyStrokeMode.Border
+
+            value14_64("UIStroke", v802, {
+				Color = color3_33,
+				Thickness = 1.5,
+				ApplyStrokeMode = Border2
+			})
+            v802.Activated:Connect(function()
+                t1.value15:FireCallback(Callback, v775)
+            end)
+
+            return {
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(v778, ...)
+            end,
+				Destroy = function(_)
+                v778:Destroy()
+            end
+			}
+        end
+        function t24.AddAIBox(_, p202)
+            local v808 = p202[1]
+
+            if not v808 then
+                v808 = p202.Name
+
+                if not v808 then
+                    v808 = p202.Title or "AI Assistant"
+                end
+            end
+
+            local v809 = p202[2]
+
+            if not v809 then
+                v809 = p202.Logo or ""
+            end
+
+            local v810 = p202.Callback or function()
+            end
+            local Frame = Instance.new("Frame")
+
+            Frame.Size = UDim2.new(1, -20, 0, 250)
+            Frame.BackgroundColor3 = Color3.fromRGB(10, 0, 0)
+            Frame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+            Frame.BorderSizePixel = 2
+            Frame.Parent = v466
+            t1.value32(Frame)
+
+            local TextLabel = Instance.new("TextLabel", Frame)
+
+            TextLabel.Size = UDim2.new(1, 0, 0, 30)
+            TextLabel.BackgroundTransparency = 1
+            TextLabel.Text = v808
+            TextLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+            TextLabel.Font = Enum.Font.SourceSansBold
+            TextLabel.TextSize = 20
+
+            local ImageLabel = Instance.new("ImageLabel", Frame)
+
+            ImageLabel.Size = UDim2.new(0, 70, 0, 70)
+            ImageLabel.Position = UDim2.new(0.5, -35, 0, 35)
+            ImageLabel.BackgroundTransparency = 1
+            ImageLabel.Image = "rbxassetid://" .. v809
+
+            local TextLabel2 = Instance.new("TextLabel", Frame)
+
+            TextLabel2.Size = UDim2.new(1, -10, 0, 80)
+            TextLabel2.Position = UDim2.new(0, 5, 0, 110)
+            TextLabel2.BackgroundTransparency = 1
+            TextLabel2.Text = "AI: مرحبا 👋"
+            TextLabel2.TextWrapped = true
+            TextLabel2.TextColor3 = Color3.fromRGB(255, 0, 0)
+            TextLabel2.Font = Enum.Font.SourceSans
+            TextLabel2.TextSize = 18
+
+            local TextBox = Instance.new("TextBox", Frame)
+
+            TextBox.Size = UDim2.new(0.65, 0, 0, 30)
+            TextBox.Position = UDim2.new(0, 5, 1, -35)
+            TextBox.PlaceholderText = "اكتب سؤالك..."
+            TextBox.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
+            TextBox.BorderColor3 = Color3.fromRGB(255, 0, 0)
+            TextBox.TextColor3 = Color3.fromRGB(255, 0, 0)
+
+            local TextButton = Instance.new("TextButton", Frame)
+
+            TextButton.Size = UDim2.new(0.35, -10, 0, 30)
+            TextButton.Position = UDim2.new(0.65, 5, 1, -35)
+            TextButton.Text = "ارسال"
+            TextButton.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
+            TextButton.BorderColor3 = Color3.fromRGB(255, 0, 0)
+            TextButton.TextColor3 = Color3.fromRGB(255, 0, 0)
+            TextButton.MouseButton1Click:Connect(function()
+                local TextBoxText = TextBox.Text
+                local v1072 = v810(TextBoxText)
+
+                if v1072 then
+                    TextLabel2.Text = "انت: " .. TextBoxText .. "\nAI: " .. v1072
+                else
+                    TextLabel2.Text = "انت: " .. TextBoxText .. "\nAI: ما فهمت سؤالك"
+                end
+
+                TextBox.Text = ""
+            end)
+        end
+        function t24.AddButton(_, p204)
+            local v819 = p204[1]
+
+            if not v819 then
+                v819 = p204.Name
+
+                if not v819 then
+                    v819 = p204.Title or "Button!"
+                end
+            end
+
+            local Desc = p204.Desc
+
+            if not Desc then
+                Desc = p204.Description or ""
+            end
+
+            local Callback = t1.value15:GetCallback(p204, 2)
+            local v822 = p204.Icon or ""
+            local v823 = p204.IconTransparency or 0
+            local v824, _ = v28(v466, v819, Desc, UDim2.new(1, -20))
+            local v826 = v824
+            local value14_65 = t1.value14
+            local uDim2_112 = UDim2.new(0, 18, 0, 18)
+            local uDim2_113 = UDim2.new(0, 8, 0.5)
+            local vector2_37 = Vector2.new(0, 0.5)
+            local v831 = value14_65("ImageLabel", v826, {
+				Size = uDim2_112,
+				Position = uDim2_113,
+				AnchorPoint = vector2_37,
+				BackgroundTransparency = 1,
+				Image = v822,
+				ImageTransparency = v823
+			})
+            local value14_66 = t1.value14
+            local uDim2_114 = UDim2.new(0, 14, 0, 14)
+            local uDim2_115 = UDim2.new(1, -10, 0.5)
+            local vector2_38 = Vector2.new(1, 0.5)
+            local v836 = value14_66("ImageLabel", v826, {
+				Size = uDim2_114,
+				Position = uDim2_115,
+				AnchorPoint = vector2_38,
+				BackgroundTransparency = 1,
+				Image = "rbxassetid://10709791437"
+			})
+
+            v826.Activated:Connect(function()
+                v836.Image = "rbxassetid://10709769508"
+                task.delay(0.5, function()
+                    v836.Image = "rbxassetid://10709791437"
+                end)
+                t1.value15:FireCallback(Callback)
+            end)
+
+            return {
+				SetIcon = function(_, p206)
+                v831.Image = p206
+            end,
+				SetTransparency = function(_, p208)
+                v831.ImageTransparency = p208
+            end,
+				Destroy = function(_)
+                v826:Destroy()
+            end
+			}
+        end
+        function t24.AddInfoBruton(_)
+            local Players = game:GetService("Players")
+            local RunService = game:GetService("RunService")
+            local LocalPlayer = Players.LocalPlayer
+            local Frame = Instance.new("Frame")
+
+            Frame.Parent = v466
+            Frame.Size = UDim2.new(1, -20, 0, 160)
+            Frame.BackgroundColor3 = Color3.fromRGB(20, 0, 0)
+            Frame.BorderSizePixel = 0
+            Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 18)
+
+            local UIStroke = Instance.new("UIStroke")
+
+            UIStroke.Parent = Frame
+            UIStroke.Thickness = 1.6
+            UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            UIStroke.Color = Color3.new(1, 0, 0)
+
+            local UIGradient = Instance.new("UIGradient")
+
+            UIGradient.Color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 0, 0)),
+				ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 0, 0)),
+				ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 0, 0))
+			})
+            UIGradient.Parent = UIStroke
+            RunService.Heartbeat:Connect(function(dt)
+                UIGradient.Rotation = (UIGradient.Rotation + 80 * dt) % 360
+            end)
+
+            local Frame2 = Instance.new("Frame")
+
+            Frame2.Parent = Frame
+            Frame2.Size = UDim2.new(0, 78, 0, 78)
+            Frame2.Position = UDim2.new(0, 16, 0.5, 0)
+            Frame2.AnchorPoint = Vector2.new(0, 0.5)
+            Frame2.BackgroundColor3 = Color3.fromRGB(30, 5, 5)
+            Frame2.BorderSizePixel = 0
+            Instance.new("UICorner", Frame2).CornerRadius = UDim.new(1, 0)
+
+            local UIStroke2 = Instance.new("UIStroke")
+
+            UIStroke2.Parent = Frame2
+            UIStroke2.Thickness = 1.2
+            UIStroke2.Color = Color3.fromRGB(0, 0, 0)
+
+            local ImageLabel = Instance.new("ImageLabel")
+
+            ImageLabel.Parent = Frame2
+            ImageLabel.Size = UDim2.new(1, -6, 1, -6)
+            ImageLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+            ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+            ImageLabel.BackgroundTransparency = 1
+            Instance.new("UICorner", ImageLabel).CornerRadius = UDim.new(1, 0)
+            ImageLabel.Image = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size180x180)
+
+            local Frame3 = Instance.new("Frame")
+
+            Frame3.Parent = Frame
+            Frame3.Position = UDim2.new(0, 110, 0, 12)
+            Frame3.Size = UDim2.new(1, -125, 1, -24)
+            Frame3.BackgroundColor3 = Color3.fromRGB(25, 3, 3)
+            Frame3.BorderSizePixel = 0
+            Instance.new("UICorner", Frame3).CornerRadius = UDim.new(0, 12)
+
+            local UIStroke3 = Instance.new("UIStroke")
+
+            UIStroke3.Parent = Frame3
+            UIStroke3.Thickness = 1
+            UIStroke3.Color = Color3.fromRGB(0, 0, 0)
+
+            local ImageLabel2 = Instance.new("ImageLabel")
+
+            ImageLabel2.Parent = Frame3
+            ImageLabel2.Size = UDim2.new(1, 0, 1, 0)
+            ImageLabel2.BackgroundTransparency = 1
+            ImageLabel2.ImageTransparency = 0.85
+            ImageLabel2.Image = "rbxassetid://"
+            ImageLabel2.ScaleType = Enum.ScaleType.Crop
+            Instance.new("UICorner", ImageLabel2).CornerRadius = UDim.new(0, 12)
+
+            local TextLabel = Instance.new("TextLabel")
+
+            TextLabel.Parent = Frame3
+            TextLabel.Size = UDim2.new(1, -16, 1, -16)
+            TextLabel.Position = UDim2.new(0.5, 0, 0.5, 0)
+            TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+            TextLabel.BackgroundTransparency = 1
+            TextLabel.TextWrapped = true
+            TextLabel.TextXAlignment = Enum.TextXAlignment.Center
+            TextLabel.TextYAlignment = Enum.TextYAlignment.Center
+            TextLabel.Font = Enum.Font.GothamBold
+            TextLabel.TextSize = 13
+            TextLabel.LineHeight = 1.1
+            TextLabel.TextColor3 = Color3.fromRGB(255, 150, 150)
+            TextLabel.ZIndex = 2
+
+            local timestamp = os.time()
+
+            RunService.Heartbeat:Connect(function()
+                local v1079 = os.time() - timestamp
+                local v1080 = math.floor(v1079 / 3600)
+                local v1081 = math.floor(v1079 % 3600 / 60)
+                local v1082 = v1079 % 60
+
+                TextLabel.Text = "Welcome\n" .. LocalPlayer.DisplayName .. "\n" .. "@" .. LocalPlayer.Name .. "\n" .. "ID: " .. LocalPlayer.UserId .. "\n" .. os.date("%d/%m/%Y") .. "\n" .. string.format("%02d:%02d:%02d", v1080, v1081, v1082) .. "\n" .. os.date("%H:%M:%S")
+            end)
+
+            return {
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(Frame, ...)
+            end,
+				Destroy = function(_)
+                Frame:Destroy()
+            end
+			}
+        end
+        function t24.AddDiscordInvite(_, p214)
+            local v854 = p214[1]
+
+            if not v854 then
+                v854 = p214.Name
+
+                if not v854 then
+                    v854 = p214.Title or "Discord"
+                end
+            end
+
+            local Desc = p214.Desc
+
+            if not Desc then
+                Desc = p214.Description or ""
+            end
+
+            local v856 = p214[2]
+
+            if not v856 then
+                v856 = p214.Logo or ""
+            end
+
+            local v857 = p214[3]
+
+            if not v857 then
+                v857 = p214.Invite or ""
+            end
+
+            local v858 = v857
+            local v859 = t1.value14("Frame", v466, {
+				Size = UDim2.new(1, 0, 0, 80),
+				Name = "Option",
+				BackgroundTransparency = 1
+			})
+            local value14_67 = t1.value14
+            local uDim2_116 = UDim2.new(1, 0, 0, 15)
+            local uDim2_117 = UDim2.new(0, 5)
+            local color3_34 = Color3.fromRGB(255, 80, 80)
+            local GothamBold = Enum.Font.GothamBold
+
+            value14_67("TextLabel", v859, {
+				Size = uDim2_116,
+				Position = uDim2_117,
+				TextColor3 = color3_34,
+				Font = GothamBold,
+				TextXAlignment = "Left",
+				BackgroundTransparency = 1,
+				TextSize = 10,
+				Text = v858
+			})
+
+            local value13_26 = t1.value13
+            local value14_68 = t1.value14
+            local uDim2_118 = UDim2.new(1, 0, 0, 65)
+            local vector2_39 = Vector2.new(0, 1)
+            local uDim2_119 = UDim2.new(0, 0, 1)
+            local color3_35 = Color3.fromRGB(120, 10, 10)
+            local v871 = value13_26(value14_68("Frame", v859, {
+				Size = uDim2_118,
+				AnchorPoint = vector2_39,
+				Position = uDim2_119,
+				BackgroundColor3 = color3_35
+			}), "Frame")
+
+            t1.value34("Corner", v871)
+            t1.value32(v871)
+
+            local value14_69 = t1.value14
+            local uDim2_120 = UDim2.new(0, 30, 0, 30)
+            local uDim2_121 = UDim2.new(0, 7, 0, 7)
+            local v875 = value14_69("ImageLabel", v871, {
+				Size = uDim2_120,
+				Position = uDim2_121,
+				Image = v856,
+				BackgroundTransparency = 1
+			})
+
+            t1.value34("Corner", v875, UDim.new(0, 4))
+            t1.value34("Stroke", v875)
+
+            local value13_27 = t1.value13
+            local value14_70 = t1.value14
+            local uDim2_122 = UDim2.new(1, -52, 0, 15)
+            local uDim2_123 = UDim2.new(0, 44, 0, 7)
+            local GothamBold6 = Enum.Font.GothamBold
+            local color3_36 = Color3.fromRGB(255, 200, 200)
+
+            value13_27(value14_70("TextLabel", v871, {
+				Size = uDim2_122,
+				Position = uDim2_123,
+				Font = GothamBold6,
+				TextColor3 = color3_36,
+				TextXAlignment = "Left",
+				BackgroundTransparency = 1,
+				TextSize = 10,
+				Text = v854
+			}), "Text")
+
+            local value13_28 = t1.value13
+            local value14_71 = t1.value14
+            local uDim2_124 = UDim2.new(1, -52, 0, 0)
+            local uDim2_125 = UDim2.new(0, 44, 0, 22)
+            local Gotham = Enum.Font.Gotham
+            local color3_37 = Color3.fromRGB(255, 150, 150)
+
+            value13_28(value14_71("TextLabel", v871, {
+				Size = uDim2_124,
+				Position = uDim2_125,
+				TextWrapped = true,
+				AutomaticSize = "Y",
+				Font = Gotham,
+				TextColor3 = color3_37,
+				TextXAlignment = "Left",
+				BackgroundTransparency = 1,
+				TextSize = 8,
+				Text = Desc
+			}), "DarkText")
+
+            local value14_72 = t1.value14
+            local uDim2_126 = UDim2.new(1, -14, 0, 16)
+            local vector2_40 = Vector2.new(0.5, 1)
+            local uDim2_127 = UDim2.new(0.5, 0, 1, -7)
+            local GothamBold7 = Enum.Font.GothamBold
+            local color3_38 = Color3.fromRGB(255, 220, 220)
+            local color3_39 = Color3.fromRGB(180, 20, 20)
+            local v895 = value14_72("TextButton", v871, {
+				Size = uDim2_126,
+				AnchorPoint = vector2_40,
+				Position = uDim2_127,
+				Text = "Join",
+				Font = GothamBold7,
+				TextSize = 12,
+				TextColor3 = color3_38,
+				BackgroundColor3 = color3_39
+			})
+
+            t1.value34("Corner", v895, UDim.new(0, 5))
+            v895.Activated:Connect(function()
+                setclipboard(v858)
+
+                local value11 = t1.value11
+                local v1086 = v895
+                local color3_40 = Color3.fromRGB(120, 10, 10)
+                local color3_41 = Color3.fromRGB(255, 180, 180)
+
+                value11(v1086, {
+					Text = "Copied to Clipboard",
+					BackgroundColor3 = color3_40,
+					TextColor3 = color3_41
+				})
+                task.wait(5)
+
+                local value11_3 = t1.value11
+                local v1090 = v895
+                local color3_42 = Color3.fromRGB(180, 20, 20)
+                local color3_43 = Color3.fromRGB(255, 220, 220)
+
+                value11_3(v1090, {
+					Text = "Join",
+					BackgroundColor3 = color3_42,
+					TextColor3 = color3_43
+				})
+            end)
+
+            return {
+				Destroy = function(_)
+                v859:Destroy()
+            end,
+				Visible = function(_, ...)
+                t1.value15:ToggleVisible(v859, ...)
+            end
+			}
+        end
+
+        return t24
+    end
+    v283.Activated:Connect(t19.CloseBtn)
+    v284.Activated:Connect(t19.MinimizeBtn)
+
+    return t19
+end
+return t1.value6
