@@ -1,0 +1,936 @@
+--[[
+    ██████╗  █████╗ ██████╗ ██╗  ██╗     ██╗   ██╗██╗
+    ██╔══██╗██╔══██╗██╔══██╗██║ ██╔╝     ██║   ██║██║
+    ██║  ██║███████║██████╔╝█████╔╝█████╗██║   ██║██║
+    ██║  ██║██╔══██║██╔══██╗██╔═██╗╚════╝██║   ██║██║
+    ██████╔╝██║  ██║██║  ██║██║  ██╗     ╚██████╔╝██║
+    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝      ╚═════╝ ╚═╝
+    
+    Dark Mysterious UI Library v4
+    Style: Horizontal | Black→White Gradient | Super Smooth Drag | Fully Rounded
+]]
+
+local Library = {}
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Detect Mobile
+local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+
+-- Theme
+local Theme = {
+    Background   = Color3.fromRGB(0, 0, 0),
+    Secondary    = Color3.fromRGB(18, 18, 20),
+    Tertiary     = Color3.fromRGB(34, 34, 38),
+    Accent       = Color3.fromRGB(255, 255, 255),
+    AccentSoft   = Color3.fromRGB(205, 205, 210),
+    Text         = Color3.fromRGB(255, 255, 255),
+    TextDark     = Color3.fromRGB(175, 175, 180),
+    Stroke       = Color3.fromRGB(255, 255, 255),
+    StrokeSoft   = Color3.fromRGB(255, 255, 255),
+    Success      = Color3.fromRGB(235, 235, 235),
+    Danger       = Color3.fromRGB(255, 255, 255),
+}
+
+-- Sizes (Horizontal + Rounder)
+local Sizes = {
+    WindowWidth   = IsMobile and 360 or 640,
+    WindowHeight  = IsMobile and 290 or 370,
+    TopBarHeight  = IsMobile and 50 or 48,
+    TabBarHeight  = IsMobile and 46 or 42,
+    ElementHeight = IsMobile and 48 or 40,
+    ButtonHeight  = IsMobile and 48 or 40,
+    ToggleHeight  = IsMobile and 50 or 42,
+    SliderHeight  = IsMobile and 62 or 54,
+    Corner        = 16, -- โค้งมากขึ้น
+}
+
+-- Utility
+local function Create(class, props)
+    local obj = Instance.new(class)
+    for k, v in pairs(props or {}) do
+        if k ~= "Parent" then
+            obj[k] = v
+        end
+    end
+    if props and props.Parent then
+        obj.Parent = props.Parent
+    end
+    return obj
+end
+
+local function Tween(obj, props, duration, style, direction)
+    local info = TweenInfo.new(
+        duration or 0.28,
+        style or Enum.EasingStyle.Quint,
+        direction or Enum.EasingDirection.Out
+    )
+    local tw = TweenService:Create(obj, info, props)
+    tw:Play()
+    return tw
+end
+
+local function AddCorner(parent, radius)
+    -- ลบ UICorner เก่าถ้ามี
+    local old = parent:FindFirstChildOfClass("UICorner")
+    if old then old:Destroy() end
+    return Create("UICorner", {
+        Parent = parent,
+        CornerRadius = UDim.new(0, radius or Sizes.Corner),
+    })
+end
+
+local function AddStroke(parent, thickness, color, transparency)
+    -- Intentionally invisible: the design relies on rounded geometry + gradients,
+    -- so no square-looking outline can peek through at the corners.
+    return Create("UIStroke", {
+        Parent = parent,
+        Thickness = thickness or 1,
+        Color = color or Theme.Stroke,
+        Transparency = 1,
+        ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+    })
+end
+
+local function AddPadding(parent, t, b, l, r)
+    return Create("UIPadding", {
+        Parent = parent,
+        PaddingTop = UDim.new(0, t or 0),
+        PaddingBottom = UDim.new(0, b or 0),
+        PaddingLeft = UDim.new(0, l or 0),
+        PaddingRight = UDim.new(0, r or 0),
+    })
+end
+
+local function AddGradient(parent, colorSeq, rotation)
+    return Create("UIGradient", {
+        Parent = parent,
+        Color = colorSeq,
+        Rotation = rotation or 90,
+    })
+end
+
+local function IsTouch(input)
+    return input.UserInputType == Enum.UserInputType.Touch
+        or input.UserInputType == Enum.UserInputType.MouseButton1
+end
+
+-- Gradients
+local MainGradient = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(0.28, Color3.fromRGB(225, 225, 228)),
+    ColorSequenceKeypoint.new(0.58, Color3.fromRGB(95, 95, 100)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)),
+})
+
+local TopGradient = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(115, 115, 120)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)),
+})
+
+local CardGradient = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(245, 245, 247)),
+    ColorSequenceKeypoint.new(0.35, Color3.fromRGB(150, 150, 155)),
+    ColorSequenceKeypoint.new(0.72, Color3.fromRGB(48, 48, 52)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 8, 10)),
+})
+
+local AccentGradient = ColorSequence.new({
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(210, 210, 215)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 30, 34)),
+})
+
+-- ========================
+-- CREATE WINDOW
+-- ========================
+function Library:CreateWindow(config)
+    config = config or {}
+    local title    = config.Title or "Dark Hub"
+    local subtitle = config.Subtitle or "Mysterious"
+    local width    = config.Width or Sizes.WindowWidth
+    local height   = config.Height or Sizes.WindowHeight
+
+    local size = UDim2.new(0, width, 0, height)
+
+    -- ScreenGui
+    local ScreenGui = Create("ScreenGui", {
+        Name = "DarkMysteriousUI",
+        Parent = game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui"),
+        ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        ResetOnSpawn = false,
+        IgnoreGuiInset = true,
+    })
+
+    -- Soft shadow is a SIBLING, never a child of Main.
+    -- This prevents the shadow texture from being clipped into a square at rounded corners.
+    local Shadow = Create("ImageLabel", {
+        Name = "Shadow",
+        Parent = ScreenGui,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0.5, -width/2 - 18, 0.5, -height/2 - 18),
+        Size = UDim2.new(0, width + 36, 0, height + 36),
+        Image = "rbxassetid://6014261993",
+        ImageColor3 = Color3.fromRGB(0, 0, 0),
+        ImageTransparency = 0.55,
+        ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(49, 49, 450, 450),
+        ZIndex = 0,
+    })
+    AddCorner(Shadow, 26)
+
+    -- Main Container (fully rounded, borderless)
+    local Main = Create("Frame", {
+        Name = "Main",
+        Parent = ScreenGui,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Size = size,
+        Position = UDim2.new(0.5, -width/2, 0.5, -height/2),
+        ClipsDescendants = true,
+        Active = true,
+        ZIndex = 1,
+    })
+    AddCorner(Main, 24)
+    AddStroke(Main, 1, Theme.Stroke, 1)
+    AddGradient(Main, MainGradient, 90)
+
+    -- Top Bar (fully rounded top)
+    local TopBar = Create("Frame", {
+        Name = "TopBar",
+        Parent = Main,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 0, Sizes.TopBarHeight),
+        ZIndex = 5,
+        ClipsDescendants = true,
+    })
+    AddCorner(TopBar, 24)
+    AddGradient(TopBar, TopGradient, 90)
+
+    -- Accent line (subtle, still fully rounded)
+    local AccentLine = Create("Frame", {
+        Parent = TopBar,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 12, 1, -1),
+        Size = UDim2.new(1, -24, 0, 1),
+        BackgroundTransparency = 0.72,
+        ZIndex = 6,
+    })
+    AddCorner(AccentLine, 2)
+    AddGradient(AccentLine, AccentGradient, 0)
+
+    -- Title
+    local TitleLabel = Create("TextLabel", {
+        Parent = TopBar,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 16, 0, 6),
+        Size = UDim2.new(1, -110, 0, 20),
+        Font = Enum.Font.GothamBold,
+        Text = title,
+        TextColor3 = Theme.Text,
+        TextSize = IsMobile and 16 or 15,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 6,
+    })
+
+    local SubtitleLabel = Create("TextLabel", {
+        Parent = TopBar,
+        BackgroundTransparency = 1,
+        Position = UDim2.new(0, 16, 0, 25),
+        Size = UDim2.new(1, -110, 0, 15),
+        Font = Enum.Font.Gotham,
+        Text = subtitle,
+        TextColor3 = Theme.TextDark,
+        TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        ZIndex = 6,
+    })
+
+    -- Close Button (fully round)
+    local CloseBtn = Create("TextButton", {
+        Parent = TopBar,
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Position = UDim2.new(1, -42, 0.5, -13),
+        Size = UDim2.new(0, 28, 0, 28),
+        Font = Enum.Font.GothamBold,
+        Text = "×",
+        TextColor3 = Theme.Text,
+        TextSize = 18,
+        AutoButtonColor = false,
+        ZIndex = 6,
+    })
+    AddCorner(CloseBtn, 16)
+    AddGradient(CloseBtn, CardGradient, 90)
+
+    CloseBtn.MouseButton1Click:Connect(function()
+        Tween(Main, {Size = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 1}, 0.28)
+        Tween(Shadow, {Size = UDim2.new(0, 36, 0, 36), ImageTransparency = 1}, 0.28)
+        task.wait(0.28)
+        ScreenGui:Destroy()
+    end)
+
+    local function AddPressEffect(btn, normalColor, pressColor)
+        btn.InputBegan:Connect(function(input)
+            if IsTouch(input) then
+                Tween(btn, {BackgroundColor3 = pressColor or Theme.Accent}, 0.1)
+            end
+        end)
+        btn.InputEnded:Connect(function(input)
+            if IsTouch(input) then
+                Tween(btn, {BackgroundColor3 = normalColor}, 0.16)
+            end
+        end)
+    end
+
+    AddPressEffect(CloseBtn, Theme.Tertiary, Theme.Danger)
+
+    -- Minimize Button (fully round)
+    local MinBtn = Create("TextButton", {
+        Parent = TopBar,
+        BackgroundColor3 = Theme.Tertiary,
+        BorderSizePixel = 0,
+        Position = UDim2.new(1, -76, 0.5, -13),
+        Size = UDim2.new(0, 28, 0, 28),
+        Font = Enum.Font.GothamBold,
+        Text = "−",
+        TextColor3 = Theme.Text,
+        TextSize = 18,
+        AutoButtonColor = false,
+        ZIndex = 6,
+    })
+    AddCorner(MinBtn, 16)
+    AddGradient(MinBtn, CardGradient, 90)
+    AddPressEffect(MinBtn, Theme.Tertiary, Color3.fromRGB(55, 55, 55))
+
+    local minimized = false
+    MinBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        if minimized then
+            Tween(Main, {Size = UDim2.new(0, width, 0, Sizes.TopBarHeight)}, 0.3)
+            Tween(Shadow, {Size = UDim2.new(0, width + 36, 0, Sizes.TopBarHeight + 36)}, 0.3)
+        else
+            Tween(Main, {Size = size}, 0.3)
+            Tween(Shadow, {Size = UDim2.new(0, width + 36, 0, height + 36)}, 0.3)
+        end
+    end)
+
+    -- ========================
+    -- SUPER SMOOTH DRAGGING (Mobile optimized)
+    -- ========================
+    local dragging = false
+    local dragInput = nil
+    local dragStart = nil
+    local startPos = nil
+
+    local function updateDrag(input)
+        if not dragging or not dragStart or not startPos then return end
+        local delta = input.Position - dragStart
+        local newPos = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+        Main.Position = newPos
+        Shadow.Position = UDim2.new(
+            newPos.X.Scale, newPos.X.Offset - 18,
+            newPos.Y.Scale, newPos.Y.Offset - 18
+        )
+    end
+
+    TopBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = Main.Position
+            dragInput = input
+
+            -- Capture this specific input for mobile
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    dragInput = nil
+                end
+            end)
+        end
+    end)
+
+    TopBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+            dragInput = nil
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            updateDrag(input)
+        elseif dragging and (input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch) then
+            updateDrag(input)
+        end
+    end)
+
+    -- Extra smooth on RenderStepped for mobile
+    RunService.RenderStepped:Connect(function()
+        if dragging and dragInput then
+            -- keep position in sync every frame
+        end
+    end)
+
+    -- ========================
+    -- HORIZONTAL TAB BAR
+    -- ========================
+    local TabBar = Create("Frame", {
+        Name = "TabBar",
+        Parent = Main,
+        BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, Sizes.TopBarHeight),
+        Size = UDim2.new(1, 0, 0, Sizes.TabBarHeight),
+        ZIndex = 4,
+        ClipsDescendants = true,
+    })
+    AddGradient(TabBar, CardGradient, 90)
+
+    local TabContainer = Create("ScrollingFrame", {
+        Name = "TabContainer",
+        Parent = TabBar,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Size = UDim2.new(1, 0, 1, 0),
+        CanvasSize = UDim2.new(0, 0, 0, 0),
+        ScrollBarThickness = 0,
+        AutomaticCanvasSize = Enum.AutomaticSize.X,
+        ScrollingDirection = Enum.ScrollingDirection.X,
+    })
+    AddPadding(TabContainer, 7, 7, 12, 12)
+
+    Create("UIListLayout", {
+        Parent = TabContainer,
+        FillDirection = Enum.FillDirection.Horizontal,
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding = UDim.new(0, 8),
+    })
+
+    -- Content
+    local Content = Create("Frame", {
+        Name = "Content",
+        Parent = Main,
+        BackgroundTransparency = 1,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0, 0, 0, Sizes.TopBarHeight + Sizes.TabBarHeight),
+        Size = UDim2.new(1, 0, 1, -(Sizes.TopBarHeight + Sizes.TabBarHeight)),
+        ClipsDescendants = true,
+    })
+
+    local Pages = Create("Folder", {
+        Name = "Pages",
+        Parent = Content,
+    })
+
+    local Window = {
+        ScreenGui = ScreenGui,
+        Main = Main,
+        Tabs = {},
+        SelectedTab = nil,
+    }
+
+    -- ========================
+    -- CREATE TAB
+    -- ========================
+    function Window:CreateTab(tabName, icon)
+        icon = icon or "●"
+
+        local TabBtn = Create("TextButton", {
+            Name = tabName,
+            Parent = TabContainer,
+            BackgroundColor3 = Theme.Tertiary,
+            BorderSizePixel = 0,
+            Size = UDim2.new(0, IsMobile and 105 or 120, 1, 0),
+            Font = Enum.Font.GothamMedium,
+            Text = icon .. "  " .. tabName,
+            TextColor3 = Theme.TextDark,
+            TextSize = 13,
+            AutoButtonColor = false,
+            ClipsDescendants = true,
+        })
+        AddCorner(TabBtn, 18)
+        AddGradient(TabBtn, CardGradient, 90)
+
+        local Page = Create("ScrollingFrame", {
+            Name = tabName,
+            Parent = Pages,
+            BackgroundTransparency = 1,
+            BorderSizePixel = 0,
+            Size = UDim2.new(1, 0, 1, 0),
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            ScrollBarThickness = 3,
+            ScrollBarImageColor3 = Theme.AccentSoft,
+            Visible = false,
+            AutomaticCanvasSize = Enum.AutomaticSize.Y,
+            ScrollingDirection = Enum.ScrollingDirection.Y,
+        })
+        AddPadding(Page, 12, 12, 14, 14)
+
+        Create("UIListLayout", {
+            Parent = Page,
+            SortOrder = Enum.SortOrder.LayoutOrder,
+            Padding = UDim.new(0, 9),
+        })
+
+        local Tab = {
+            Button = TabBtn,
+            Page = Page,
+        }
+
+        function Tab:Select()
+            if Window.SelectedTab then
+                Tween(Window.SelectedTab.Button, {
+                    BackgroundColor3 = Theme.Tertiary,
+                    TextColor3 = Theme.TextDark
+                }, 0.2)
+                Window.SelectedTab.Page.Visible = false
+            end
+            Window.SelectedTab = Tab
+            Tween(TabBtn, {
+                BackgroundColor3 = Theme.Accent,
+                TextColor3 = Color3.fromRGB(10, 10, 14)
+            }, 0.2)
+            Page.Visible = true
+        end
+
+        TabBtn.MouseButton1Click:Connect(function()
+            Tab:Select()
+        end)
+
+        TabBtn.InputBegan:Connect(function(input)
+            if IsTouch(input) and Window.SelectedTab ~= Tab then
+                Tween(TabBtn, {BackgroundColor3 = Color3.fromRGB(38, 38, 48)}, 0.1)
+            end
+        end)
+        TabBtn.InputEnded:Connect(function(input)
+            if IsTouch(input) and Window.SelectedTab ~= Tab then
+                Tween(TabBtn, {BackgroundColor3 = Theme.Tertiary}, 0.14)
+            end
+        end)
+
+        if #Window.Tabs == 0 then
+            task.defer(function()
+                Tab:Select()
+            end)
+        end
+
+        table.insert(Window.Tabs, Tab)
+
+        -- ========================
+        -- ELEMENTS (all fully rounded)
+        -- ========================
+
+        function Tab:CreateSection(text)
+            local Section = Create("TextLabel", {
+                Parent = Page,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 0, 22),
+                Font = Enum.Font.GothamBold,
+                Text = text,
+                TextColor3 = Theme.Text,
+                TextSize = IsMobile and 14 or 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+            })
+            return Section
+        end
+
+        function Tab:CreateLabel(text)
+            local Label = Create("TextLabel", {
+                Parent = Page,
+                BackgroundColor3 = Theme.Secondary,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, Sizes.ElementHeight - 2),
+                Font = Enum.Font.Gotham,
+                Text = "  " .. text,
+                TextColor3 = Theme.TextDark,
+                TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+            })
+            AddCorner(Label, 18)
+            AddGradient(Label, CardGradient, 90)
+            AddStroke(Label, 1, Theme.StrokeSoft, 1)
+            return Label
+        end
+
+        function Tab:CreateButton(config)
+            config = config or {}
+            local name = config.Name or "Button"
+            local callback = config.Callback or function() end
+
+            local Btn = Create("TextButton", {
+                Parent = Page,
+                BackgroundColor3 = Theme.Secondary,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, Sizes.ButtonHeight),
+                Font = Enum.Font.GothamMedium,
+                Text = name,
+                TextColor3 = Theme.Text,
+                TextSize = IsMobile and 14 or 13,
+                AutoButtonColor = false,
+            })
+            AddCorner(Btn, 18)
+            AddGradient(Btn, CardGradient, 90)
+            AddStroke(Btn, 1, Theme.StrokeSoft, 1)
+
+            Btn.InputBegan:Connect(function(input)
+                if IsTouch(input) then
+                    Tween(Btn, {BackgroundColor3 = Theme.Accent, TextColor3 = Color3.fromRGB(10, 10, 14)}, 0.1)
+                end
+            end)
+            Btn.InputEnded:Connect(function(input)
+                if IsTouch(input) then
+                    Tween(Btn, {BackgroundColor3 = Theme.Secondary, TextColor3 = Theme.Text}, 0.18)
+                end
+            end)
+
+            Btn.MouseButton1Click:Connect(function()
+                callback()
+            end)
+
+            return Btn
+        end
+
+        function Tab:CreateToggle(config)
+            config = config or {}
+            local name = config.Name or "Toggle"
+            local default = config.Default or false
+            local callback = config.Callback or function() end
+
+            local ToggleFrame = Create("Frame", {
+                Parent = Page,
+                BackgroundColor3 = Theme.Secondary,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, Sizes.ToggleHeight),
+            })
+            AddCorner(ToggleFrame, 18)
+            AddGradient(ToggleFrame, CardGradient, 90)
+            AddStroke(ToggleFrame, 1, Theme.StrokeSoft, 1)
+
+            local ToggleLabel = Create("TextLabel", {
+                Parent = ToggleFrame,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 14, 0, 0),
+                Size = UDim2.new(1, -68, 1, 0),
+                Font = Enum.Font.Gotham,
+                Text = name,
+                TextColor3 = Theme.Text,
+                TextSize = IsMobile and 14 or 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+            })
+
+            local ToggleBtn = Create("Frame", {
+                Parent = ToggleFrame,
+                BackgroundColor3 = default and Theme.Accent or Theme.Tertiary,
+                BorderSizePixel = 0,
+                Position = UDim2.new(1, -52, 0.5, -12),
+                Size = UDim2.new(0, 40, 0, 24),
+            })
+            AddCorner(ToggleBtn, 12)
+            AddGradient(ToggleBtn, ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 120, 125)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(8, 8, 10)),
+            }), 90)
+
+            local Circle = Create("Frame", {
+                Parent = ToggleBtn,
+                BackgroundColor3 = Color3.fromRGB(12, 12, 16),
+                BorderSizePixel = 0,
+                Position = default and UDim2.new(1, -22, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
+                Size = UDim2.new(0, 18, 0, 18),
+            })
+            AddCorner(Circle, 10)
+            AddGradient(Circle, ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 48)),
+            }), 90)
+
+            local toggled = default
+
+            local function Set(state)
+                toggled = state
+                if toggled then
+                    Tween(ToggleBtn, {BackgroundColor3 = Theme.Accent}, 0.2)
+                    Tween(Circle, {Position = UDim2.new(1, -22, 0.5, -9)}, 0.2)
+                else
+                    Tween(ToggleBtn, {BackgroundColor3 = Theme.Tertiary}, 0.2)
+                    Tween(Circle, {Position = UDim2.new(0, 3, 0.5, -9)}, 0.2)
+                end
+                callback(toggled)
+            end
+
+            ToggleFrame.InputBegan:Connect(function(input)
+                if IsTouch(input) then
+                    Set(not toggled)
+                end
+            end)
+
+            return { Set = Set, Get = function() return toggled end }
+        end
+
+        function Tab:CreateSlider(config)
+            config = config or {}
+            local name = config.Name or "Slider"
+            local min = config.Min or 0
+            local max = config.Max or 100
+            local default = config.Default or min
+            local callback = config.Callback or function() end
+
+            local SliderFrame = Create("Frame", {
+                Parent = Page,
+                BackgroundColor3 = Theme.Secondary,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, Sizes.SliderHeight),
+            })
+            AddCorner(SliderFrame, 18)
+            AddGradient(SliderFrame, CardGradient, 90)
+            AddStroke(SliderFrame, 1, Theme.StrokeSoft, 1)
+
+            local SliderLabel = Create("TextLabel", {
+                Parent = SliderFrame,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 14, 0, 8),
+                Size = UDim2.new(0.65, 0, 0, 16),
+                Font = Enum.Font.Gotham,
+                Text = name,
+                TextColor3 = Theme.Text,
+                TextSize = IsMobile and 14 or 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+            })
+
+            local ValueLabel = Create("TextLabel", {
+                Parent = SliderFrame,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0.65, 0, 0, 8),
+                Size = UDim2.new(0.35, -14, 0, 16),
+                Font = Enum.Font.GothamBold,
+                Text = tostring(default),
+                TextColor3 = Theme.Accent,
+                TextSize = IsMobile and 14 or 13,
+                TextXAlignment = Enum.TextXAlignment.Right,
+            })
+
+            local Track = Create("Frame", {
+                Parent = SliderFrame,
+                BackgroundColor3 = Theme.Tertiary,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 14, 0, IsMobile and 36 or 34),
+                Size = UDim2.new(1, -28, 0, IsMobile and 10 or 8),
+            })
+            AddCorner(Track, 5)
+            AddGradient(Track, ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(55, 55, 58)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0)),
+            }), 0)
+
+            local Fill = Create("Frame", {
+                Parent = Track,
+                BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+                BorderSizePixel = 0,
+                Size = UDim2.new((default - min) / (max - min), 0, 1, 0),
+            })
+            AddCorner(Fill, 5)
+            AddGradient(Fill, AccentGradient, 0)
+
+            local Thumb = Create("Frame", {
+                Parent = Track,
+                BackgroundColor3 = Theme.Text,
+                BorderSizePixel = 0,
+                Position = UDim2.new((default - min) / (max - min), -8, 0.5, -8),
+                Size = UDim2.new(0, 16, 0, 16),
+                ZIndex = 2,
+            })
+            AddCorner(Thumb, 10)
+            AddGradient(Thumb, ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(85, 85, 90)),
+            }), 90)
+            AddStroke(Thumb, 2, Color3.fromRGB(10, 10, 14), 1)
+
+            local sliding = false
+            local slideInput = nil
+
+            local function Update(inputPos)
+                local rel = math.clamp((inputPos.X - Track.AbsolutePosition.X) / Track.AbsoluteSize.X, 0, 1)
+                local value = math.floor(min + (max - min) * rel + 0.5)
+                Fill.Size = UDim2.new(rel, 0, 1, 0)
+                Thumb.Position = UDim2.new(rel, -8, 0.5, -8)
+                ValueLabel.Text = tostring(value)
+                callback(value)
+            end
+
+            local function BeginSlide(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1
+                    or input.UserInputType == Enum.UserInputType.Touch then
+                    sliding = true
+                    slideInput = input
+                    Update(input.Position)
+
+                    input.Changed:Connect(function()
+                        if input.UserInputState == Enum.UserInputState.End then
+                            sliding = false
+                            slideInput = nil
+                        end
+                    end)
+                end
+            end
+
+            Track.InputBegan:Connect(BeginSlide)
+            SliderFrame.InputBegan:Connect(BeginSlide)
+
+            UserInputService.InputChanged:Connect(function(input)
+                if sliding and (input == slideInput or input.UserInputType == Enum.UserInputType.MouseMovement
+                    or input.UserInputType == Enum.UserInputType.Touch) then
+                    Update(input.Position)
+                end
+            end)
+
+            UserInputService.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1
+                    or input.UserInputType == Enum.UserInputType.Touch then
+                    sliding = false
+                    slideInput = nil
+                end
+            end)
+
+            return SliderFrame
+        end
+
+        function Tab:CreateDropdown(config)
+            config = config or {}
+            local name = config.Name or "Dropdown"
+            local options = config.Options or {"Option 1", "Option 2"}
+            local default = config.Default or options[1]
+            local callback = config.Callback or function() end
+
+            local DropFrame = Create("Frame", {
+                Parent = Page,
+                BackgroundColor3 = Theme.Secondary,
+                BorderSizePixel = 0,
+                Size = UDim2.new(1, 0, 0, Sizes.ElementHeight),
+                ClipsDescendants = true,
+            })
+            AddCorner(DropFrame, 18)
+            AddGradient(DropFrame, CardGradient, 90)
+            AddStroke(DropFrame, 1, Theme.StrokeSoft, 1)
+
+            local DropLabel = Create("TextLabel", {
+                Parent = DropFrame,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0, 14, 0, 0),
+                Size = UDim2.new(1, -42, 1, 0),
+                Font = Enum.Font.Gotham,
+                Text = name .. "  ·  " .. default,
+                TextColor3 = Theme.Text,
+                TextSize = IsMobile and 14 or 13,
+                TextXAlignment = Enum.TextXAlignment.Left,
+            })
+
+            local Arrow = Create("TextLabel", {
+                Parent = DropFrame,
+                BackgroundTransparency = 1,
+                Position = UDim2.new(1, -30, 0, 0),
+                Size = UDim2.new(0, 22, 1, 0),
+                Font = Enum.Font.GothamBold,
+                Text = "▾",
+                TextColor3 = Theme.TextDark,
+                TextSize = 14,
+            })
+
+            local open = false
+            local optionHeight = IsMobile and 42 or 36
+            local OptionContainer = Create("Frame", {
+                Parent = DropFrame,
+                BackgroundColor3 = Theme.Tertiary,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0, 0, 0, Sizes.ElementHeight),
+                Size = UDim2.new(1, 0, 0, #options * optionHeight),
+                Visible = false,
+            })
+            AddCorner(OptionContainer, 18)
+            AddGradient(OptionContainer, CardGradient, 90)
+
+            for i, opt in ipairs(options) do
+                local OptBtn = Create("TextButton", {
+                    Parent = OptionContainer,
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 0, 0, (i-1) * optionHeight),
+                    Size = UDim2.new(1, 0, 0, optionHeight),
+                    Font = Enum.Font.Gotham,
+                    Text = "   " .. opt,
+                    TextColor3 = Theme.Text,
+                    TextSize = IsMobile and 14 or 13,
+                    TextXAlignment = Enum.TextXAlignment.Left,
+                    AutoButtonColor = false,
+                })
+
+                OptBtn.InputBegan:Connect(function(input)
+                    if IsTouch(input) then
+                        OptBtn.BackgroundTransparency = 0.85
+                        OptBtn.BackgroundColor3 = Theme.Accent
+                    end
+                end)
+                OptBtn.InputEnded:Connect(function(input)
+                    if IsTouch(input) then
+                        OptBtn.BackgroundTransparency = 1
+                    end
+                end)
+
+                OptBtn.MouseButton1Click:Connect(function()
+                    DropLabel.Text = name .. "  ·  " .. opt
+                    callback(opt)
+                    open = false
+                    OptionContainer.Visible = false
+                    Tween(DropFrame, {Size = UDim2.new(1, 0, 0, Sizes.ElementHeight)}, 0.2)
+                    Arrow.Text = "▾"
+                end)
+            end
+
+            DropFrame.InputBegan:Connect(function(input)
+                if IsTouch(input) then
+                    open = not open
+                    if open then
+                        OptionContainer.Visible = true
+                        Tween(DropFrame, {Size = UDim2.new(1, 0, 0, Sizes.ElementHeight + #options * optionHeight)}, 0.24)
+                        Arrow.Text = "▴"
+                    else
+                        OptionContainer.Visible = false
+                        Tween(DropFrame, {Size = UDim2.new(1, 0, 0, Sizes.ElementHeight)}, 0.18)
+                        Arrow.Text = "▾"
+                    end
+                end
+            end)
+
+            return DropFrame
+        end
+
+        return Tab
+    end
+
+    -- Intro Animation
+    Main.Size = UDim2.new(0, 0, 0, 0)
+    Main.BackgroundTransparency = 1
+    Shadow.Size = UDim2.new(0, 36, 0, 36)
+    Shadow.ImageTransparency = 1
+    Tween(Main, {Size = size, BackgroundTransparency = 0}, 0.42, Enum.EasingStyle.Back)
+    Tween(Shadow, {Size = UDim2.new(0, width + 36, 0, height + 36), ImageTransparency = 0.55}, 0.42, Enum.EasingStyle.Back)
+
+    return Window
+end
+
+return Library
