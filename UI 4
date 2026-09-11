@@ -1,0 +1,529 @@
+-- STREAMING_CHUNK:Initializing Services and Module...
+local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+​local UIModule = {}
+UIModule.__index = UIModule
+​-- 定義 UI 的唯一名稱 (重複執行時自動刪除舊版)
+local GUI_NAME = "HackerHub_REC_Edition"
+​-- --- 自動刪除舊 GUI ---
+local CoreGui = game:GetService("CoreGui")
+local oldGui = CoreGui:FindFirstChild(GUI_NAME)
+if oldGui then
+oldGui:Destroy()
+end
+​-- STREAMING_CHUNK:Defining Utility Functions...
+-- 通用工具：支援「TextScaled 自動縮放」+「TextWrapped 自動換行」
+local function applyTextSettings(textObject, minSize, maxSize)
+textObject.TextScaled = true
+textObject.TextWrapped = true -- 支援自動換行
+​local oldConstraint = textObject:FindFirstChildOfClass("UITextSizeConstraint")
+if oldConstraint then oldConstraint:Destroy() end
+​local constraint = Instance.new("UITextSizeConstraint")
+constraint.MinTextSize = minSize or 8
+constraint.MaxTextSize = maxSize or 16 -- 提高上限，讓字體能放大
+constraint.Parent = textObject
+end
+​-- 全局字體設定 (Hacker 風格)
+local HACKER_FONT = Enum.Font.RobotoMono
+​-- --- 1. 建立 UI 主視窗 (:CreateWindow) ---
+function UIModule.CreateWindow(titleText, footerText)
+local self = setmetatable({}, UIModule)
+​-- STREAMING_CHUNK:Creating Base GUI and Main Frame...
+local ApexHub = Instance.new("ScreenGui")
+ApexHub.Name = GUI_NAME
+ApexHub.Parent = CoreGui
+self.Gui = ApexHub
+​-- 主面板 (Main Panel)
+local Main = Instance.new("Frame")
+Main.Parent = ApexHub
+Main.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- 設為白色以讓 Gradient 正常顯示
+Main.BorderSizePixel = 0
+Main.Position = UDim2.new(0.5, -130, 0.5, -200)
+Main.Size = UDim2.new(0, 260, 0, 100)
+Main.Active = true
+​-- 黑白漸層效果 (Hacker Gradient)
+local UIGradient = Instance.new("UIGradient")
+UIGradient.Color = ColorSequence.new{
+ColorSequenceKeypoint.new(0, Color3.fromRGB(45, 45, 45)),   -- 頂部深灰
+ColorSequenceKeypoint.new(0.5, Color3.fromRGB(15, 15, 15)), -- 中間黑色
+ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))       -- 底部純黑
+}
+UIGradient.Rotation = 90
+UIGradient.Parent = Main
+​local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 6) -- 稍微銳利一點的邊角
+UICorner.Parent = Main
+​-- GUI 外框（純白/亮灰 - Hacker 風格）
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Thickness = 1.5
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
+UIStroke.Parent = Main
+​-- STREAMING_CHUNK:Styling the Header and REC Effect...
+-- 標題文字 (Terminal Style)
+local Title = Instance.new("TextLabel")
+Title.Parent = Main
+Title.Size = UDim2.new(1, -95, 0, 40)
+Title.Position = UDim2.new(0, 12, 0, 0)
+Title.Text = "> " .. (titleText or "ROOT_ACCESS")
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Font = HACKER_FONT
+Title.BackgroundTransparency = 1
+Title.TextXAlignment = Enum.TextXAlignment.Left
+​applyTextSettings(Title, 10, 18)
+self.TitleLabel = Title
+​-- 攝影機 REC 特效 (Camera REC Effect)
+local RecFrame = Instance.new("Frame")
+RecFrame.Size = UDim2.new(0, 50, 0, 20)
+RecFrame.Position = UDim2.new(1, -90, 0, 10)
+RecFrame.BackgroundTransparency = 1
+RecFrame.Parent = Main
+​local RecDot = Instance.new("Frame")
+RecDot.Size = UDim2.new(0, 10, 0, 10)
+RecDot.Position = UDim2.new(0, 0, 0.5, -5)
+RecDot.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- 紅色錄影燈
+RecDot.Parent = RecFrame
+local DotCorner = Instance.new("UICorner")
+DotCorner.CornerRadius = UDim.new(1, 0)
+DotCorner.Parent = RecDot
+​local RecLabel = Instance.new("TextLabel")
+RecLabel.Size = UDim2.new(1, -15, 1, 0)
+RecLabel.Position = UDim2.new(0, 15, 0, 0)
+RecLabel.BackgroundTransparency = 1
+RecLabel.Text = "REC"
+RecLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+RecLabel.Font = HACKER_FONT
+RecLabel.TextSize = 14
+RecLabel.TextXAlignment = Enum.TextXAlignment.Left
+RecLabel.Parent = RecFrame
+​-- 閃爍動畫邏輯 (Blinking Animation)
+task.spawn(function()
+while Main.Parent do
+RecDot.BackgroundTransparency = 0
+task.wait(0.7)
+RecDot.BackgroundTransparency = 1
+task.wait(0.7)
+end
+end)
+​-- STREAMING_CHUNK:Setting up Content Container and Controls...
+-- 內容容器 (ScrollingFrame)
+local Content = Instance.new("ScrollingFrame")
+Content.Parent = Main
+Content.Position = UDim2.new(0, 12, 0, 42)
+Content.Size = UDim2.new(1, -24, 0, 0)
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+Content.ScrollBarThickness = 2
+Content.ScrollBarImageColor3 = Color3.fromRGB(255, 255, 255)
+Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Content.CanvasSize = UDim2.new(0, 0, 0, 0)
+self.Content = Content
+​local UIList = Instance.new("UIListLayout")
+UIList.Parent = Content
+UIList.Padding = UDim.new(0, 6)
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+self.UIList = UIList
+​-- 右上角縮小按鈕 (Minimize Button)
+local isMinimized = false
+local MINIMIZED_SIZE = UDim2.new(0, 260, 0, 42)
+​local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0, 22, 0, 22)
+MinBtn.Position = UDim2.new(1, -30, 0, 10)
+MinBtn.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+MinBtn.Text = "-"
+MinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinBtn.Font = HACKER_FONT
+MinBtn.TextSize = 16
+MinBtn.Parent = Main
+​local MinBtnCorner = Instance.new("UICorner")
+MinBtnCorner.CornerRadius = UDim.new(0, 4)
+MinBtnCorner.Parent = MinBtn
+​local MinBtnStroke = Instance.new("UIStroke")
+MinBtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+MinBtnStroke.Thickness = 1
+MinBtnStroke.Color = Color3.fromRGB(255, 255, 255)
+MinBtnStroke.Parent = MinBtn
+​-- STREAMING_CHUNK:Implementing UI Drag and Auto-resize...
+-- 自動調整高度邏輯
+local TITLE_PADDING = 52
+local MAX_HEIGHT = 350
+​local function updateMainSize()
+if not isMinimized then
+local contentHeight = UIList.AbsoluteContentSize.Y
+local targetContentHeight = math.min(contentHeight, MAX_HEIGHT)
+​Content.Size = UDim2.new(1, -24, 0, targetContentHeight)
+Main.Size = UDim2.new(0, 260, 0, targetContentHeight + TITLE_PADDING)
+end
+end
+self.UpdateSize = updateMainSize
+UIList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateMainSize)
+​-- 縮小功能
+MinBtn.MouseButton1Click:Connect(function()
+isMinimized = not isMinimized
+if isMinimized then
+Content.Visible = false
+Main.Size = MINIMIZED_SIZE
+MinBtn.Text = "+"
+RecFrame.Visible = false
+else
+Content.Visible = true
+updateMainSize()
+MinBtn.Text = "-"
+RecFrame.Visible = true
+end
+end)
+​-- 拖曳邏輯
+local dragToggle, dragInput, dragStart, startPos
+Main.InputBegan:Connect(function(input)
+if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
+dragToggle = true
+dragStart = input.Position
+startPos = Main.Position
+input.Changed:Connect(function()
+if input.UserInputState == Enum.UserInputState.End then
+dragToggle = false
+end
+end)
+end
+end)
+​Main.InputChanged:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+dragInput = input
+end
+end)
+​UIS.InputChanged:Connect(function(input)
+if input == dragInput and dragToggle then
+local delta = input.Position - dragStart
+Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+end)
+​-- STREAMING_CHUNK:Footer and Public Methods...
+-- 頁尾標籤
+if footerText then
+local Footer = Instance.new("TextLabel")
+Footer.Size = UDim2.new(0.9, 0, 0, 20)
+Footer.BackgroundTransparency = 1
+Footer.Text = "[ " .. footerText .. " ]"
+Footer.TextColor3 = Color3.fromRGB(150, 150, 150)
+Footer.Font = HACKER_FONT
+Footer.Parent = Content
+applyTextSettings(Footer, 8, 12)
+end
+​return self
+end
+​-- --- 2. 動態修改標題 (:SetTitle) ---
+function UIModule:SetTitle(newTitle)
+if self.TitleLabel then
+self.TitleLabel.Text = "> " .. tostring(newTitle)
+end
+end
+​-- --- 3. 清空內容 (:Clear) ---
+function UIModule:Clear()
+for _, child in ipairs(self.Content:GetChildren()) do
+if not child:IsA("UIListLayout") then
+child:Destroy()
+end
+end
+self.UpdateSize()
+end
+​-- STREAMING_CHUNK:Creating UI Button...
+-- --- 4. 普通按鈕 (:CreateButton) ---
+function UIModule:CreateButton(txt, cb, maxFontSize)
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0.92, 0, 0, 32)
+btn.AutomaticSize = Enum.AutomaticSize.Y
+btn.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+btn.Text = txt
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+btn.Font = HACKER_FONT
+btn.Parent = self.Content
+​local UIPadding = Instance.new("UIPadding")
+UIPadding.PaddingLeft = UDim.new(0, 8)
+UIPadding.PaddingRight = UDim.new(0, 8)
+UIPadding.PaddingTop = UDim.new(0, 4)
+UIPadding.PaddingBottom = UDim.new(0, 4)
+UIPadding.Parent = btn
+​applyTextSettings(btn, 8, maxFontSize or 14)
+​local BtnStroke = Instance.new("UIStroke")
+BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+BtnStroke.Thickness = 1
+BtnStroke.Color = Color3.fromRGB(150, 150, 150) -- 灰色邊框
+BtnStroke.Parent = btn
+​local c = Instance.new("UICorner")
+c.CornerRadius = UDim.new(0, 4)
+c.Parent = btn
+​btn.MouseButton1Click:Connect(function()
+-- 點擊特效 (Blink White)
+local originColor = btn.BackgroundColor3
+btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+btn.TextColor3 = Color3.fromRGB(0, 0, 0)
+task.wait(0.05)
+btn.BackgroundColor3 = originColor
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+if cb then cb(btn) end
+end)
+​self.UpdateSize()
+return btn
+end
+​-- STREAMING_CHUNK:Creating UI Toggle...
+-- --- 5. 開關按鈕 (:CreateToggle) ---
+function UIModule:CreateToggle(txt, defaultState, cb, maxFontSize)
+local state = defaultState or false
+​local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0.92, 0, 0, 32)
+btn.AutomaticSize = Enum.AutomaticSize.Y
+btn.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+btn.Text = ""
+btn.Parent = self.Content
+​local c = Instance.new("UICorner")
+c.CornerRadius = UDim.new(0, 4)
+c.Parent = btn
+​local BtnStroke = Instance.new("UIStroke")
+BtnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+BtnStroke.Thickness = 1
+BtnStroke.Color = Color3.fromRGB(150, 150, 150)
+BtnStroke.Parent = btn
+​local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, -38, 1, 0)
+label.Position = UDim2.new(0, 8, 0, 0)
+label.BackgroundTransparency = 1
+label.Text = txt
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Font = HACKER_FONT
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.Parent = btn
+applyTextSettings(label, 8, maxFontSize or 14)
+​local box = Instance.new("Frame")
+box.Size = UDim2.new(0, 18, 0, 18)
+box.Position = UDim2.new(1, -26, 0.5, -9)
+box.Parent = btn
+​local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 4)
+boxCorner.Parent = box
+​local boxStroke = Instance.new("UIStroke")
+boxStroke.Thickness = 1
+boxStroke.Color = Color3.fromRGB(255, 255, 255)
+boxStroke.Parent = box
+​local function updateState()
+if state then
+box.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- 開啟時白色
+label.Text = "[X] " .. txt
+else
+box.BackgroundColor3 = Color3.fromRGB(20, 20, 20)  -- 關閉時深灰
+label.Text = "[ ] " .. txt
+end
+end
+​updateState()
+​btn.MouseButton1Click:Connect(function()
+state = not state
+updateState()
+if cb then cb(state) end
+end)
+​self.UpdateSize()
+return btn
+end
+​-- STREAMING_CHUNK:Creating UI Slider...
+-- --- 6. 滑桿 (:CreateSlider) ---
+function UIModule:CreateSlider(txt, min, max, default, cb)
+min = min or 0
+max = max or 100
+default = math.clamp(default or min, min, max)
+​local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.92, 0, 0, 36)
+frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+frame.Parent = self.Content
+​local c = Instance.new("UICorner")
+c.CornerRadius = UDim.new(0, 4)
+c.Parent = frame
+​local frameStroke = Instance.new("UIStroke")
+frameStroke.Thickness = 1
+frameStroke.Color = Color3.fromRGB(150, 150, 150)
+frameStroke.Parent = frame
+​local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, -16, 0, 18)
+label.Position = UDim2.new(0, 8, 0, 2)
+label.BackgroundTransparency = 1
+label.Text = txt .. " <" .. tostring(default) .. ">"
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Font = HACKER_FONT
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.Parent = frame
+applyTextSettings(label, 8, 12)
+​local track = Instance.new("Frame")
+track.Size = UDim2.new(1, -16, 0, 4)
+track.Position = UDim2.new(0, 8, 0, 25)
+track.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+track.Parent = frame
+​local fill = Instance.new("Frame")
+fill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
+fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- 填滿白色
+fill.BorderSizePixel = 0
+fill.Parent = track
+​local dragging = false
+​local function updateVal(input)
+local pos = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+local val = math.floor(min + ((max - min) * pos))
+fill.Size = UDim2.new(pos, 0, 1, 0)
+label.Text = txt .. " <" .. tostring(val) .. ">"
+if cb then cb(val) end
+end
+​track.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+dragging = true
+updateVal(input)
+end
+end)
+​UIS.InputEnded:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+dragging = false
+end
+end)
+​UIS.InputChanged:Connect(function(input)
+if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+updateVal(input)
+end
+end)
+​self.UpdateSize()
+return frame
+end
+​-- STREAMING_CHUNK:Creating UI Dropdown...
+-- --- 7. 下拉選單 (:CreateDropdown) ---
+function UIModule:CreateDropdown(txt, options, default, cb)
+options = options or {}
+local selected = default or (options[1] or "None")
+local isOpen = false
+​local dropdownFrame = Instance.new("Frame")
+dropdownFrame.Size = UDim2.new(0.92, 0, 0, 32)
+dropdownFrame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+dropdownFrame.ClipsDescendants = true
+dropdownFrame.Parent = self.Content
+​local c = Instance.new("UICorner")
+c.CornerRadius = UDim.new(0, 4)
+c.Parent = dropdownFrame
+​local mainStroke = Instance.new("UIStroke")
+mainStroke.Thickness = 1
+mainStroke.Color = Color3.fromRGB(150, 150, 150)
+mainStroke.Parent = dropdownFrame
+​local mainBtn = Instance.new("TextButton")
+mainBtn.Size = UDim2.new(1, -28, 0, 32)
+mainBtn.Position = UDim2.new(0, 6, 0, 0)
+mainBtn.BackgroundTransparency = 1
+mainBtn.Text = txt .. ": " .. tostring(selected)
+mainBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+mainBtn.Font = HACKER_FONT
+mainBtn.TextXAlignment = Enum.TextXAlignment.Left
+mainBtn.Parent = dropdownFrame
+applyTextSettings(mainBtn, 8, 13)
+​local arrow = Instance.new("TextLabel")
+arrow.Size = UDim2.new(0, 24, 0, 32)
+arrow.Position = UDim2.new(1, -24, 0, 0)
+arrow.BackgroundTransparency = 1
+arrow.Text = "v"
+arrow.TextColor3 = Color3.fromRGB(255, 255, 255)
+arrow.Font = HACKER_FONT
+arrow.TextSize = 14
+arrow.Parent = dropdownFrame
+​local container = Instance.new("Frame")
+container.Size = UDim2.new(1, -12, 0, 0)
+container.Position = UDim2.new(0, 6, 0, 32)
+container.BackgroundTransparency = 1
+container.Parent = dropdownFrame
+​local listLayout = Instance.new("UIListLayout")
+listLayout.Padding = UDim.new(0, 3)
+listLayout.Parent = container
+​local function toggleDropdown()
+isOpen = not isOpen
+arrow.Text = isOpen and "^" or "v"
+​if isOpen then
+local totalHeight = listLayout.AbsoluteContentSize.Y + 38
+dropdownFrame.Size = UDim2.new(0.92, 0, 0, totalHeight)
+else
+dropdownFrame.Size = UDim2.new(0.92, 0, 0, 32)
+end
+self.UpdateSize()
+end
+​mainBtn.MouseButton1Click:Connect(toggleDropdown)
+​for _, optionText in ipairs(options) do
+local optBtn = Instance.new("TextButton")
+optBtn.Size = UDim2.new(1, 0, 0, 24)
+optBtn.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+optBtn.Text = "> " .. optionText
+optBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
+optBtn.Font = HACKER_FONT
+optBtn.TextXAlignment = Enum.TextXAlignment.Left
+optBtn.Parent = container
+​local optPad = Instance.new("UIPadding")
+optPad.PaddingLeft = UDim.new(0, 6)
+optPad.Parent = optBtn
+​applyTextSettings(optBtn, 8, 12)
+​local optCorner = Instance.new("UICorner")
+optCorner.CornerRadius = UDim.new(0, 2)
+optCorner.Parent = optBtn
+​optBtn.MouseButton1Click:Connect(function()
+selected = optionText
+mainBtn.Text = txt .. ": " .. tostring(selected)
+toggleDropdown()
+if cb then cb(selected) end
+end)
+end
+​self.UpdateSize()
+return dropdownFrame
+end
+​-- STREAMING_CHUNK:Creating UI Input...
+-- --- 8. 輸入框 (:CreateInput) ---
+function UIModule:CreateInput(txt, placeholder, cb)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0.92, 0, 0, 32)
+frame.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
+frame.Parent = self.Content
+​local c = Instance.new("UICorner")
+c.CornerRadius = UDim.new(0, 4)
+c.Parent = frame
+​local frameStroke = Instance.new("UIStroke")
+frameStroke.Thickness = 1
+frameStroke.Color = Color3.fromRGB(150, 150, 150)
+frameStroke.Parent = frame
+​local label = Instance.new("TextLabel")
+label.Size = UDim2.new(0.45, 0, 1, 0)
+label.Position = UDim2.new(0, 8, 0, 0)
+label.BackgroundTransparency = 1
+label.Text = txt
+label.TextColor3 = Color3.fromRGB(255, 255, 255)
+label.Font = HACKER_FONT
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.Parent = frame
+applyTextSettings(label, 8, 12)
+​local textBox = Instance.new("TextBox")
+textBox.Size = UDim2.new(0.5, -8, 0, 22)
+textBox.Position = UDim2.new(0.5, 0, 0.5, -11)
+textBox.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+textBox.Text = ""
+textBox.PlaceholderText = placeholder or "root@sys:~#"
+textBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 100)
+textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+textBox.Font = HACKER_FONT
+textBox.ClearTextOnFocus = false
+textBox.Parent = frame
+applyTextSettings(textBox, 8, 12)
+​local boxCorner = Instance.new("UICorner")
+boxCorner.CornerRadius = UDim.new(0, 2)
+boxCorner.Parent = textBox
+​local boxStroke = Instance.new("UIStroke")
+boxStroke.Thickness = 1
+boxStroke.Color = Color3.fromRGB(80, 80, 80)
+boxStroke.Parent = textBox
+​textBox.FocusLost:Connect(function(enterPressed)
+if cb then
+cb(textBox.Text, enterPressed)
+end
+end)
+​self.UpdateSize()
+return frame
+end
+​-- --- 9. 銷毀 UI (:Destroy) ---
+function UIModule:Destroy()
+if self.Gui then
+self.Gui:Destroy()
+end
+end
+​return UIModule
