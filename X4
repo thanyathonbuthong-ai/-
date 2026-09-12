@@ -1,0 +1,1064 @@
+--[[
+    AmberCore V9 - WindUI Native
+]]
+
+if getthreadidentity and getthreadidentity() < 8 then
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = tostring(identifyexecutor and identifyexecutor() or "Executor"),
+            Text = "Executor level ต่ำเกินไป (ต้องการ >= 8)",
+            Duration = 12
+        })
+    end)
+end
+
+local GlobalEnv = getgenv and getgenv() or _G
+if GlobalEnv.AmberCoreExecuted then
+    warn("[AmberCore] โหลดอยู่แล้ว")
+    return
+end
+GlobalEnv.AmberCoreExecuted = true
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local Stats = game:GetService("Stats")
+local ContentProvider = game:GetService("ContentProvider")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local CurrentCamera = workspace.CurrentCamera
+
+local isUnloaded = false
+local Wait = task.wait
+
+local function safeRequire(path)
+    local ok, mod = pcall(require, path)
+    if ok then return mod end
+    return nil
+end
+
+local SprintingModule = safeRequire(ReplicatedStorage:FindFirstChild("Systems") and ReplicatedStorage.Systems.Character.Game.Sprinting)
+local WorkspacePlayers = workspace:FindFirstChild("Players")
+local SurvivorsFolder = WorkspacePlayers and WorkspacePlayers:FindFirstChild("Survivors")
+local KillersFolder = WorkspacePlayers and WorkspacePlayers:FindFirstChild("Killers")
+
+-- Load WindUI (single URL)
+local WindUI
+do
+    local ok, err = pcall(function()
+        WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+    end)
+    if not ok or not WindUI then
+        warn("[AmberCore] WindUI load error:", err)
+        pcall(function()
+            game:GetService("StarterGui"):SetCore("SendNotification", {
+                Title = "AmberCore",
+                Text = "โหลด WindUI ไม่ได้: " .. tostring(err),
+                Duration = 15
+            })
+        end)
+        GlobalEnv.AmberCoreExecuted = false
+        return
+    end
+end
+
+print("[AmberCore] WindUI OK")
+
+local Flags = setmetatable({}, {
+    __index = function(t, k)
+        local f = {
+            CurrentValue = false,
+            CurrentOption = {},
+            Color = Color3.new(1,1,1),
+            Set = function(self, v) self.CurrentValue = v end
+        }
+        rawset(t, k, f)
+        return f
+    end
+})
+
+local WindWindow = WindUI:CreateWindow({
+    Title = "AmberCore v9",
+    Icon = "rbxassetid://10723407389",
+    Folder = "AmberCoreV9",
+    Theme = "Dark",
+})
+
+print("[AmberCore] Window created")
+
+pcall(function()
+    WindUI:Notify({ Title = "AmberCore v9", Content = "โหลดสำเร็จ", Duration = 5 })
+end)
+
+local function AddToggle(tab, name, flag, default, callback)
+    default = default or false
+    Flags[flag].CurrentValue = default
+    tab:Toggle({
+        Title = name,
+        Value = default,
+        Callback = function(v)
+            Flags[flag].CurrentValue = v
+            if callback then task.spawn(callback, v) end
+        end
+    })
+end
+
+local function AddButton(tab, name, callback)
+    tab:Button({
+        Title = name,
+        Callback = function()
+            if callback then task.spawn(callback) end
+        end
+    })
+end
+
+local function AddSlider(tab, name, flag, minv, maxv, default, increment, callback)
+    default = default or minv
+    Flags[flag].CurrentValue = default
+    tab:Slider({
+        Title = name,
+        Value = { Min = minv, Max = maxv, Default = default },
+        Step = increment or 1,
+        Callback = function(v)
+            Flags[flag].CurrentValue = v
+            if callback then task.spawn(callback, v) end
+        end
+    })
+end
+
+local function AddDropdown(tab, name, flag, options, default, multi, callback)
+    default = default or {}
+    Flags[flag].CurrentOption = default
+    tab:Dropdown({
+        Title = name,
+        Values = options or {},
+        Value = multi and default or (default[1] or (options and options[1])),
+        Multi = multi == true,
+        Callback = function(v)
+            local val = type(v) == "table" and v or {tostring(v)}
+            Flags[flag].CurrentOption = val
+            if callback then task.spawn(callback, val) end
+        end
+    })
+end
+
+local function AddSection(tab, title)
+    pcall(function() tab:Section({ Title = title }) end)
+end
+
+local function AddColor(tab, name, flag, color)
+    color = color or Color3.new(1,1,1)
+    Flags[flag].Color = color
+    pcall(function()
+        tab:Colorpicker({
+            Title = name,
+            Default = color,
+            Callback = function(c) Flags[flag].Color = c end
+        })
+    end)
+end
+
+local function AddInput(tab, name, flag, default, placeholder, callback)
+    default = default or ""
+    Flags[flag].CurrentValue = default
+    tab:Input({
+        Title = name,
+        Value = tostring(default),
+        Placeholder = placeholder or "",
+        Callback = function(txt)
+            Flags[flag].CurrentValue = txt
+            if callback then task.spawn(callback, txt) end
+        end
+    })
+end
+
+local Window = { Flags = Flags }
+
+-- Generators
+local GeneratorsTab = WindWindow:Tab({ Title = "เจเนอเรเตอร์", Icon = "battery-charging" })
+AddSection(GeneratorsTab, "เจเนอเรเตอร์")
+AddToggle(GeneratorsTab, "ฟาร์มเจเนอเรเตอร์อัตโนมัติ", "AutoGeneratorFarm", false)
+AddToggle(GeneratorsTab, "ทำเจเนอเรเตอร์อัตโนมัติ", "AutoCompleteGenerators", false)
+AddToggle(GeneratorsTab, "ตัวช่วยเจเนอเรเตอร์", "GeneratorHelper", false)
+AddToggle(GeneratorsTab, "เข้าเจเนอเรเตอร์ทันที", "InstantlyEnterGenerator", false)
+AddButton(GeneratorsTab, "ทำเจเนอเรเตอร์ปัจจุบันให้เสร็จ", function() end)
+AddButton(GeneratorsTab, "ทำเจเนอเรเตอร์ทั้งหมดให้เสร็จ", function() end)
+AddSection(GeneratorsTab, "ตั้งค่า")
+AddSlider(GeneratorsTab, "ความเร็วปริศนา", "GeneratorPuzzleDelay", 0.02, 1, 0.08, 0.01)
+AddToggle(GeneratorsTab, "ใช้ความล่าช้าปกติเมื่อมีผู้เล่นใกล้ๆ", "LegitPuzzles", false)
+AddSlider(GeneratorsTab, "ความเร็วปริศนา (ปกติ)", "GeneratorLegitPuzzleDelay", 0.1, 2, 0.08, 0.01)
+
+-- ESP
+local EspTab = WindWindow:Tab({ Title = "ESP", Icon = "eye" })
+AddSection(EspTab, "เปิด/ปิด ESP")
+AddToggle(EspTab, "ESP เจเนอเรเตอร์", "GeneratorEsp", false)
+AddToggle(EspTab, "ESP ฆาตกร", "KillerEsp", false)
+AddToggle(EspTab, "ESP ผู้รอดชีวิต", "SurvivorEsp", false)
+AddToggle(EspTab, "ESP ไอเทม", "ItemEsp", false)
+AddToggle(EspTab, "ESP ซอมบี้/มินเนี่ยน", "EntityEsp", false)
+AddToggle(EspTab, "ESP แทฟ", "TaphEsp", false)
+AddToggle(EspTab, "ESP บิลเดอร์แมน", "BuildermanEsp", false)
+AddToggle(EspTab, "ESP จอห์น โด", "JohnDoeEsp", false)
+AddToggle(EspTab, "ESP วีโรนิกา", "VeeronicaEsp", false)
+AddToggle(EspTab, "ESP อาซัวร์", "AzureEsp", false)
+AddSection(EspTab, "สี ESP")
+AddColor(EspTab, "สีเจเนอเรเตอร์", "GeneratorEspColor", Color3.fromRGB(221,51,255))
+AddColor(EspTab, "สีฆาตกร", "KillerEspColor", Color3.fromRGB(255,0,0))
+AddColor(EspTab, "สีผู้รอดชีวิต", "SurvivorEspColor", Color3.fromRGB(0,0,255))
+AddColor(EspTab, "สีไอเทม", "ItemEspColor", Color3.fromRGB(0,255,255))
+AddColor(EspTab, "สีซอมบี้/มินเนี่ยน", "EntityEspColor", Color3.fromRGB(255,159,0))
+AddColor(EspTab, "สีแทฟ", "TaphEspColor", Color3.fromRGB(75,255,145))
+AddColor(EspTab, "สีบิลเดอร์แมน", "BuildermanEspColor", Color3.fromRGB(157,255,0))
+AddColor(EspTab, "สีจอห์น โด", "JohnDoeEspColor", Color3.fromRGB(0,0,0))
+AddColor(EspTab, "สีวีโรนิกา", "VeeronicaEspColor", Color3.fromRGB(255,0,242))
+AddColor(EspTab, "สีอาซัวร์", "AzureEspColor", Color3.fromRGB(255,255,255))
+
+-- Stamina
+local StaminaTab = WindWindow:Tab({ Title = "พลังวิ่ง", Icon = "footprints" })
+AddSection(StaminaTab, "พลังวิ่ง")
+AddToggle(StaminaTab, "พลังวิ่งไม่จำกัด", "UnlimitedRunning", false, function(v)
+    if not SprintingModule then return end
+    task.spawn(function()
+        while Flags.UnlimitedRunning.CurrentValue and not isUnloaded do
+            pcall(function()
+                if SprintingModule.Stamina and SprintingModule.MaxStamina and SprintingModule.Stamina < SprintingModule.MaxStamina then
+                    SprintingModule.Stamina = SprintingModule.MaxStamina
+                    if SprintingModule.__staminaChangedEvent then SprintingModule.__staminaChangedEvent:Fire() end
+                end
+            end)
+            Wait()
+        end
+    end)
+end)
+AddInput(StaminaTab, "พลังวิ่งสูงสุด", "StaminaOptions_MaxStamina", "100", "ตัวเลข")
+AddInput(StaminaTab, "อัตราการใช้พลังวิ่ง", "StaminaOptions_StaminaLoss", "1", "ตัวเลข")
+AddInput(StaminaTab, "อัตราการฟื้นพลังวิ่ง", "StaminaOptions_StaminaGain", "1", "ตัวเลข")
+
+-- Aimbot
+local AimbotTab = WindWindow:Tab({ Title = "เอ็มบอท", Icon = "crosshair" })
+AddSection(AimbotTab, "Silent Aim")
+AddToggle(AimbotTab, "เปิด Silent Aim", "SilentAimToggle", false)
+AddDropdown(AimbotTab, "สกิล Silent Aim", "SilentAimValues", {"Plasma beam - Dusekkar","Void Star - Noli","Corrupt Nature - Coolkid"}, {}, true)
+AddToggle(AimbotTab, "Dusekkar เล็งผู้รอดชีวิต", "DusekkarSurvivor", false)
+AddSection(AimbotTab, "Aimbot")
+AddToggle(AimbotTab, "เปิด Aimbot", "AimbotToggle", false)
+AddDropdown(AimbotTab, "สกิล Aimbot", "AimbotValues", {"Entanglement - 1x1x1x1","Mass Infection - 1x1x1x1","Throw Pizza - Elliot","Blood Hook - Nosferatu","One Shot - Chance","Corrupt Energy - John Doe","Enstrangle - Azure"}, {}, true)
+AddToggle(AimbotTab, "ช่วยเหลือ M1", "Mouse1Aimbot", false)
+
+-- Hitbox
+local HitboxTab = WindWindow:Tab({ Title = "ฮิตบ็อกซ์", Icon = "sword" })
+AddSection(HitboxTab, "ขยายฮิตบ็อกซ์")
+AddToggle(HitboxTab, "เปิดการขยายฮิตบ็อกซ์", "HitboxExpander", false)
+AddSlider(HitboxTab, "ระยะ", "HitboxExpanderRange", 30, 200, 60, 1)
+AddSection(HitboxTab, "แสดงฮิตบ็อกซ์")
+AddToggle(HitboxTab, "เปิดการปรับแต่งการแสดงผล", "HitboxModifications", false)
+AddColor(HitboxTab, "สีฮิตบ็อกซ์", "HitboxColor", Color3.new(1,0.25,0.25))
+AddColor(HitboxTab, "สีฮิตบ็อกซ์ (เมื่อโดน)", "HitboxHitColor", Color3.new(0.5,1,0.5))
+AddSlider(HitboxTab, "ความโปร่งใสฮิตบ็อกซ์", "HitboxTransparency", 0, 1, 1, 0.02)
+AddSlider(HitboxTab, "ความโปร่งใสฮิตบ็อกซ์ (เมื่อโดน)", "HitboxHitTransparency", 0, 1, 1, 0.02)
+
+-- Convenience
+local ConvenienceTab = WindWindow:Tab({ Title = "ความสะดวก", Icon = "leaf" })
+AddSection(ConvenienceTab, "ฟีเจอร์สะดวก")
+AddToggle(ConvenienceTab, "ปิดความเร็วทิศทาง", "DisableDirectionalSpeed", false)
+AddToggle(ConvenienceTab, "ปิดการเคลื่อนที่ทิศทาง", "DisableDirectionalMovement", false)
+AddToggle(ConvenienceTab, "ป้องกันการทำลายโล่ Dusekkar", "ProtectionBreak", false)
+AddToggle(ConvenienceTab, "เพิ่มความเร็ว", "SmallSpeedBoost", false, function(v)
+    if not v then return end
+    task.spawn(function()
+        while Flags.SmallSpeedBoost.CurrentValue and not isUnloaded do
+            pcall(function()
+                local char = LocalPlayer.Character
+                local root = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChild("Humanoid")
+                if hum and root and root.Velocity.Magnitude > 1 then
+                    char:TranslateBy(hum.MoveDirection * 7 * RunService.RenderStepped:Wait())
+                end
+            end)
+            Wait()
+        end
+    end)
+end)
+AddToggle(ConvenienceTab, "กลับล็อบบี้้อัตโนมัติ", "AutoLobby", false)
+AddToggle(ConvenienceTab, "แสดงแถบด้านข้างเสมอ", "SidebarVisibility", false)
+AddToggle(ConvenienceTab, "แสดงแชทเสมอ", "AlwaysShowChat", false)
+AddToggle(ConvenienceTab, "ปิดอาการบ้าจาก AFK", "DisableAFKTaunting", false)
+AddToggle(ConvenienceTab, "พยายามปลดอาวุธไม่จำกัด", "InfiniteDisarmAttempts", false)
+AddSection(ConvenienceTab, "สกิล")
+AddToggle(ConvenienceTab, "Noclip ขณะ Demonic Pursuit", "DemonicPursuitNoclip", false)
+AddToggle(ConvenienceTab, "ป้องกันแครชจาก Demonic Pursuit", "DemonicPursuitAntiCrash", false)
+AddToggle(ConvenienceTab, "Noclip ขณะ Void Rush", "VoidRushNoclip", false)
+AddToggle(ConvenienceTab, "ป้องกันแครชจาก Void Rush", "VoidRushAntiCrash", false)
+
+-- Auto Block
+local AutoBlockTab = WindWindow:Tab({ Title = "ออโต้บล็อก", Icon = "shield" })
+AddSection(AutoBlockTab, "ออโต้บล็อก")
+AddToggle(AutoBlockTab, "ออโต้บล็อก", "AutoBlockToggle", false)
+AddToggle(AutoBlockTab, "โคลน 007n7 อัตโนมัติ", "AutoCloneToggle", false)
+AddToggle(AutoBlockTab, "Raging Pace อัตโนมัติ", "AutoParryToggle", false)
+AddSection(AutoBlockTab, "ตั้งค่า")
+AddToggle(AutoBlockTab, "ต่อยอัตโนมัติ", "AutoBlockPunch", true)
+AddToggle(AutoBlockTab, "เทคนิคดึงฮิตบ็อกซ์", "HitboxDragTech", true)
+AddSlider(AutoBlockTab, "ระยะตรวจจับ Raging Pace", "RagingPaceRange", 4, 12, 10, 1)
+AddToggle(AutoBlockTab, "ตรวจสอบทิศทาง Raging Pace", "RagingPaceFaceCheck", true)
+AddSlider(AutoBlockTab, "หน่วงเวลาก่อนบล็อก (ms)", "AutoBlockMS", 0, 100, 0, 1)
+AddSection(AutoBlockTab, "ตัวแสดงผล")
+AddToggle(AutoBlockTab, "แสดงตัวแสดงผล", "AutoBlockVisualizer", true)
+AddSlider(AutoBlockTab, "ขนาดด้านซ้าย", "VisualizerLeft", 0, 9, 5, 1)
+AddSlider(AutoBlockTab, "ขนาดด้านขวา", "VisualizerRight", 0, 9, 5, 1)
+AddSlider(AutoBlockTab, "ขนาดด้านหน้า", "VisualizerFront", 0, 18, 9, 1)
+AddSlider(AutoBlockTab, "ขนาดด้านหลัง", "VisualizerBack", 0, 11, 5, 1)
+AddSlider(AutoBlockTab, "ขนาดด้านหน้าเพิ่มเมื่อเดิน", "VisualizerFrontPlus", 0, 9, 6, 1)
+
+-- Player
+local PlayerTab = WindWindow:Tab({ Title = "ผู้เล่น", Icon = "user" })
+AddSection(PlayerTab, "ตั้งค่าผู้เล่น")
+AddToggle(PlayerTab, "ลบป๊อปอัปอัตโนมัติ", "AutoClearPopups", false)
+AddToggle(PlayerTab, "หนี Nosferatu อัตโนมัติ", "NosferatuMinigame", false)
+AddToggle(PlayerTab, "หยุดวิ่งอัตโนมัติ", "AutoUnsprint", false)
+AddToggle(PlayerTab, "เปิดวิ่งเสมอ", "AutoSprint", false)
+AddToggle(PlayerTab, "ไม่มีแอนิเมชันวิ่ง", "NoSprintTween", false)
+AddToggle(PlayerTab, "ไม่ชะลอความเร็ว", "NoSlowdown", false)
+AddToggle(PlayerTab, "ไม่ชะลอจากสกิล", "NoAbilitySlowdown", false)
+AddSection(PlayerTab, "สกิลผู้เล่น")
+AddToggle(PlayerTab, "Veeronica ทำท่าอัตโนมัติ", "AutoTrick", false)
+AddToggle(PlayerTab, "ควบคุม Veeronica", "SkateTurningControl", false)
+AddToggle(PlayerTab, "Nosferatu ดึงอัตโนมัติ", "AutoNosferatuReel", false)
+AddToggle(PlayerTab, "โยนเหรียญอัตโนมัติ", "AutoCoinFlip", false)
+AddSlider(PlayerTab, "จำนวนชาร์จสูงสุด", "MaxCharges", 1, 3, 1, 1)
+AddToggle(PlayerTab, "ใช้ 404 Error อัตโนมัติ", "AutoUse404Error", false)
+AddToggle(PlayerTab, "ปลดอาวุธมินิเกมอัตโนมัติ", "AutoDisarmMinigame", false)
+AddToggle(PlayerTab, "TP มีดสั้น", "TPDagger", false)
+AddToggle(PlayerTab, "TP ฟัน", "TPSlash", false)
+AddToggle(PlayerTab, "TP ยิงครั้งเดียว", "TPOneShot", false)
+AddToggle(PlayerTab, "ใช้ไก่ทอดอัตโนมัติ", "AutoChicken", false)
+AddSlider(PlayerTab, "ขีดจำกัดเลือด (ไก่ทอด)", "AutoChickenHealth", 1, 99, 40, 1)
+AddToggle(PlayerTab, "ใช้ไก่เมื่อห่างจากฆาตกร", "AutoChickenFar", false)
+AddSection(PlayerTab, "ล่องหน / แทงหลัง / M1")
+AddToggle(PlayerTab, "ล่องหน", "PartialInvisibility", false)
+AddToggle(PlayerTab, "ป้องกันการโดนตี", "AntiHit", false)
+AddToggle(PlayerTab, "ออโต้แทงหลัง", "AutoBackstab", false)
+AddToggle(PlayerTab, "เปิดล่องหนหลังแทง", "BackstabInvis", false)
+AddToggle(PlayerTab, "ออโต้ฟัน/M1", "AutoUseM1", false)
+AddToggle(PlayerTab, "ตรวจสอบทิศทาง M1", "AutoM1FaceCheck", true)
+AddSlider(PlayerTab, "รัศมี M1", "AutoM1Radius", 6, 15, 10, 1)
+
+-- Map
+local MapTab = WindWindow:Tab({ Title = "แผนที่", Icon = "map" })
+AddSection(MapTab, "แผนที่")
+AddToggle(MapTab, "Noclip หนาม", "SpikeNoclip", false)
+AddSection(MapTab, "ไอเทม")
+AddToggle(MapTab, "เก็บไอเทมทั้งหมดอัตโนมัติ", "AutoRomania", false)
+AddToggle(MapTab, "เก็บไอเทมใกล้ๆอัตโนมัติ", "AutoPickCloseItems", false)
+AddSection(MapTab, "ฆาตกร / ผู้รอดชีวิต")
+AddToggle(MapTab, "ฟาร์มผู้รอดชีวิต", "AutoFarmSurvivors", false)
+AddToggle(MapTab, "ทะลุกำแพงฆาตกร", "BypassKillerWalls", false)
+
+-- Antis
+local AntisTab = WindWindow:Tab({ Title = "ป้องกันสถานะ", Icon = "shield-check" })
+AddSection(AntisTab, "Anti Effects")
+AddToggle(AntisTab, "ป้องกันชะลอ", "AntiSlowness", false)
+AddToggle(AntisTab, "ป้องกันซับสเปซ", "AntiSubspace", false)
+AddToggle(AntisTab, "ป้องกันตาบอด", "AntiBlindness", false)
+AddToggle(AntisTab, "ป้องกันกลิตช์", "AntiGlitched", false)
+AddToggle(AntisTab, "ป้องกันชะลอ/FOV สเลทสกิน", "AntiSlateskin", false)
+AddToggle(AntisTab, "ป้องกันคลื่นไส้", "AntiNausea", false)
+AddToggle(AntisTab, "ป้องกันสตั้น", "AntiStun", false)
+AddToggle(AntisTab, "ป้องกันภาพหลอน", "AntiHallu", false)
+AddToggle(AntisTab, "ป้องกันชะลอตอนตก", "AntiSlowOnLanding", false)
+
+-- Misc
+local MiscTab = WindWindow:Tab({ Title = "อื่นๆ", Icon = "settings" })
+AddSection(MiscTab, "ระบบ")
+AddToggle(MiscTab, "สว่างเต็มที่", "Fullbright", false, function(v)
+    if not v then return end
+    task.spawn(function()
+        while Flags.Fullbright.CurrentValue and not isUnloaded do
+            pcall(function()
+                Lighting.Brightness = 2
+                Lighting.ClockTime = 14
+                Lighting.FogEnd = 100000
+                Lighting.GlobalShadows = false
+                Lighting.OutdoorAmbient = Color3.fromRGB(128,128,128)
+            end)
+            task.wait(3)
+        end
+    end)
+end)
+AddToggle(MiscTab, "ปิดการแจ้งเตือนอัปเดต", "DisableGitHubNotifications", false)
+AddButton(MiscTab, "ปิดสคริปต์", function()
+    isUnloaded = true
+    GlobalEnv.AmberCoreExecuted = false
+    pcall(function() WindWindow:Destroy() end)
+    pcall(function() WindUI:Notify({ Title = "AmberCore", Content = "ปิดแล้ว", Duration = 3 }) end)
+end)
+
+print("[AmberCore] All tabs created - Ready")
+
+pcall(function()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "AmberCore v9",
+        Text = "พร้อมใช้งาน",
+        Duration = 5
+    })
+end)
+
+-- ============================================================
+-- GAME LOGIC (functional)
+-- ============================================================
+
+-- Alias so logic can use Window.Flags
+Window.Flags = Flags
+
+local VirtualInputManager = game:GetService("VirtualInputManager")
+
+-- Safe module load
+local function tryRequire(path)
+    local ok, res = pcall(require, path)
+    return ok and res or nil
+end
+
+local FlowGameModule = tryRequire(ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules.Minigames and ReplicatedStorage.Modules.Minigames.FlowGameManager and ReplicatedStorage.Modules.Minigames.FlowGameManager.FlowGame)
+local GetMousePosMod = tryRequire(ReplicatedStorage:FindFirstChild("Systems") and ReplicatedStorage.Systems.Player and ReplicatedStorage.Systems.Player.Miscellaneous and ReplicatedStorage.Systems.Player.Miscellaneous.GetPlayerMousePosition)
+local GetMousePos = GetMousePosMod and GetMousePosMod.GetMousePos
+local DirectionalSpeed = tryRequire(ReplicatedStorage:FindFirstChild("Systems") and ReplicatedStorage.Systems.Character and ReplicatedStorage.Systems.Character.QualityOfLife and ReplicatedStorage.Systems.Character.QualityOfLife.DirectionalSpeed)
+local CharacterReplication = tryRequire(ReplicatedStorage:FindFirstChild("Systems") and ReplicatedStorage.Systems.Player and ReplicatedStorage.Systems.Player.Game and ReplicatedStorage.Systems.Player.Game.CharacterReplication)
+local NetworkFolder = ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules:FindFirstChild("Network") and ReplicatedStorage.Modules.Network:FindFirstChild("Network")
+local Network = NetworkFolder and tryRequire(NetworkFolder)
+
+local SlownessEffect = tryRequire(ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules.Schematics and ReplicatedStorage.Modules.Schematics.StatusEffects and ReplicatedStorage.Modules.Schematics.StatusEffects.Slowness)
+local SubspacedEffect = tryRequire(ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules.Schematics and ReplicatedStorage.Modules.Schematics.StatusEffects and ReplicatedStorage.Modules.Schematics.StatusEffects.SurvivorExclusive and ReplicatedStorage.Modules.Schematics.StatusEffects.SurvivorExclusive.Subspaced)
+local BlindnessEffect = tryRequire(ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules.Schematics and ReplicatedStorage.Modules.Schematics.StatusEffects and ReplicatedStorage.Modules.Schematics.StatusEffects.Blindness)
+local GlitchedEffect = tryRequire(ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules.Schematics and ReplicatedStorage.Modules.Schematics.StatusEffects and ReplicatedStorage.Modules.Schematics.StatusEffects.KillerExclusive and ReplicatedStorage.Modules.Schematics.StatusEffects.KillerExclusive.Glitched)
+local SlateskinEffect = tryRequire(ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules.Schematics and ReplicatedStorage.Modules.Schematics.StatusEffects and ReplicatedStorage.Modules.Schematics.StatusEffects.Slateskin)
+local NauseaEffect = tryRequire(ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules.Schematics and ReplicatedStorage.Modules.Schematics.StatusEffects and ReplicatedStorage.Modules.Schematics.StatusEffects.Nausea)
+local StunnedEffect = tryRequire(ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules.Schematics and ReplicatedStorage.Modules.Schematics.StatusEffects and ReplicatedStorage.Modules.Schematics.StatusEffects.Stunned)
+
+local TemporaryUI = PlayerGui:FindFirstChild("TemporaryUI")
+
+local GameData = {
+    GameState = 1,
+    RoundStart = tick(),
+    RoundGenerators = {},
+    Killers = {},
+    Survivors = {},
+    Items = {},
+    TaphDebris = {},
+    BuildermanDebris = {},
+    DoeDebris = {},
+    VeeDebris = {},
+    AzureDebris = {},
+    Spikes = {},
+    EspAppliedToGenerators = {},
+    EspAppliedToItems = {},
+    EspAppliedToTaphDebris = {},
+    EspAppliedToBuildermanDebris = {},
+    EspAppliedToDoeDebris = {},
+    EspAppliedToVeeDebris = {},
+    EspAppliedToAzureDebris = {},
+    CurrentPuzzle = nil,
+}
+
+local function Notify(title, content, duration)
+    pcall(function()
+        WindUI:Notify({ Title = title or "AmberCore", Content = content or "", Duration = duration or 4 })
+    end)
+end
+
+-- ---------- Helpers ----------
+local function GetClosestKiller(maxDist)
+    maxDist = maxDist or 5000
+    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    local best, bestD = nil, maxDist
+    for _, char in ipairs(GameData.Killers) do
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChild("Humanoid")
+        if hrp and hum and hum.Health > 0 then
+            local d = (hrp.Position - root.Position).Magnitude
+            if d < bestD then bestD, best = d, char end
+        end
+    end
+    return best
+end
+
+local function GetClosestSurvivor(maxDist)
+    maxDist = maxDist or 5000
+    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not root then return nil end
+    local best, bestD = nil, maxDist
+    for _, char in ipairs(GameData.Survivors) do
+        if char == LocalPlayer.Character then continue end
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        local hum = char:FindFirstChild("Humanoid")
+        if hrp and hum and hum.Health > 0 then
+            local d = (hrp.Position - root.Position).Magnitude
+            if d < bestD then bestD, best = d, char end
+        end
+    end
+    return best
+end
+
+local function IsKiller()
+    local char = LocalPlayer.Character
+    return char and KillersFolder and char.Parent == KillersFolder
+end
+
+local function HasAbility(name)
+    local ui = PlayerGui:FindFirstChild("MainUI")
+    return ui and ui:FindFirstChild("AbilityContainer") and ui.AbilityContainer:FindFirstChild(name)
+end
+
+local function HasAbilityReady(name)
+    local ab = HasAbility(name)
+    return ab and ab:FindFirstChild("CooldownTime") and ab.CooldownTime.Text == ""
+end
+
+local function FireAbility(name)
+    if Network then
+        pcall(function()
+            Network:FireServerConnection("UseActorAbility", "REMOTE_EVENT", name)
+        end)
+    end
+end
+
+local function stareFunc(target)
+    local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    local targetRoot = target and target:FindFirstChild("HumanoidRootPart")
+    if not myRoot or not targetRoot then return end
+    local pos = myRoot.Position
+    myRoot.CFrame = CFrame.new(pos, Vector3.new(targetRoot.Position.X, pos.Y, targetRoot.Position.Z))
+end
+
+-- ---------- Scanner ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            local newKillers, newSurvivors, newGens, newItems = {}, {}, {}, {}
+            local newTaph, newBuilder, newDoe, newVee, newAzure, newSpikes = {}, {}, {}, {}, {}, {}
+
+            if KillersFolder then
+                for _, char in ipairs(KillersFolder:GetChildren()) do
+                    table.insert(newKillers, char)
+                end
+            end
+            if SurvivorsFolder then
+                for _, char in ipairs(SurvivorsFolder:GetChildren()) do
+                    table.insert(newSurvivors, char)
+                end
+            end
+
+            local ingame = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Ingame")
+            if ingame then
+                for _, obj in ipairs(ingame:GetDescendants()) do
+                    if obj.Name == "Generator" then
+                        table.insert(newGens, obj)
+                    elseif obj:IsA("Tool") then
+                        table.insert(newItems, obj)
+                    elseif obj.Name:find("TaphTripwire") or obj.Name == "SubspaceTripmine" then
+                        table.insert(newTaph, obj)
+                    elseif obj.Name == "BuildermanSentry" or obj.Name == "BuildermanDispenser" then
+                        table.insert(newBuilder, obj)
+                    elseif obj.Name == "SpikeCollision" then
+                        table.insert(newSpikes, obj)
+                    elseif obj.Name == "VineModel" or obj.Name == "GroundBulbModel" then
+                        table.insert(newAzure, obj)
+                    end
+                end
+                for _, obj in ipairs(workspace:GetChildren()) do
+                    if obj:IsA("Tool") then table.insert(newItems, obj) end
+                end
+            end
+
+            GameData.Killers = newKillers
+            GameData.Survivors = newSurvivors
+            GameData.RoundGenerators = newGens
+            GameData.Items = newItems
+            GameData.TaphDebris = newTaph
+            GameData.BuildermanDebris = newBuilder
+            GameData.Spikes = newSpikes
+            GameData.AzureDebris = newAzure
+        end)
+        Wait(0.35)
+    end
+end)
+
+-- ---------- ESP (Highlight) ----------
+local function AddHighlight(inst, colorFlag)
+    if not inst or inst:FindFirstChildOfClass("Highlight") then return end
+    local hl = Instance.new("Highlight")
+    hl.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    hl.Parent = inst
+    task.spawn(function()
+        while hl.Parent and not isUnloaded do
+            local col = Flags[colorFlag] and Flags[colorFlag].Color or Color3.new(1,1,1)
+            hl.FillColor = col
+            hl.OutlineColor = col
+            hl.FillTransparency = 0.5
+            RunService.Heartbeat:Wait()
+        end
+    end)
+end
+
+local function ClearHighlight(inst)
+    if not inst then return end
+    local hl = inst:FindFirstChildOfClass("Highlight")
+    if hl then hl:Destroy() end
+end
+
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            -- Generators
+            for _, gen in ipairs(GameData.RoundGenerators) do
+                if Flags.GeneratorEsp.CurrentValue then
+                    if not GameData.EspAppliedToGenerators[gen] then
+                        GameData.EspAppliedToGenerators[gen] = true
+                        AddHighlight(gen, "GeneratorEspColor")
+                    end
+                else
+                    ClearHighlight(gen)
+                    GameData.EspAppliedToGenerators[gen] = false
+                end
+            end
+            -- Killers
+            for _, char in ipairs(GameData.Killers) do
+                if Flags.KillerEsp.CurrentValue then
+                    AddHighlight(char, "KillerEspColor")
+                else
+                    ClearHighlight(char)
+                end
+            end
+            -- Survivors
+            for _, char in ipairs(GameData.Survivors) do
+                if char == LocalPlayer.Character then continue end
+                if Flags.SurvivorEsp.CurrentValue then
+                    AddHighlight(char, "SurvivorEspColor")
+                else
+                    ClearHighlight(char)
+                end
+            end
+            -- Items
+            for _, item in ipairs(GameData.Items) do
+                if Flags.ItemEsp.CurrentValue then
+                    if not GameData.EspAppliedToItems[item] then
+                        GameData.EspAppliedToItems[item] = true
+                        AddHighlight(item, "ItemEspColor")
+                    end
+                else
+                    ClearHighlight(item)
+                    GameData.EspAppliedToItems[item] = false
+                end
+            end
+            -- Taph / Builderman / Azure / Spikes debris
+            for _, obj in ipairs(GameData.TaphDebris) do
+                if Flags.TaphEsp.CurrentValue then AddHighlight(obj, "TaphEspColor") else ClearHighlight(obj) end
+            end
+            for _, obj in ipairs(GameData.BuildermanDebris) do
+                if Flags.BuildermanEsp.CurrentValue then AddHighlight(obj, "BuildermanEspColor") else ClearHighlight(obj) end
+            end
+            for _, obj in ipairs(GameData.AzureDebris) do
+                if Flags.AzureEsp.CurrentValue then AddHighlight(obj, "AzureEspColor") else ClearHighlight(obj) end
+            end
+        end)
+        Wait(0.2)
+    end
+end)
+
+-- ---------- Instant generator enter ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if Flags.InstantlyEnterGenerator.CurrentValue then
+                for _, gen in ipairs(GameData.RoundGenerators) do
+                    local main = gen:FindFirstChild("Main")
+                    local prompt = main and main:FindFirstChild("Prompt")
+                    if prompt then prompt.HoldDuration = 0 end
+                end
+            end
+        end)
+        Wait(0.15)
+    end
+end)
+
+-- ---------- Auto generator puzzle (hook FlowGame if available) ----------
+if FlowGameModule and typeof(FlowGameModule) == "table" and FlowGameModule.new then
+    pcall(function()
+        local oldNew = FlowGameModule.new
+        FlowGameModule.new = newcclosure(function(...)
+            local puzzle = oldNew(...)
+            GameData.CurrentPuzzle = puzzle
+            if Flags.AutoCompleteGenerators.CurrentValue and puzzle then
+                task.spawn(function()
+                    pcall(function()
+                        if puzzle.Solution then
+                            for i = 1, #puzzle.Solution do
+                                if not Flags.AutoCompleteGenerators.CurrentValue then break end
+                                local sol = puzzle.Solution[i]
+                                if sol then
+                                    for _, cell in ipairs(sol) do
+                                        if puzzle.paths and puzzle.paths[i] then
+                                            table.insert(puzzle.paths[i], {row=cell.row, col=cell.col})
+                                        end
+                                        if puzzle.updateGui then puzzle:updateGui() end
+                                        task.wait(Flags.GeneratorPuzzleDelay.CurrentValue or 0.08)
+                                    end
+                                    if puzzle.checkForWin then puzzle:checkForWin() end
+                                end
+                            end
+                        end
+                        Notify("Generator", "ทำปริศนาเสร็จ", 2)
+                    end)
+                end)
+            end
+            return puzzle
+        end)
+    end)
+end
+
+-- ---------- Auto Sprint / Unsprint ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not SprintingModule then return end
+            if Flags.AutoUnsprint.CurrentValue and SprintingModule.Stamina and SprintingModule.Stamina < 3 then
+                SprintingModule.IsSprinting = false
+                if SprintingModule.__sprintedEvent then SprintingModule.__sprintedEvent:Fire(false) end
+            elseif Flags.AutoSprint.CurrentValue then
+                if not (Flags.AutoUnsprint.CurrentValue and SprintingModule.Stamina ~= 100) then
+                    if not SprintingModule.IsSprinting then
+                        SprintingModule.IsSprinting = true
+                        if SprintingModule.__sprintedEvent then SprintingModule.__sprintedEvent:Fire(true) end
+                    end
+                end
+            end
+        end)
+        Wait(0.1)
+    end
+end)
+
+-- ---------- No Slowdown ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not (Flags.NoSlowdown.CurrentValue or Flags.NoAbilitySlowdown.CurrentValue) then return end
+            local char = LocalPlayer.Character
+            local mults = char and char:FindFirstChild("SpeedMultipliers")
+            if not mults then return end
+            for _, m in ipairs(mults:GetChildren()) do
+                if m.Value < 1 then
+                    local isAbility = HasAbility(m.Name)
+                    if Flags.NoSlowdown.CurrentValue and not isAbility then
+                        m.Value = 1
+                    elseif Flags.NoAbilitySlowdown.CurrentValue and isAbility then
+                        m.Value = 1
+                    end
+                end
+            end
+        end)
+        Wait(0.1)
+    end
+end)
+
+-- ---------- Auto M1 ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not Flags.AutoUseM1.CurrentValue then return end
+            local radius = Flags.AutoM1Radius.CurrentValue or 10
+            local target
+            if IsKiller() then
+                target = GetClosestSurvivor(radius)
+            else
+                target = GetClosestKiller(radius)
+            end
+            if target and HasAbilityReady("Slash") then
+                FireAbility("Slash")
+            elseif target and HasAbilityReady("M1") then
+                FireAbility("M1")
+            end
+        end)
+        Wait(0.15)
+    end
+end)
+
+-- ---------- Auto Backstab (Dagger) ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not Flags.AutoBackstab.CurrentValue then return end
+            if not HasAbilityReady("Dagger") then return end
+            local killer = GetClosestKiller(15)
+            if not killer then return end
+            local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local kRoot = killer:FindFirstChild("HumanoidRootPart")
+            if not myRoot or not kRoot then return end
+            -- rough behind check
+            local delta = myRoot.Position - kRoot.Position
+            local back = -kRoot.CFrame.LookVector
+            local proj = delta:Dot(back)
+            if proj > 0 and proj < 8 and (delta - back * proj).Magnitude < 4 then
+                stareFunc(killer)
+                FireAbility("Dagger")
+                if Flags.BackstabInvis.CurrentValue then
+                    Flags.PartialInvisibility.CurrentValue = true
+                end
+            end
+        end)
+        Wait(0.12)
+    end
+end)
+
+-- ---------- Auto Block ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not Flags.AutoBlockToggle.CurrentValue then return end
+            if not HasAbilityReady("Block") then return end
+            local killer = GetClosestKiller(12)
+            if not killer then return end
+            local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local kRoot = killer:FindFirstChild("HumanoidRootPart")
+            if not myRoot or not kRoot then return end
+            if (myRoot.Position - kRoot.Position).Magnitude <= 10 then
+                FireAbility("Block")
+                if Flags.AutoBlockPunch.CurrentValue then
+                    task.wait(0.35)
+                    if HasAbilityReady("Punch") then FireAbility("Punch") end
+                end
+            end
+        end)
+        Wait(0.08)
+    end
+end)
+
+-- ---------- Spike Noclip ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if Flags.SpikeNoclip.CurrentValue then
+                for i = #GameData.Spikes, 1, -1 do
+                    local s = GameData.Spikes[i]
+                    if s then pcall(function() s:Destroy() end) end
+                    table.remove(GameData.Spikes, i)
+                end
+            end
+        end)
+        Wait(0.2)
+    end
+end)
+
+-- ---------- Auto pickup items ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not (Flags.AutoRomania.CurrentValue or Flags.AutoPickCloseItems.CurrentValue) then return end
+            if IsKiller() then return end
+            local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if not root then return end
+            for _, item in ipairs(GameData.Items) do
+                local itemRoot = item:FindFirstChild("ItemRoot") or item:FindFirstChildWhichIsA("BasePart")
+                if not itemRoot then continue end
+                local prompt = itemRoot:FindFirstChildWhichIsA("ProximityPrompt") or (itemRoot:FindFirstChild("ProximityPrompt"))
+                local dist = (itemRoot.Position - root.Position).Magnitude
+                if Flags.AutoRomania.CurrentValue or (Flags.AutoPickCloseItems.CurrentValue and prompt and dist <= (prompt.MaxActivationDistance or 10)) then
+                    if Flags.AutoRomania.CurrentValue then
+                        local saved = root.CFrame
+                        root.CFrame = itemRoot.CFrame
+                        if prompt then pcall(fireproximityprompt, prompt) end
+                        task.wait(0.15)
+                        root.CFrame = saved
+                    elseif prompt then
+                        pcall(fireproximityprompt, prompt)
+                    end
+                end
+            end
+        end)
+        Wait(0.4)
+    end
+end)
+
+-- ---------- Auto Farm Survivors (as killer) ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not Flags.AutoFarmSurvivors.CurrentValue then return end
+            if not IsKiller() then return end
+            local target = GetClosestSurvivor(5000)
+            if not target then return end
+            local myRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local tRoot = target:FindFirstChild("HumanoidRootPart")
+            if myRoot and tRoot then
+                myRoot.CFrame = tRoot.CFrame
+                FireAbility("Slash")
+            end
+        end)
+        Wait(0.2)
+    end
+end)
+
+-- ---------- Hitbox Expander (velocity push toward target while attacking) ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not Flags.HitboxExpander.CurrentValue then return end
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChild("Humanoid")
+            if not root or not hum then return end
+            local attacking = false
+            for _, track in ipairs(hum:GetPlayingAnimationTracks()) do
+                if track.TimePosition / math.max(track.Length, 0.01) < 0.75 then
+                    attacking = true
+                    break
+                end
+            end
+            if not attacking then return end
+            local range = Flags.HitboxExpanderRange.CurrentValue or 60
+            local target = IsKiller() and GetClosestSurvivor(range) or GetClosestKiller(range)
+            if not target then return end
+            local tRoot = target:FindFirstChild("HumanoidRootPart")
+            if not tRoot then return end
+            local ping = 0.05
+            pcall(function() ping = Stats.PerformanceStats.Ping:GetValue() / 1000 end)
+            local predicted = tRoot.Position + tRoot.Velocity * (ping * 1.25)
+            local vel = (predicted - root.Position) / math.max(ping * 2, 0.05)
+            local old = root.Velocity
+            root.Velocity = vel
+            RunService.RenderStepped:Wait()
+            root.Velocity = old
+        end)
+        Wait()
+    end
+end)
+
+-- ---------- Anti effects ----------
+local function HookEffect(mod, flagName, displayName)
+    if not mod or not mod.Applied then return end
+    pcall(function()
+        local old = mod.Applied
+        mod.Applied = newcclosure(function(...)
+            if Flags[flagName] and Flags[flagName].CurrentValue then
+                Notify("Anti " .. displayName, "บล็อกเอฟเฟกต์ " .. displayName, 3)
+                return
+            end
+            return old(...)
+        end)
+    end)
+end
+
+HookEffect(SlownessEffect, "AntiSlowness", "ชะลอ")
+HookEffect(SubspacedEffect, "AntiSubspace", "ซับสเปซ")
+HookEffect(BlindnessEffect, "AntiBlindness", "ตาบอด")
+HookEffect(GlitchedEffect, "AntiGlitched", "กลิตช์")
+HookEffect(SlateskinEffect, "AntiSlateskin", "สเลทสกิน")
+HookEffect(NauseaEffect, "AntiNausea", "คลื่นไส้")
+HookEffect(StunnedEffect, "AntiStun", "สตั้น")
+
+-- ---------- Directional speed disable ----------
+task.spawn(function()
+    local last = false
+    while not isUnloaded do
+        pcall(function()
+            local v = Flags.DisableDirectionalSpeed.CurrentValue
+            if v ~= last and DirectionalSpeed then
+                last = v
+                if v and DirectionalSpeed.Destroy then
+                    DirectionalSpeed:Destroy()
+                elseif (not v) and DirectionalSpeed.Start then
+                    DirectionalSpeed:Start()
+                end
+            end
+        end)
+        Wait(0.5)
+    end
+end)
+
+-- ---------- Disable directional movement attribute ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            local char = LocalPlayer.Character
+            if char and Flags.DisableDirectionalMovement.CurrentValue then
+                char:SetAttribute("DirectionalMovementDisabled", true)
+            elseif char then
+                char:SetAttribute("DirectionalMovementDisabled", false)
+            end
+        end)
+        Wait(0.3)
+    end
+end)
+
+-- ---------- Auto chicken ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not Flags.AutoChicken.CurrentValue then return end
+            if not HasAbilityReady("FriedChicken") then return end
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+            if not hum then return end
+            local limit = Flags.AutoChickenHealth.CurrentValue or 40
+            if hum.Health > limit then return end
+            if Flags.AutoChickenFar.CurrentValue then
+                local killer = GetClosestKiller(5000)
+                local root = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if killer and root and killer:FindFirstChild("HumanoidRootPart") then
+                    if (root.Position - killer.HumanoidRootPart.Position).Magnitude < 100 then return end
+                end
+            end
+            FireAbility("FriedChicken")
+        end)
+        Wait(0.4)
+    end
+end)
+
+-- ---------- Auto CoinFlip / 404 ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if Flags.AutoCoinFlip.CurrentValue and HasAbilityReady("CoinFlip") then
+                FireAbility("CoinFlip")
+            end
+            if Flags.AutoUse404Error.CurrentValue and HasAbilityReady("404Error") then
+                FireAbility("404Error")
+            end
+        end)
+        Wait(0.5)
+    end
+end)
+
+-- ---------- Auto Lobby ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if not Flags.AutoLobby.CurrentValue then return end
+            local endScreen = PlayerGui:FindFirstChild("EndScreen")
+            local ret = endScreen and endScreen:FindFirstChild("Main") and endScreen.Main:FindFirstChild("Return")
+            if ret then
+                pcall(firesignal, ret.MouseButton1Click)
+            end
+        end)
+        Wait(1)
+    end
+end)
+
+-- ---------- Always show chat ----------
+task.spawn(function()
+    while not isUnloaded do
+        pcall(function()
+            if Flags.AlwaysShowChat.CurrentValue then
+                local cfg = game:GetService("TextChatService"):FindFirstChildOfClass("ChatWindowConfiguration")
+                if cfg then cfg.Enabled = true end
+            end
+        end)
+        Wait(1)
+    end
+end)
+
+print("[AmberCore] Game logic loaded - features are active")
+Notify("AmberCore", "ฟีเจอร์พร้อมใช้งาน", 5)
