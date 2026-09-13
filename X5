@@ -1,0 +1,1960 @@
+--[[
+AmberCore / V9
+Client script
+Presentation-only revision: internal names and section headings (Thai Translation).
+]]
+​-- AmberCore | 01 / Startup checks
+​if getthreadidentity() < 8 then
+game:GetService("StarterGui"):SetCore("SendNotification", {
+Title = identifyexecutor();
+Text = "ขออภัย แต่ตัวรันของคุณ (ระดับ " .. getthreadidentity() .. ") ไม่สามารถรันสคริปต์นี้ได้ เนื่องจากประสิทธิภาพไม่เพียงพอ!";
+Duration = 15;
+Button1 = "ฉันจะอัปเกรดตัวรัน";
+})
+end
+​local startupNotifier = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local maintenance = false
+if maintenance then
+return startupNotifier:Notify({
+Title = "AmberCore",
+Content = "AmberCore v9 สคริปต์ที่คุณรันอยู่ขณะนี้ปิดปรับปรุงชั่วคราว เนื่องจากมีการเปลี่ยนแปลงในระบบของเกม หรือมีข้อผิดพลาดร้ายแรงในโค้ด กรุณารอประมาณ 20 นาทีเพื่อทำการแก้ไข",
+Duration = 40
+})
+end
+​function deepcopy(original)
+if type(original) ~= "table" then return original end
+local copy = {}
+for k, v in pairs(original) do
+copy[deepcopy(k)] = deepcopy(v)
+end
+return setmetatable(copy, getmetatable(original))
+end
+​if isfile('AmberCoreconfigs.json') and not isfile("AmberCoreconfigfix.txt") then
+local raw = deepcopy(game:GetService("HttpService"):JSONDecode(readfile('AmberCoreconfigs.json')))
+for _, cfg in pairs(raw) do
+if cfg ~= "[]" then
+for _, entry in pairs(cfg) do
+if entry.CurrentOption then
+local newList = {}
+for optionName, enabled in pairs(entry.CurrentOption) do
+if enabled == true then
+table.insert(newList, optionName)
+end
+end
+entry.CurrentOption = newList
+end
+end
+end
+end
+writefile("AmberCoreconfigs.json", game:GetService("HttpService"):JSONEncode(raw))
+end
+writefile("AmberCoreconfigfix.txt", "")
+​if isfile('AmberCoreconfigs.json') and not isfile("AmberCoreconfigfix2.txt") then
+writefile("AmberCoreconfigs.json", readfile('AmberCoreconfigs.json')
+:gsub('"currentcfgname":{"CurrentOption"', '"currentcfgname":{"CurrentValue"')
+:gsub('"currentcfgname":{"CurrentValue":%[""%]', '"currentcfgname":{"CurrentValue":""')
+)
+end
+writefile("AmberCoreconfigfix2.txt", "")
+​_G.LUNAR_BACKGROUND = "https://github.com/test1237423234-stack/MegaSaken/raw/main/megasakenimage.webp"
+_G.LUNAR_TITLE = nil
+_G.SINGLE_COLUMNS = false
+​-- AmberCore | 02 / Shared environment
+​local GlobalEnv = getgenv()
+local useLegacyUI = isfile("BOOL_AmberCore_OLDUI")
+​if GlobalEnv.executed then
+return GlobalEnv.Fluent:Notify{
+Title = "AmberCore",
+Content = "สคริปต์ถูกโหลดไปแล้ว! หากต้องการโหลดใหม่ ให้กดปุ่มในหมวดเบ็ดเตล็ด (Miscellaneous)",
+Duration = 5
+}
+end
+GlobalEnv.executed = true
+​local hookedFunctions = {}
+GlobalEnv.OldHF = GlobalEnv.OldHF or hookfunction
+hookfunction = newcclosure(function(func, newFunc)
+pcall(function()
+print("[hooks] Replacing", debug.info(func, "s") .. "/" .. tostring(debug.info(func, "n")))
+end)
+table.insert(hookedFunctions, func)
+return GlobalEnv.OldHF(func, newFunc)
+end)
+​GlobalEnv.OldRF = GlobalEnv.OldRF or restorefunction
+restorefunction = newcclosure(function(func)
+pcall(function()
+print("[hooks] Restoring", debug.info(func, "s") .. "/" .. tostring(debug.info(func, "n")))
+end)
+local idx = table.find(hookedFunctions, func)
+if idx then table.remove(hookedFunctions, idx) end
+return GlobalEnv.OldRF(func)
+end)
+​local Renv = getrenv()
+hookfunction(Renv.debug.traceback, newcclosure(function(...)
+return [[ReplicatedStorage.Systems.Character.Game.Sprinting:423: attempt to call a nil value
+Stack Begin
+Script 'LocalScript' Line 925 - function ToggleSprint
+Script 'LocalScript' Line 490
+Stack End]]
+end))
+​local isUnloaded = false
+local ContentProvider = game:GetService('ContentProvider')
+local Lighting = game:GetService('Lighting')
+local RunService = game:GetService('RunService')
+local HttpService = game:GetService('HttpService')
+local Players = game:GetService('Players')
+local ReplicatedStorage = game:GetService('ReplicatedStorage')
+local Stats = game:GetService('Stats')
+local TweenService = game:GetService('TweenService')
+local VirtualInputManager = game:GetService('VirtualInputManager')
+local UserInputService = game:GetService('UserInputService')
+​local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local SprintingModule = require(ReplicatedStorage.Systems.Character.Game.Sprinting)
+local FlowGameModule = require(ReplicatedStorage.Modules.Minigames.FlowGameManager.FlowGame)
+local GetMousePos = require(ReplicatedStorage.Systems.Player.Miscellaneous.GetPlayerMousePosition).GetMousePos
+local DirectionalSpeed = require(ReplicatedStorage.Systems.Character.QualityOfLife.DirectionalSpeed)
+local DusekkarBehavior = require(ReplicatedStorage.Assets.Survivors.Dusekkar.Behavior)
+local SmoothShiftLock = require(ReplicatedStorage.Systems.Player.Game.SmoothShiftLock)
+local SidebarHandler = require(ReplicatedStorage.Systems.Player.UI.SidebarHandler)
+local VeeronicaConfig = require(ReplicatedStorage.Assets.Survivors.Veeronica.Config)
+local CharacterReplication = require(ReplicatedStorage.Systems.Player.Game.CharacterReplication)
+local TabbedOutScare = ReplicatedStorage.Systems.Player.Miscellaneous.TabbedOutScare
+local IconModule = require(ReplicatedStorage.Modules.Utilities.Icon)
+local RagdollModule = require(ReplicatedStorage.Modules.Rendering.Ragdolls)
+local PlayerControls = require(LocalPlayer.PlayerScripts:WaitForChild("PlayerModule")):GetControls()
+​local SlownessEffect = require(ReplicatedStorage.Modules.Schematics.StatusEffects.Slowness)
+local SubspacedEffect = require(ReplicatedStorage.Modules.Schematics.StatusEffects.SurvivorExclusive.Subspaced)
+local BlindnessEffect = require(ReplicatedStorage.Modules.Schematics.StatusEffects.Blindness)
+local GlitchedEffect = require(ReplicatedStorage.Modules.Schematics.StatusEffects.KillerExclusive.Glitched)
+local SlateskinEffect = require(ReplicatedStorage.Modules.Schematics.StatusEffects.Slateskin)
+local NauseaEffect = require(ReplicatedStorage.Modules.Schematics.StatusEffects.Nausea)
+local StunnedEffect = require(ReplicatedStorage.Modules.Schematics.StatusEffects.Stunned)
+​local VeeronicaBehavior = ReplicatedStorage.Assets.Survivors.Veeronica.Behavior
+local AzureConstructQTE = require(ReplicatedStorage.Assets.Killers.Azure.Config.cl_WorkaroundModules.cl_ConstructQTE)
+local JohnDoeConfig = require(ReplicatedStorage.Assets.Killers.JohnDoe.Config)
+local NetworkFolder = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Network"):WaitForChild("Network")
+local Network = require(NetworkFolder)
+​LocalPlayer:WaitForChild("PlayerData"):WaitForChild("Settings")
+local TemporaryUI = LocalPlayer.PlayerGui.TemporaryUI
+local PlayerInfoUI = TemporaryUI:FindFirstChild('PlayerInfo')
+local CurrentCamera = workspace.CurrentCamera
+local WorkspacePlayers = workspace.Players
+local SurvivorsFolder = WorkspacePlayers.Survivors
+local KillersFolder = WorkspacePlayers.Killers
+local SpectatingFolder = WorkspacePlayers.Spectating
+local RealDevice = _G.RealDevice or LocalPlayer:GetAttribute('Device')
+_G.RealDevice = RealDevice
+​local Wait = task.wait
+local ConstantImageMap = {}
+local isVelocityExecutor = identifyexecutor():lower():find('velocity')
+local EspScreenGui = Instance.new('ScreenGui', isVelocityExecutor and game:GetService('CoreGui') or gethui())
+local baseWarn = warn
+JohnDoeConfig.CorruptEnergyWindup = 2
+​local DrawingLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/test1237423234-stack/MegaSaken/refs/heads/main/drawing-lib'))()
+​local function warn(...)
+return baseWarn('[AmberCore]', ...)
+end
+​local bannerUrl = "https://github.com/lunar-repo/pic/raw/main/"
+if not isfile("banner.png") then
+writefile("banner.png", game:HttpGet(bannerUrl .. "banner.png"))
+end
+​local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+​local activeConfigFile = (isfile("AmberCoreautoload.txt") and readfile("AmberCoreautoload.txt")) or ("AmberCore-default-" .. LocalPlayer.Name .. ".json")
+local loadedSettings = {}
+local isMobile = UserInputService.TouchEnabled == true and UserInputService.KeyboardEnabled == false
+​function randomstring(len)
+local result = ""
+local chars = ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"):split("")
+for i = 1, len or 16 do
+result = result .. chars[math.random(1, #chars)]
+end
+return result
+end
+​-- AmberCore | 03 / Interface components
+​local CustomUILibraryFactory = not useLegacyUI and (function()
+if isfile("AmberCoreconfigs.json") then
+loadedSettings = HttpService:JSONDecode(readfile("AmberCoreconfigs.json"))[activeConfigFile] or {}
+else
+writefile("AmberCoreconfigs.json", HttpService:JSONEncode({[activeConfigFile] = {}}))
+end
+​local Library = {}
+​if RunService:IsStudio() then
+LocalPlayer:WaitForChild("PlayerGui"):WaitForChild("debugUi"):Destroy()
+end
+​local Icons = RunService:IsStudio() and require(game:GetService("ReplicatedStorage").Icons) or loadstring(game:HttpGet("https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/refs/heads/main/icons.lua"))()
+​local function getIcon(name)
+if name:find("rbxasset") then
+return { id = name, imageRectSize = Vector2.new(0,0), imageRectOffset = Vector2.new(0,0) }
+end
+name = string.match(string.lower(name), "^%s*(.)%s$")
+local iconData = Icons['48px'][name]
+return {
+id = "rbxassetid://" .. iconData[1],
+imageRectSize = Vector2.new(iconData[2][1], iconData[2][2]),
+imageRectOffset = Vector2.new(iconData[3][1], iconData[3][2]),
+}
+end
+​local function addShadow(scrollingFrame)
+local shadow = Instance.new("Frame")
+shadow.Size = UDim2.new(1,0,0,80)
+shadow.Position = UDim2.new(0,0,1,-80)
+shadow.BackgroundColor3 = Color3.new(0,0,0)
+shadow.ZIndex = scrollingFrame.ZIndex + 1
+shadow.Parent = scrollingFrame.Parent
+Instance.new("UICorner", shadow).CornerRadius = UDim.new(0,5)
+local grad = Instance.new("UIGradient", shadow)
+grad.Rotation = 90
+grad.Transparency = NumberSequence.new{
+NumberSequenceKeypoint.new(0,1),
+NumberSequenceKeypoint.new(1,0.6),
+}
+local function update()
+local atBottom = (scrollingFrame.CanvasPosition.Y + scrollingFrame.AbsoluteWindowSize.Y + 10) >= scrollingFrame.AbsoluteCanvasSize.Y - 1
+TweenService:Create(shadow, TweenInfo.new(0.1, Enum.EasingStyle.Quad), {
+BackgroundTransparency = atBottom and 1 or 0
+}):Play()
+end
+scrollingFrame:GetPropertyChangedSignal("CanvasPosition"):Connect(update)
+return shadow
+end
+​local function createRipple(parent, x, y)
+local ripple = Instance.new("Frame")
+ripple.Name = "Ripple"
+ripple.AnchorPoint = Vector2.new(0.5,0.5)
+ripple.BackgroundColor3 = Color3.fromRGB(255,255,255)
+ripple.BackgroundTransparency = 0.6
+ripple.Position = UDim2.fromOffset(x, y)
+ripple.Size = UDim2.fromOffset(0,0)
+ripple.ZIndex = parent.ZIndex + 1
+local corner = Instance.new("UICorner", ripple)
+corner.CornerRadius = UDim.new(1,0)
+ripple.Parent = parent
+local size = math.sqrt(parent.AbsoluteSize.X^2 + parent.AbsoluteSize.Y^2) * 0.2
+local tween = TweenService:Create(ripple, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+Size = UDim2.fromOffset(size, size),
+BackgroundTransparency = 1,
+})
+tween:Play()
+tween.Completed:Connect(function() ripple:Destroy() end)
+end
+​local SmoothScroll = (function()
+local RS, UIS, CAS = game:GetService("RunService"), game:GetService("UserInputService"), game:GetService("ContextActionService")
+if not RS:IsClient() then error("SmoothScroll สามารถใช้งานได้เฉพาะบน Client เท่านั้น") end
+local container = RunService:IsStudio() and LocalPlayer:WaitForChild("PlayerGui") or CoreGui
+local mouse = LocalPlayer:GetMouse()
+local scrollData = {}
+local scrollGui, isDragging = nil, false
+if not UIS.TouchEnabled then
+scrollGui = Instance.new("ScreenGui", container)
+scrollGui.Name = "SmoothScroll"
+RS.Heartbeat:Connect(function()
+for frame, data in pairs(scrollData) do
+if math.abs(data.Velocity) > 0.05 then
+data.Velocity *= data.Frict
+if data.Axis == "X" then
+frame.CanvasPosition = Vector2.new(frame.CanvasPosition.X + data.Velocity, frame.CanvasPosition.Y)
+if math.abs(data.LastPos - frame.CanvasPosition.X) == 0 then data.Velocity = 0 end
+data.LastPos = frame.CanvasPosition.X
+else
+frame.CanvasPosition = Vector2.new(frame.CanvasPosition.X, frame.CanvasPosition.Y + data.Velocity)
+if math.abs(data.LastPos - frame.CanvasPosition.Y) == 0 then data.Velocity = 0 end
+data.LastPos = frame.CanvasPosition.Y
+end
+end
+end
+end)
+UIS.PointerAction:Connect(function(_, delta, _, _)
+if isDragging then return end
+local objs = container:GetGuiObjectsAtPosition(mouse.X, mouse.Y)
+for , gui in ipairs(objs) do
+local data = scrollData[gui]
+if data and data.Visibility.Visible then
+data.Velocity -= data.Sens * delta.Y * (data.Inverted and -1 or 1)
+break
+end
+end
+end)
+CAS:BindActionAtPriority("SmoothScroll", function(, _, input)
+if isDragging then return Enum.ContextActionResult.Pass end
+local handled = false
+local objs = container:GetGuiObjectsAtPosition(mouse.X, mouse.Y)
+for _, gui in ipairs(objs) do
+local data = scrollData[gui]
+if data and data.Visibility.Visible then
+data.Velocity -= data.Sens * input.Position.Z * (data.Inverted and -1 or 1)
+handled = true
+break
+end
+end
+return handled and Enum.ContextActionResult.Sink or Enum.ContextActionResult.Pass
+end, false, 8000, Enum.UserInputType.MouseWheel)
+end
+​local Visibility = {}
+Visibility.__index = Visibility
+function Visibility.new(guiObj)
+local bindable = Instance.new("BindableEvent")
+local self = setmetatable({
+GuiObject = guiObj, Visible = nil, Changed = bindable.Event,
+_path = {}, _conn = {}, _root = nil, _visibleChanged = bindable
+}, Visibility)
+local function check()
+local visible = (self._root and self._root.Enabled or false)
+if visible then
+for _, obj in ipairs(self._path) do
+if not obj.Visible then visible = false break end
+end
+end
+if visible ~= self.Visible then
+self.Visible = visible
+bindable:Fire(visible)
+end
+end
+local function buildPath()
+for _, c in ipairs(self._conn) do c:Disconnect() end
+local path, conns, root = {}, {}, nil
+local cur = guiObj
+while cur and (cur:IsA("GuiObject") or cur:IsA("Folder")) do
+if cur:IsA("GuiObject") then
+table.insert(conns, cur:GetPropertyChangedSignal("Visible"):Connect(check))
+table.insert(path, cur)
+end
+cur = cur.Parent
+end
+if cur and cur:IsA("LayerCollector") then
+table.insert(conns, cur:GetPropertyChangedSignal("Enabled"):Connect(check))
+root = cur
+end
+self._path, self._conn, self._root = path, conns, root
+check()
+end
+self._ancestry = guiObj.AncestryChanged:Connect(buildPath)
+buildPath()
+return self
+end
+function Visibility.Destroy(self)
+self._visibleChanged:Fire(false)
+self._visibleChanged:Destroy()
+self._ancestry:Disconnect()
+for _, c in ipairs(self._conn) do c:Disconnect() end
+end
+​local function CreateBar(frame, axis)
+axis = axis or "Y"
+if not (frame and typeof(frame) == "Instance" and frame.ClassName == "ScrollingFrame") then return end
+local btn = Instance.new("TextButton")
+btn.Name = frame.Name .. "Scroller" .. axis
+btn.Text = ""
+btn.BackgroundTransparency = 1
+btn.Visible = scrollData[frame].Visibility.Visible
+local absSize, absPos, thickness = frame.AbsoluteSize, frame.AbsolutePosition, frame.ScrollBarThickness
+local dragConn
+btn.MouseButton1Down:Connect(function()
+if isDragging or dragConn then return end
+isDragging = true
+local start = Vector2.new(mouse.X, mouse.Y)
+dragConn = UIS.InputChanged:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseMovement then
+local delta = Vector2.new(input.Position.X, input.Position.Y) - start
+local ratio = (axis == "Y" and delta.Y or delta.X) / (axis == "Y" and frame.AbsoluteWindowSize.Y or frame.AbsoluteWindowSize.X)
+local ancestor = frame:FindFirstAncestorWhichIsA("GuiBase2d")
+local canvas = Vector2.new(
+(frame.CanvasSize.X.Scale * ancestor.AbsoluteSize.X) + frame.CanvasSize.X.Offset,
+(frame.CanvasSize.Y.Scale * ancestor.AbsoluteSize.Y) + frame.CanvasSize.Y.Offset
+)
+frame.CanvasPosition = Vector2.new(
+frame.CanvasPosition.X + (axis == "X" and canvas.X * ratio or 0),
+frame.CanvasPosition.Y + (axis == "Y" and canvas.Y * ratio or 0)
+)
+start = Vector2.new(input.Position.X, input.Position.Y)
+end
+end)
+end)
+local endConn = UIS.InputEnded:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 and dragConn then
+isDragging = false
+dragConn:Disconnect()
+dragConn = nil
+end
+end)
+scrollData[frame].Visibility.Changed:Connect(function(v)
+btn.Visible = v
+if not v and dragConn then
+isDragging = false
+dragConn:Disconnect()
+dragConn = nil
+end
+end)
+if axis == "X" then
+btn.Size = UDim2.new(0, absSize.X, 0, thickness)
+btn.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y - thickness)
+else
+btn.Size = UDim2.new(0, thickness, 0, absSize.Y)
+btn.Position = UDim2.new(0, frame.VerticalScrollBarPosition == Enum.VerticalScrollBarPosition.Right and absPos.X + absSize.X - thickness or absPos.X, 0, absPos.Y)
+end
+local changeConn
+changeConn = frame.Changed:Connect(function(prop)
+if not scrollData[frame] then
+btn:Destroy()
+changeConn:Disconnect()
+endConn:Disconnect()
+if dragConn then dragConn:Disconnect() end
+return
+end
+if frame:FindFirstAncestorWhichIsA("GuiBase2d") and (prop == "AbsoluteSize" or prop == "AbsolutePosition" or prop == "CanvasSize" or prop == "ScrollBarThickness") then
+absSize, absPos, thickness = frame.AbsoluteSize, frame.AbsolutePosition, frame.ScrollBarThickness
+if axis == "X" then
+btn.Size = UDim2.new(0, absSize.X, 0, thickness)
+btn.Position = UDim2.new(0, absPos.X, 0, absPos.Y + absSize.Y - thickness)
+else
+btn.Size = UDim2.new(0, thickness, 0, absSize.Y)
+btn.Position = UDim2.new(0, frame.VerticalScrollBarPosition == Enum.VerticalScrollBarPosition.Right and absPos.X + absSize.X - thickness or absPos.X, 0, absPos.Y)
+end
+end
+end)
+btn.Parent = scrollGui
+end
+​local API = {}
+function API.Enable(frame, sens, frict, inverted, axis)
+if not UIS.MouseEnabled or UIS.TouchEnabled then return end
+if typeof(frame) ~= "Instance" or frame.ClassName ~= "ScrollingFrame" then return end
+if not scrollData[frame] then
+frame.ScrollingEnabled = false
+local actives, conns = {}, {}
+for _, desc in ipairs(frame:GetDescendants()) do
+if desc:IsA("GuiObject") then
+actives[desc] = desc.Active
+desc.Active = false
+table.insert(conns, desc:GetPropertyChangedSignal("Active"):Connect(function() desc.Active = false end))
+end
+end
+local cur = frame
+while cur and (cur:IsA("GuiObject") or cur:IsA("Folder")) do
+if cur:IsA("GuiObject") then
+actives[cur] = cur.Active
+cur.Active = false
+table.insert(conns, cur:GetPropertyChangedSignal("Active"):Connect(function() cur.Active = false end))
+end
+cur = cur.Parent
+end
+table.insert(conns, frame.DescendantAdded:Connect(function(desc)
+if desc:IsA("GuiObject") then
+scrollData[frame].Actives[desc] = desc.Active
+desc.Active = false
+table.insert(scrollData[frame].Connections, desc:GetPropertyChangedSignal("Active"):Connect(function() desc.Active = false end))
+end
+end))
+if not (axis == "X" or axis == "Y") then
+axis = (frame.CanvasSize.Y.Offset > 0 or frame.CanvasSize.Y.Scale > 0) and "Y" or "X"
+if frame.CanvasSize.Y.Offset == 0 and frame.CanvasSize.Y.Scale == 0 and frame.CanvasSize.X.Offset == 0 and frame.CanvasSize.X.Scale == 0 then axis = "Y" end
+end
+scrollData[frame] = {
+Connections = conns, Actives = actives, Velocity = 0, LastPos = 0,
+Visibility = Visibility.new(frame),
+Inverted = inverted, Axis = axis,
+Frict = math.clamp(type(frict) == "number" and frict or 0.78, 0.2, 0.99),
+Sens = math.clamp(type(sens) == "number" and sens or (mouse.ViewSizeY / 27), 0.01, 1e16)
+}
+CreateBar(frame, "X")
+CreateBar(frame, "Y")
+else
+scrollData[frame].Sens = math.clamp(type(sens) == "number" and sens or (mouse.ViewSizeY / 27), 0.01, 1e16)
+scrollData[frame].Frict = math.clamp(type(frict) == "number" and frict or 0.78, 0.2, 0.99)
+scrollData[frame].Inverted = inverted
+end
+end
+function API.Disable(frame)
+if scrollData[frame] then
+frame.ScrollingEnabled = true
+for _, c in ipairs(scrollData[frame].Connections) do c:Disconnect() end
+scrollData[frame].Visibility:Destroy()
+for obj, active in pairs(scrollData[frame].Actives) do obj.Active = active end
+scrollData[frame] = nil
+end
+end
+return API
+end)()
+​local function AddDrag(frame, handle)
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+local delta = input.Position - dragStart
+local newPos = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+TweenService:Create(frame, TweenInfo.new(0.05), {Position = newPos}):Play()
+end
+handle.InputBegan:Connect(function(input)
+if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and UserInputService:GetFocusedTextBox() == nil then
+dragging = true
+dragStart = input.Position
+startPos = frame.Position
+input.Changed:Connect(function()
+if input.UserInputState == Enum.UserInputState.End then dragging = false end
+end)
+end
+end)
+handle.InputChanged:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+dragInput = input
+end
+end)
+UserInputService.InputChanged:Connect(function(input)
+if input == dragInput and dragging then update(input) end
+end)
+end
+​function Library.CreateWindow(_, config)
+local bgAsset = _G.LUNAR_BACKGROUND or getcustomasset("banner.png")
+local onBgUpdate = function() end
+if not isfolder("lunarbackgrounds") then makefolder("lunarbackgrounds") end
+function _G.UpdGuiBackground()
+bgAsset = _G.LUNAR_BACKGROUND
+if bgAsset then
+local tmpPath = "lunarbackgrounds/" .. randomstring(10)
+if (bgAsset:find("https://") or bgAsset:find("http://")) and not bgAsset:match("http?.://roblox%.com") then
+local data = game:HttpGet(bgAsset)
+if data then
+writefile(tmpPath, data)
+bgAsset = getcustomasset(tmpPath) or getcustomasset("banner.png")
+end
+end
+else
+bgAsset = getcustomasset("banner.png")
+end
+onBgUpdate()
+end
+_G.UpdGuiBackground()
+​local windowName = config.Name
+local windowIcon = config.Icon
+if typeof(windowIcon) == "number" then windowIcon = "rbxassetid://" .. windowIcon end
+​local screenGui = Instance.new("ScreenGui")
+local mainFrame = Instance.new("Frame")
+local bgImage = Instance.new("ImageLabel")
+local mainCorner = Instance.new("UICorner")
+local topBar = Instance.new("Frame")
+local topCorner = Instance.new("UICorner")
+local iconImage = Instance.new("ImageLabel")
+local titleLabel = Instance.new("TextLabel")
+local searchFrame = Instance.new("Frame")
+local searchCorner = Instance.new("UICorner")
+local searchIcon = Instance.new("ImageLabel")
+local searchBox = Instance.new("TextBox")
+local searchBoxCorner = Instance.new("UICorner")
+local sideBar = Instance.new("Frame")
+local tabScroll = Instance.new("ScrollingFrame")
+local tabList = Instance.new("UIListLayout")
+​AddDrag(mainFrame, topBar)
+​screenGui.Name = HttpService:GenerateGUID()
+screenGui.Parent = not RunService:IsStudio() and gethui() or LocalPlayer.PlayerGui
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.ResetOnSpawn = false
+screenGui.Enabled = false
+_G.globaluilibrary = screenGui
+​UserInputService.InputBegan:Connect(function(input, processed)
+if isUnloaded then return end
+if processed then return end
+if input.KeyCode == Enum.KeyCode.F4 then
+if GlobalEnv.MobileToggle.isSelected then
+GlobalEnv.MobileToggle:deselect()
+else
+GlobalEnv.MobileToggle:select()
+end
+end
+end)
+​mainFrame.Parent = screenGui
+mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(255,255,255)
+mainFrame.Position = UDim2.new(0.5,0,0.5,0)
+mainFrame.Size = (isMobile or _G.SINGLE_COLUMNS) and UDim2.new(0,570,0,380) or UDim2.new(0,890,0,460)
+​mainCorner.CornerRadius = UDim.new(0,5)
+mainCorner.Parent = mainFrame
+​topBar.Parent = mainFrame
+topBar.BackgroundColor3 = Color3.fromRGB(22,22,22)
+topBar.BackgroundTransparency = 0.65
+topBar.Size = UDim2.new(1,0,0,50)
+​topCorner.CornerRadius = UDim.new(0,5)
+topCorner.Parent = topBar
+​iconImage.Parent = topBar
+iconImage.AnchorPoint = Vector2.new(0,0.5)
+iconImage.BackgroundTransparency = 1
+iconImage.Position = UDim2.new(0,3,0.5,0)
+iconImage.Size = UDim2.new(0,36,0,36)
+iconImage.Image = windowIcon
+​titleLabel.Parent = topBar
+titleLabel.AnchorPoint = Vector2.new(0,0.5)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Position = UDim2.new(0,50,0.5,0)
+titleLabel.Size = UDim2.new(0,200,0,20)
+titleLabel.FontFace = Font.fromName("Arial", Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+titleLabel.Text = windowName
+titleLabel.TextColor3 = Color3.fromRGB(255,255,255)
+titleLabel.TextSize = 12
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+function _G.UpdGuiTitle()
+titleLabel.Text = type(_G.LUNAR_TITLE) == "string" and _G.LUNAR_TITLE or windowName
+end
+​searchFrame.Name = "search"
+searchFrame.Parent = topBar
+searchFrame.AnchorPoint = Vector2.new(1,0.5)
+searchFrame.BackgroundColor3 = Color3.fromRGB(140,85,15)
+searchFrame.BackgroundTransparency = 0.65
+searchFrame.Position = UDim2.new(1,-11,0.5,0)
+searchFrame.Size = UDim2.new(0,139,1,-24)
+​searchCorner.CornerRadius = UDim.new(0,5)
+searchCorner.Parent = searchFrame
+​local searchIconData = getIcon("search")
+searchIcon.Parent = searchFrame
+searchIcon.AnchorPoint = Vector2.new(1,0.5)
+searchIcon.BackgroundTransparency = 1
+searchIcon.Position = UDim2.new(1,-6,0.5,0)
+searchIcon.Size = UDim2.new(0,16,0,16)
+searchIcon.Image = searchIconData.id
+searchIcon.ImageRectOffset = searchIconData.imageRectOffset
+searchIcon.ImageRectSize = searchIconData.imageRectSize
+​searchBox.Parent = searchFrame
+searchBox.BackgroundTransparency = 1
+searchBox.Position = UDim2.new(0,4,0,0)
+searchBox.Size = UDim2.new(1,-34,1,0)
+searchBox.Font = Enum.Font.ArialBold
+searchBox.PlaceholderText = "ค้นหา..."
+searchBox.Text = ""
+searchBox.TextColor3 = Color3.fromRGB(255,255,255)
+searchBox.TextSize = 14
+searchBox.TextXAlignment = Enum.TextXAlignment.Left
+​bgImage.Name = "backgroundimagelabel"
+bgImage.Parent = mainFrame
+bgImage.BackgroundColor3 = Color3.fromRGB(30,30,30)
+bgImage.BackgroundTransparency = 1
+bgImage.Size = UDim2.new(1,0,1,0)
+bgImage.ZIndex = 0
+bgImage.Image = bgAsset
+bgImage.ImageColor3 = Color3.fromRGB(116,116,116)
+bgImage.ScaleType = Enum.ScaleType.Crop
+onBgUpdate = function() bgImage.Image = bgAsset or getcustomasset("banner.png") end
+​searchBoxCorner.CornerRadius = UDim.new(0,5)
+searchBoxCorner.Parent = bgImage
+​sideBar.Parent = mainFrame
+sideBar.BackgroundColor3 = Color3.fromRGB(22,22,22)
+sideBar.BackgroundTransparency = 0.65
+sideBar.Position = UDim2.new(0,1,0,50)
+sideBar.Size = UDim2.new(0,160,1,-50)
+​tabScroll.Parent = sideBar
+tabScroll.Active = true
+tabScroll.AnchorPoint = Vector2.new(0,0.5)
+tabScroll.BackgroundTransparency = 1
+tabScroll.Position = UDim2.new(0,0,0.5,0)
+tabScroll.Size = UDim2.new(1,0,1,-6)
+tabScroll.ScrollBarThickness = 2
+tabScroll.ScrollBarImageColor3 = Color3.fromRGB(245,159,39)
+tabScroll.ScrollBarImageTransparency = 0.4
+tabScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+tabScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+tabScroll.ClipsDescendants = true
+addShadow(tabScroll)
+SmoothScroll.Enable(tabScroll, 2, 0.9)
+​tabList.Parent = tabScroll
+tabList.SortOrder = Enum.SortOrder.LayoutOrder
+tabList.Padding = UDim.new(0,4)
+​local pageHolder = Instance.new("Frame")
+pageHolder.Name = "PageHolder"
+pageHolder.Parent = mainFrame
+pageHolder.BackgroundTransparency = 1
+pageHolder.Position = UDim2.new(0,161,0,50)
+pageHolder.Size = UDim2.new(1,-159,1,-60)
+pageHolder.ClipsDescendants = true
+​local WindowAPI = {}
+local Tabs = {}
+​local function scoreMatch(text, query)
+text = text:lower()
+local score = 0
+if text == query then return 100 end
+local words = {}
+for w in query:gmatch("%S+") do table.insert(words, w) end
+if #words > 1 then
+for _, w in ipairs(words) do
+if not text:find(w, 1, true) then return 0 end
+score += 1
+end
+if text:find(query, 1, true) then score += 3 end
+score -= #text / 20
+return score
+end
+local pos = text:find(query, 1, true)
+if not pos then return 0 end
+score += 1
+if pos == 1 then score += 4 end
+for word in text:gmatch("%S+") do
+if word:sub(1, #query) == query then score += 3 break end
+if word == query then score += 5 break end
+end
+score -= #text / 20
+return score
+end
+​local function search(query)
+query = query:lower()
+local bestScore, bestIdx = 0, nil
+for idx, tab in pairs(Tabs) do
+local tabScore = 0
+for _, feature in pairs(tab.Features) do
+tabScore += scoreMatch(feature, query)
+end
+tab.Frame.Visible = tabScore > 0
+if tabScore > bestScore then
+bestScore = tabScore
+bestIdx = idx
+end
+end
+if bestIdx then WindowAPI:SelectTab(bestIdx) end
+end
+​searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+local text = searchBox.Text
+if text ~= "" then
+search(text)
+else
+for _, tab in pairs(Tabs) do tab.Frame.Visible = true end
+end
+end)
+​function WindowAPI.CreateTab(_, name, iconName)
+local tabButton = Instance.new("Frame")
+local activeBar = Instance.new("Frame")
+local nameLabel = Instance.new("TextLabel")
+local iconLabel = Instance.new("ImageLabel")
+local iconData = getIcon(iconName)
+local page = Instance.new("Frame")
+local header = Instance.new("Frame")
+local headerLabel = Instance.new("TextLabel")
+local leftScroll = Instance.new("ScrollingFrame")
+local rightScroll = Instance.new("ScrollingFrame")
+local leftList = Instance.new("UIListLayout")
+local rightList = Instance.new("UIListLayout")
+local currentScroll = leftScroll
+​page.Name = "Page"
+page.Parent = pageHolder
+page.BackgroundTransparency = 1
+page.Position = UDim2.new(0,0,0,-30)
+page.Size = UDim2.new(1,0,1,0)
+page.Visible = false
+​header.Parent = page
+header.BackgroundColor3 = Color3.fromRGB(0,0,0)
+header.BackgroundTransparency = 0.75
+header.Size = UDim2.new(1,-1,0,28)
+header.Position = UDim2.fromOffset(-1,0)
+​headerLabel.Parent = header
+headerLabel.AnchorPoint = Vector2.new(0.5,0.5)
+headerLabel.BackgroundTransparency = 1
+headerLabel.Position = UDim2.new(0.5,0,0.5,0)
+headerLabel.Size = UDim2.new(1,0,1,0)
+headerLabel.Font = Enum.Font.ArialBold
+headerLabel.Text = name
+headerLabel.TextColor3 = Color3.fromRGB(255,190,80)
+headerLabel.TextSize = 13
+​for _, scroll in ipairs{leftScroll, rightScroll} do
+scroll.Parent = page
+scroll.Active = true
+scroll.BackgroundTransparency = 1
+scroll.ScrollBarThickness = 0
+scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+scroll.ClipsDescendants = true
+SmoothScroll.Enable(scroll, 4, 0.9)
+end
+​leftScroll.Position = UDim2.new(0,0,0,28)
+if isMobile or _G.SINGLE_COLUMNS then
+leftScroll.Size = UDim2.new(1,0,1,-28)
+rightScroll.Visible = false
+else
+leftScroll.Size = UDim2.new(0.5,-4,1,-28)
+rightScroll.Position = UDim2.new(0.5,4,0,28)
+rightScroll.Size = UDim2.new(0.5,-4,1,-28)
+end
+​leftList.Parent = leftScroll
+leftList.SortOrder = Enum.SortOrder.LayoutOrder
+leftList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+leftList.Padding = UDim.new(0,3)
+​rightList.Parent = rightScroll
+rightList.SortOrder = Enum.SortOrder.LayoutOrder
+rightList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+rightList.Padding = UDim.new(0,3)
+​tabButton.Name = "TabButton"
+tabButton.Parent = tabScroll
+tabButton.BackgroundColor3 = Color3.fromRGB(110,65,5)
+tabButton.BackgroundTransparency = 1
+tabButton.Size = UDim2.new(1,-4,0,35)
+​activeBar.Parent = tabButton
+activeBar.BackgroundColor3 = Color3.fromRGB(255,190,80)
+activeBar.AnchorPoint = Vector2.new(0,0)
+activeBar.Position = UDim2.new(0,0,0,0)
+activeBar.Size = UDim2.new(0,1,0,0)
+​nameLabel.Parent = tabButton
+nameLabel.AnchorPoint = Vector2.new(0,0.5)
+nameLabel.BackgroundTransparency = 1
+nameLabel.Position = UDim2.new(0,30,0.5,0)
+nameLabel.Size = UDim2.new(0,200,0,20)
+nameLabel.Font = Enum.Font.ArialBold
+nameLabel.Text = name
+nameLabel.TextColor3 = Color3.fromRGB(161,161,161)
+nameLabel.TextSize = 13
+nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+​iconLabel.Parent = tabButton
+iconLabel.AnchorPoint = Vector2.new(0,0.5)
+iconLabel.BackgroundTransparency = 1
+iconLabel.Position = UDim2.new(0,7,0.5,0)
+iconLabel.Size = UDim2.new(0,16,0,16)
+iconLabel.Image = iconData.id
+iconLabel.ImageColor3 = Color3.fromRGB(161,161,161)
+iconLabel.ImageRectOffset = iconData.imageRectOffset
+iconLabel.ImageRectSize = iconData.imageRectSize
+iconLabel.ScaleType = Enum.ScaleType.Fit
+​local tweenInfo = TweenInfo.new(0.1, Enum.EasingStyle.Linear)
+local activeTween
+​local function SetSepAnchor(atBottom)
+activeBar.AnchorPoint = Vector2.new(0, atBottom)
+activeBar.Position = UDim2.new(0, activeBar.Position.X.Offset, atBottom, activeBar.Position.Y.Offset)
+end
+​local function DeselectDirectional(fromBottom, callback)
+page.Position = UDim2.new(0,0,0,-10)
+page.Visible = false
+TweenService:Create(tabButton, tweenInfo, {BackgroundTransparency = 1}):Play()
+TweenService:Create(nameLabel, tweenInfo, {TextColor3 = Color3.fromRGB(161,161,161)}):Play()
+TweenService:Create(iconLabel, tweenInfo, {ImageColor3 = Color3.fromRGB(161,161,161)}):Play()
+SetSepAnchor(fromBottom and 1 or 0)
+if activeTween then activeTween:Cancel() end
+activeTween = TweenService:Create(activeBar, tweenInfo, {Size = UDim2.new(0,1,0,0)})
+if callback then activeTween.Completed:Connect(callback) end
+activeTween:Play()
+end
+​local function SelectDirectional(fromBottom)
+page.Visible = true
+TweenService:Create(page, TweenInfo.new(0.2), {Position = UDim2.fromOffset(0,0)}):Play()
+TweenService:Create(tabButton, tweenInfo, {BackgroundTransparency = 0.65}):Play()
+TweenService:Create(nameLabel, tweenInfo, {TextColor3 = Color3.fromRGB(255,190,80)}):Play()
+TweenService:Create(iconLabel, tweenInfo, {ImageColor3 = Color3.fromRGB(255,190,80)}):Play()
+SetSepAnchor(fromBottom and 0 or 1)
+if activeTween then activeTween:Cancel() end
+activeBar.Size = UDim2.new(0,1,0,0)
+activeTween = TweenService:Create(activeBar, tweenInfo, {Size = UDim2.new(0,1,1,0)})
+activeTween:Play()
+end
+​local tabData = {
+IsSelected = false, Frame = tabButton,
+Deselect = function() DeselectDirectional(true, nil) end,
+Select = function() SelectDirectional(true) end,
+DeselectDirectional = DeselectDirectional,
+SelectDirectional = SelectDirectional,
+Index = #Tabs + 1, Features = {}, NumSections = 0, AutoIndex = 0
+}
+table.insert(Tabs, tabData)
+​local clickBtn = Instance.new("TextButton", tabButton)
+clickBtn.Text = ""
+clickBtn.ZIndex = 2
+clickBtn.BackgroundTransparency = 1
+clickBtn.Size = UDim2.fromScale(1,1)
+​local function onClick()
+if tabData.IsSelected then return end
+local fromBottom = true
+local prev
+for _, t in pairs(Tabs) do
+if t.IsSelected then
+fromBottom = tabData.Index > t.Index
+prev = t
+break
+end
+end
+for _, t in pairs(Tabs) do t.IsSelected = false end
+tabData.IsSelected = true
+if prev then
+prev.DeselectDirectional(fromBottom, function()
+if tabData.IsSelected then SelectDirectional(fromBottom) end
+end)
+else
+SelectDirectional(fromBottom)
+end
+end
+​clickBtn.MouseEnter:Connect(function()
+tabData.IsHover = true
+if not tabData.IsSelected then TweenService:Create(tabButton, tweenInfo, {BackgroundTransparency = 0.8}):Play() end
+end)
+clickBtn.MouseLeave:Connect(function()
+tabData.IsHover = false
+if not tabData.IsSelected then TweenService:Create(tabButton, tweenInfo, {BackgroundTransparency = 1}):Play() end
+end)
+clickBtn.MouseButton1Down:Connect(function()
+if not tabData.IsSelected then TweenService:Create(tabButton, tweenInfo, {BackgroundTransparency = 0.7}):Play() end
+end)
+clickBtn.MouseButton1Up:Connect(function()
+if not tabData.IsSelected then
+TweenService:Create(tabButton, tweenInfo, {BackgroundTransparency = tabData.IsHover and 0.8 or 1}):Play()
+end
+end)
+clickBtn.MouseButton1Click:Connect(onClick)
+​local SectionAPI = {}
+local hiddenFolder = Instance.new("Folder")
+hiddenFolder.Name = "HiddenElements"
+​tabData.CurrentSection = nil
+tabData.CurrentSectionIndex = 0
+tabData.SectionGroups = {}
+tabData.Columns = {
+Left = { ScrollingFrame = leftScroll, Count = 0, LastSection = nil },
+Right = { ScrollingFrame = rightScroll, Count = 0, LastSection = nil },
+}
+​local function insertIntoSection(gui)
+local curSec = tabData.CurrentSection
+if curSec then
+local group = tabData.SectionGroups[curSec]
+gui.LayoutOrder = tabData.CurrentSectionIndex * 1000 + #group + 1
+table.insert(group, gui)
+else
+gui.LayoutOrder = tabData.CurrentSectionIndex * 1000
+end
+end
+​function SectionAPI.CreateSection(_, title, column)
+tabData.NumSections += 1
+local colName
+if isMobile or _G.SINGLE_COLUMNS then colName = "Left"
+elseif column then colName = column
+else
+tabData.AutoIndex += 1
+colName = (tabData.AutoIndex % 2 == 1) and "Left" or "Right"
+end
+local col = tabData.Columns[colName]
+if col.Count > 0 and col.LastSection then
+local spacer = Instance.new("Frame", col.ScrollingFrame)
+spacer.BackgroundTransparency = 1
+spacer.Size = UDim2.new(0,0,0,10)
+spacer.LayoutOrder = col.LastSection.LayoutOrder + #tabData.SectionGroups[col.LastSection] + 1
+table.insert(tabData.SectionGroups[col.LastSection], spacer)
+end
+currentScroll = col.ScrollingFrame
+​local secFrame = Instance.new("Frame", currentScroll)
+secFrame.Name = "Section"
+secFrame.BackgroundTransparency = 1
+secFrame.Size = UDim2.new(1,0,0,28)
+​local secBtn = Instance.new("TextButton", secFrame)
+secBtn.BackgroundTransparency = 1
+secBtn.Position = UDim2.new(0,10,0,0)
+secBtn.Size = UDim2.new(1,-20,1,0)
+secBtn.Font = Enum.Font.ArialBold
+secBtn.Text = title
+secBtn.TextColor3 = Color3.fromRGB(199,199,199)
+secBtn.TextSize = 13
+secBtn.TextXAlignment = Enum.TextXAlignment.Left
+secBtn.ZIndex = 2
+​local shadow = secBtn:Clone()
+shadow.ZIndex = 1
+shadow.TextColor3 = Color3.new(0,0,0)
+shadow.Position += UDim2.fromOffset(1,1)
+shadow.Parent = secFrame
+shadow.Active = false
+​tabData.CurrentSectionIndex += 1
+secFrame.LayoutOrder = tabData.CurrentSectionIndex * 1000
+tabData.CurrentSection = secFrame
+tabData.SectionGroups[secFrame] = {}
+col.Count += 1
+col.LastSection = secFrame
+​local collapsed, busy = false, false
+local dur, step = 0.2, 0.06
+local tweenInf = TweenInfo.new(dur, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut)
+secBtn.MouseButton1Click:Connect(function()
+if busy then return end
+busy = true
+collapsed = not collapsed
+local items = tabData.SectionGroups[secFrame]
+local count = #items
+local total = dur + (count > 0 and (count - 1) * step or 0)
+if collapsed then
+local sizes, clips, poses, autos = {}, {}, {}, {}
+for i = 1, count do
+local it = items[i]
+sizes[it] = it.Size
+autos[it] = it.AutomaticSize
+if it.AutomaticSize ~= Enum.AutomaticSize.None then it.AutomaticSize = Enum.AutomaticSize.None end
+clips[it] = it.ClipsDescendants
+poses[it] = it.Position
+it.ClipsDescendants = true
+end
+for i = count, 1, -1 do
+local it = items[i]
+local delay = (count - i) * step
+local h = sizes[it].Y.Offset
+task.delay(delay, function()
+TweenService:Create(it, tweenInf, {Size = UDim2.new(it.Size.X.Scale, it.Size.X.Offset, 0, 0)}):Play()
+for j = i + 1, count do
+local other = items[j]
+TweenService:Create(other, tweenInf, {Position = UDim2.new(other.Position.X.Scale, other.Position.X.Offset, other.Position.Y.Scale, other.Position.Y.Offset - h)}):Play()
+end
+end)
+end
+task.delay(total, function()
+for i = 1, count do
+local it = items[i]
+it.Parent = hiddenFolder
+it.Position = poses[it]
+it:SetAttribute("__restoreX", sizes[it].X.Scale)
+it:SetAttribute("__restoreXO", sizes[it].X.Offset)
+it:SetAttribute("__restoreY", sizes[it].Y.Scale)
+it:SetAttribute("__restoreYO", sizes[it].Y.Offset)
+it:SetAttribute("__clips", clips[it])
+it:SetAttribute("__autosize", autos[it].Name)
+end
+busy = false
+end)
+else
+for i = 1, count do
+local it = items[i]
+it.Size = UDim2.new(it:GetAttribute("__restoreX") or 0, it:GetAttribute("__restoreXO") or 0, 0, 0)
+it.Parent = currentScroll
+end
+task.wait()
+local posMap = {}
+for i = 1, count do posMap[items[i]] = items[i].Position end
+for i = 1, count do items[i].Position = posMap[items[i]] end
+for i = 1, count do
+local it = items[i]
+local rx, rxo, ry, ryo = it:GetAttribute("__restoreX") or 0, it:GetAttribute("__restoreXO") or 0, it:GetAttribute("__restoreY") or 0, it:GetAttribute("__restoreYO") or 0
+task.delay((i-1)*step, function()
+TweenService:Create(it, tweenInf, {Size = UDim2.new(rx, rxo, ry, ryo)}):Play()
+for j = i+1, count do
+local other = items[j]
+TweenService:Create(other, tweenInf, {Position = UDim2.new(other.Position.X.Scale, other.Position.X.Offset, other.Position.Y.Scale, other.Position.Y.Offset + ryo)}):Play()
+end
+end)
+end
+task.delay(total, function()
+for i = 1, count do
+local it = items[i]
+local clip = it:GetAttribute("__clips")
+it.ClipsDescendants = clip == nil and false or clip
+local auto = it:GetAttribute("__autosize")
+if auto then it.AutomaticSize = Enum.AutomaticSize[auto] end
+end
+busy = false
+end)
+end
+end)
+​return { Set = function(_, txt) secBtn.Text = txt shadow.Text = txt end }
+end
+​function SectionAPI.CreateLabel(, text)
+local frame = Instance.new("Frame", currentScroll)
+frame.Name = "Toggle"
+insertIntoSection(frame)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.45
+frame.AutomaticSize = Enum.AutomaticSize.Y
+frame.Size = UDim2.new(1,-10,0,28)
+local pad = Instance.new("UIPadding", frame)
+pad.PaddingTop = UDim.new(0,6)
+pad.PaddingBottom = UDim.new(0,6)
+local label = Instance.new("TextLabel", frame)
+label.BackgroundTransparency = 1
+label.Position = UDim2.new(0,10,0,0)
+label.Size = UDim2.new(1,-20,0,0)
+label.AutomaticSize = Enum.AutomaticSize.Y
+label.TextWrapped = true
+label.Font = Enum.Font.ArialBold
+label.Text = text
+label.TextColor3 = Color3.fromRGB(145,145,145)
+label.TextSize = 13
+label.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,5)
+return { Set = function(, t) label.Text = t end }
+end
+​function SectionAPI.CreateToggle(_, cfg)
+local flag, default, name, cb, textMode = cfg.Flag, cfg.CurrentValue, cfg.Name, cfg.Callback or function() end, cfg.TextMode
+WindowAPI.Flags[flag] = {CurrentValue = default}
+table.insert(tabData.Features, name)
+​local frame = Instance.new("Frame", currentScroll)
+frame.Name = "Toggle"
+insertIntoSection(frame)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.45
+frame.Size = UDim2.new(1,-10,0,28)
+​local label = Instance.new("TextLabel", frame)
+label.BackgroundTransparency = 1
+label.Position = UDim2.new(0,10,0,0)
+label.Size = UDim2.new(0.5,0,0,28)
+label.Font = Enum.Font.ArialBold
+label.Text = name
+label.TextColor3 = Color3.fromRGB(199,199,199)
+label.TextSize = 13
+label.TextXAlignment = Enum.TextXAlignment.Left
+​Instance.new("UICorner", frame).CornerRadius = UDim.new(0,5)
+​local btn = Instance.new("TextButton")
+btn.Text = ""
+btn.ZIndex = 2
+btn.BackgroundTransparency = 1
+btn.Size = UDim2.fromScale(1,1)
+​local stateLabel, switchFrame, ball
+local function updateVisual()
+if textMode then
+stateLabel.Text = default and "เปิด" or "ปิด"
+stateLabel.TextColor3 = default and Color3.fromRGB(85,170,85) or Color3.fromRGB(170,60,60)
+stateLabel.TextSize = 18
+TweenService:Create(stateLabel, TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {TextSize = 13}):Play()
+else
+TweenService:Create(switchFrame, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {
+BackgroundColor3 = default and Color3.fromRGB(140,85,15) or Color3.fromRGB(67,67,67)
+}):Play()
+TweenService:Create(ball, TweenInfo.new(0.3, Enum.EasingStyle.Sine), {
+BackgroundColor3 = default and Color3.fromRGB(255,255,255) or Color3.fromRGB(62,62,62),
+Position = default and UDim2.new(0,30,0.5,0) or UDim2.new(0,2,0.5,0)
+}):Play()
+end
+end
+​if textMode then
+stateLabel = Instance.new("TextLabel", frame)
+stateLabel.Name = "StateLabel"
+stateLabel.AnchorPoint = Vector2.new(1,0.5)
+stateLabel.BackgroundTransparency = 1
+stateLabel.Position = UDim2.new(1,-10,0.5,0)
+stateLabel.Size = UDim2.new(0,40,0,20)
+stateLabel.Font = Enum.Font.ArialBold
+stateLabel.TextSize = 13
+stateLabel.TextXAlignment = Enum.TextXAlignment.Right
+btn.Parent = stateLabel
+else
+switchFrame = Instance.new("Frame", frame)
+switchFrame.Name = "Switch"
+switchFrame.AnchorPoint = Vector2.new(1,0)
+switchFrame.BackgroundColor3 = Color3.fromRGB(67,67,67)
+switchFrame.BackgroundTransparency = 0.7
+switchFrame.Position = UDim2.new(1,-4,0,4)
+switchFrame.Size = UDim2.new(0,48,0,20)
+Instance.new("UICorner", switchFrame).CornerRadius = UDim.new(1,0)
+ball = Instance.new("Frame", switchFrame)
+ball.Name = "ball"
+ball.AnchorPoint = Vector2.new(0,0.5)
+ball.BackgroundColor3 = Color3.fromRGB(62,62,62)
+ball.Position = UDim2.new(0,2,0.5,0)
+ball.Size = UDim2.new(0,16,0,16)
+Instance.new("UICorner", ball).CornerRadius = UDim.new(1,0)
+btn.Parent = switchFrame
+btn.Size = UDim2.fromScale(1,1)
+btn.InputBegan:Connect(function(inp)
+if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+TweenService:Create(ball, TweenInfo.new(0.15, Enum.EasingStyle.Sine), {Size = UDim2.new(0,16,0,10)}):Play()
+end
+end)
+btn.InputEnded:Connect(function(inp)
+if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+TweenService:Create(ball, TweenInfo.new(0.15, Enum.EasingStyle.Sine), {Size = UDim2.new(0,16,0,16)}):Play()
+end
+end)
+end
+​local flagObj = WindowAPI.Flags[flag]
+function flagObj.Set(_, val, silent)
+default = val
+WindowAPI.Flags[flag].CurrentValue = val
+updateVisual()
+task.spawn(function() cb(val, silent) end)
+end
+​local saved = loadedSettings[flag]
+if saved and saved.CurrentValue ~= nil and not cfg.NoSave then
+flagObj:Set(saved.CurrentValue, true)
+elseif default then
+flagObj:Set(default, true)
+end
+​btn.MouseButton1Click:Connect(function() flagObj:Set(not default) end)
+if not default and textMode then updateVisual() end
+​return flagObj
+end
+​function SectionAPI.CreateButton(_, cfg)
+local name, cb = cfg.Name, cfg.Callback or function() end
+table.insert(tabData.Features, name)
+local frame = Instance.new("Frame", currentScroll)
+frame.Name = "Button"
+insertIntoSection(frame)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.45
+frame.Size = UDim2.new(1,-10,0,32)
+frame.ClipsDescendants = true
+local label = Instance.new("TextLabel", frame)
+label.BackgroundTransparency = 1
+label.Position = UDim2.new(0,10,0,0)
+label.Size = UDim2.new(0.5,0,0,32)
+label.Font = Enum.Font.ArialBold
+label.Text = name
+label.TextColor3 = Color3.fromRGB(199,199,199)
+label.TextSize = 13
+label.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,5)
+local iconData = getIcon("mouse-pointer-2")
+local icon = Instance.new("ImageLabel", frame)
+icon.AnchorPoint = Vector2.new(1,0)
+icon.BackgroundTransparency = 1
+icon.Position = UDim2.new(1,-4,0,6)
+icon.Size = UDim2.new(0,20,0,20)
+icon.Image = iconData.id
+icon.ImageRectOffset = iconData.imageRectOffset
+icon.ImageRectSize = iconData.imageRectSize
+frame.InputBegan:Connect(function(input)
+if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+task.spawn(cb)
+local pos = frame.AbsolutePosition
+createRipple(frame, input.Position.X - pos.X, input.Position.Y - pos.Y)
+end
+end)
+end
+​function SectionAPI.CreateSlider(_, cfg)
+local name, range, default, flag, cb, suffix, inc = cfg.Name, cfg.Range, cfg.CurrentValue, cfg.Flag, cfg.Callback or function() end, cfg.Suffix or "", cfg.Increment
+WindowAPI.Flags[flag] = {CurrentValue = default}
+table.insert(tabData.Features, name)
+​local frame = Instance.new("Frame", currentScroll)
+frame.Name = "Slider"
+insertIntoSection(frame)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.45
+frame.Size = UDim2.new(1,-10,0,32)
+​local nameLabel = Instance.new("TextLabel", frame)
+nameLabel.Name = "SliderName"
+nameLabel.BackgroundTransparency = 1
+nameLabel.Position = UDim2.new(0,10,0,0)
+nameLabel.Size = UDim2.new(0.5,0,0,32)
+nameLabel.Font = Enum.Font.ArialBold
+nameLabel.TextColor3 = Color3.fromRGB(199,199,199)
+nameLabel.TextSize = 13
+nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+nameLabel.RichText = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,5)
+​local bar = Instance.new("Frame", frame)
+bar.Name = "Bar"
+bar.AnchorPoint = Vector2.new(1,0)
+bar.BackgroundColor3 = Color3.fromRGB(109,109,129)
+bar.BackgroundTransparency = 0.5
+bar.Position = UDim2.new(1,-16,0,13)
+bar.Size = UDim2.new(0,120,0,6)
+Instance.new("UICorner", bar).CornerRadius = UDim.new(1,0)
+​local ball = Instance.new("Frame", bar)
+ball.Name = "Ball"
+ball.AnchorPoint = Vector2.new(0.5,0.5)
+ball.BackgroundColor3 = Color3.fromRGB(255,255,255)
+ball.Position = UDim2.new(0.5,0,0.5,0)
+ball.Size = UDim2.new(0,16,0,16)
+ball.ZIndex = 2
+Instance.new("UICorner", ball).CornerRadius = UDim.new(1,0)
+​local fill = Instance.new("Frame", bar)
+fill.Name = "Fill"
+fill.BackgroundColor3 = Color3.fromRGB(245,159,39)
+fill.Size = UDim2.new(0.5,0,1,0)
+Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+​local min, max = range[1], range[2]
+local function valueToAlpha(v) return (v - min) / (max - min) end
+local function alphaToValue(a)
+local v = a * (max - min) + min
+local rounded = math.round(v / inc) * inc
+local decimals = math.max(0, math.ceil(-math.log10(inc)))
+return tonumber(string.format("%."..decimals.."f", math.clamp(rounded, min, max)))
+end
+local function updateVisual(alpha, animate)
+local val = alphaToValue(alpha)
+nameLabel.Text = name .. string.format(' <font color="rgb(245, 159, 39)">%s<font color="rgb(141, 141, 141)">%s</font></font>', tostring(val), suffix)
+local size = UDim2.new(alpha,0,1,0)
+local pos = UDim2.new(alpha,0,0.5,0)
+if animate then
+TweenService:Create(fill, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = size}):Play()
+TweenService:Create(ball, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = pos}):Play()
+else
+fill.Size = size
+ball.Position = pos
+end
+end
+​if loadedSettings[flag] then
+default = loadedSettings[flag].CurrentValue
+WindowAPI.Flags[flag] = {CurrentValue = default}
+task.spawn(function() cb(default) end)
+end
+updateVisual(valueToAlpha(default), false)
+​local dragging, hoveringBar, hoveringBall = false, false, false
+local normalSize, hoverSize = UDim2.new(0,120,0,6), UDim2.new(0,120,0,9)
+local ballNormal, ballHover = UDim2.new(0,16,0,16), UDim2.new(0,20,0,20)
+local tweenInf = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+​local function onDrag(x)
+local alpha = math.clamp((x - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
+local val = alphaToValue(alpha)
+if val ~= WindowAPI.Flags[flag].CurrentValue then
+WindowAPI.Flags[flag].CurrentValue = val
+updateVisual(valueToAlpha(val), true)
+cb(val)
+end
+end
+​bar.MouseEnter:Connect(function() hoveringBar = true TweenService:Create(bar, tweenInf, {Size = hoverSize}):Play() TweenService:Create(ball, tweenInf, {Size = ballHover}):Play() end)
+bar.MouseLeave:Connect(function() hoveringBar = false if not hoveringBall and not dragging then TweenService:Create(bar, tweenInf, {Size = normalSize}):Play() TweenService:Create(ball, tweenInf, {Size = ballNormal}):Play() end end)
+ball.MouseEnter:Connect(function() hoveringBall = true TweenService:Create(bar, tweenInf, {Size = hoverSize}):Play() TweenService:Create(ball, tweenInf, {Size = ballHover}):Play() end)
+ball.MouseLeave:Connect(function() hoveringBall = false if not hoveringBar and not dragging then TweenService:Create(bar, tweenInf, {Size = normalSize}):Play() TweenService:Create(ball, tweenInf, {Size = ballNormal}):Play() end end)
+ball.InputBegan:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then dragging = true onDrag(inp.Position.X) end end)
+bar.InputBegan:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then dragging = true onDrag(inp.Position.X) end end)
+UserInputService.InputChanged:Connect(function(inp) if dragging and (inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch) then onDrag(inp.Position.X) end end)
+UserInputService.InputEnded:Connect(function(inp)
+if dragging and (inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch) then
+dragging = false
+if inp.UserInputType == Enum.UserInputType.Touch or (not hoveringBar and not hoveringBall) then
+TweenService:Create(bar, tweenInf, {Size = normalSize}):Play()
+TweenService:Create(ball, tweenInf, {Size = ballNormal}):Play()
+end
+end
+end)
+end
+​function SectionAPI.CreateDropdown(_, cfg)
+local name, flag, default, options, multi, cb = cfg.Name, cfg.Flag, deepcopy(cfg.CurrentOption), deepcopy(cfg.Options), cfg.MultipleOptions, cfg.Callback or function() end
+table.insert(tabData.Features, name)
+local frame = Instance.new("Frame", currentScroll)
+frame.Name = "Dropdown"
+insertIntoSection(frame)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.45
+frame.ClipsDescendants = true
+frame.Size = UDim2.new(1,-10,0,32)
+local label = Instance.new("TextLabel", frame)
+label.BackgroundTransparency = 1
+label.Position = UDim2.new(0,10,0,0)
+label.Size = UDim2.new(0.5,0,0,32)
+label.Font = Enum.Font.ArialBold
+label.TextColor3 = Color3.fromRGB(199,199,199)
+label.TextSize = 13
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.RichText = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,5)
+local arrow = Instance.new("ImageLabel", frame)
+arrow.AnchorPoint = Vector2.new(1,0)
+arrow.BackgroundTransparency = 1
+arrow.Position = UDim2.new(1,-4,0,6)
+arrow.Size = UDim2.new(0,20,0,20)
+arrow.Image = "rbxassetid://130996747355335"
+local list = Instance.new("ScrollingFrame", frame)
+list.Active = true
+list.BackgroundTransparency = 1
+list.Position = UDim2.new(0,10,0,32)
+list.Size = UDim2.new(1,-20,1,-42)
+list.ScrollBarThickness = 8
+list.AutomaticCanvasSize = Enum.AutomaticSize.Y
+list.Visible = false
+local listLayout = Instance.new("UIListLayout", list)
+listLayout.Padding = UDim.new(0,4)
+​local function DeepEqual(a,b)
+if type(a) ~= type(b) then return false end
+if type(a) ~= "table" then return a == b end
+for k,v in pairs(a) do if not DeepEqual(v, b[k]) then return false end end
+for k in pairs(b) do if a[k] == nil then return false end end
+return true
+end
+​if (loadedSettings[flag] or {}).CurrentOption and not DeepEqual(loadedSettings[flag].CurrentOption, options) then
+default = loadedSettings[flag].CurrentOption
+task.spawn(function() cb(default, true) end)
+end
+​local selectedMap = {}
+for _, opt in pairs(options) do selectedMap[opt] = false end
+for _, opt in pairs(default) do selectedMap[opt] = true end
+local function ValuesToTable(map)
+local t = {}
+for k,v in pairs(map) do if v then table.insert(t, k) end end
+return t
+end
+WindowAPI.Flags[flag] = {CurrentOption = ValuesToTable(selectedMap)}
+​local clickArea = Instance.new("TextButton", frame)
+clickArea.Text = ""
+clickArea.BackgroundTransparency = 1
+clickArea.Size = UDim2.new(1,0,0,32)
+clickArea.ZIndex = 2
+​local shadow
+if #options > 3 then shadow = addShadow(list) shadow.Visible = false end
+​local opened = false
+clickArea.MouseButton1Click:Connect(function()
+opened = not opened
+if shadow then shadow.Visible = opened end
+list.Visible = opened
+if opened then
+local h = math.clamp(38 + (#options * (28 + listLayout.Padding.Offset)), 0, 38 + (3 * (28 + listLayout.Padding.Offset)))
+TweenService:Create(frame, TweenInfo.new(0.3), {Size = UDim2.new(frame.Size.X.Scale, frame.Size.X.Offset, frame.Size.Y.Scale, h)}):Play()
+else
+list.CanvasPosition = Vector2.new(0,0)
+TweenService:Create(frame, TweenInfo.new(0.3), {Size = UDim2.new(frame.Size.X.Scale, frame.Size.X.Offset, frame.Size.Y.Scale, 32)}):Play()
+end
+end)
+​local DropdownAPI = { __DropdownOptions = {} }
+local function GetDisplayString(map)
+local t = {}
+for k,v in pairs(map) do if v then table.insert(t, tostring(k)) end end
+if #t == 1 then return t[1] end
+return (#t == 0 and "ไม่มี" or #t) .. " ตัวเลือก"
+end
+function DropdownAPI.SetTitle(_, newTitle)
+name = newTitle
+label.Text = newTitle .. string.format(' <font color="rgb(100, 100, 100)">%s</font>', GetDisplayString(selectedMap))
+end
+DropdownAPI:SetTitle(name)
+​local function RefreshDropdown(newOptions)
+options = newOptions
+for _, child in pairs(list:GetChildren()) do if child.Name == "Option" then child:Destroy() end end
+DropdownAPI.__DropdownOptions = {}
+for , opt in pairs(newOptions) do
+local optFrame = Instance.new("Frame", list)
+optFrame.Name = "Option"
+optFrame.BackgroundColor3 = Color3.fromRGB(100,100,100)
+optFrame.BackgroundTransparency = 0.8
+optFrame.Size = UDim2.new(1,0,0,28)
+optFrame.ClipsDescendants = true
+Instance.new("UICorner", optFrame).CornerRadius = UDim.new(0,5)
+local optLabel = Instance.new("TextLabel", optFrame)
+optLabel.Name = "OName"
+optLabel.BackgroundTransparency = 1
+optLabel.Position = UDim2.new(0,10,0,0)
+optLabel.Size = UDim2.new(1,-20,1,0)
+optLabel.Font = Enum.Font.ArialBold
+optLabel.Text = tostring(opt)
+optLabel.TextColor3 = Color3.fromRGB(199,199,199)
+optLabel.TextSize = 13
+optLabel.TextXAlignment = Enum.TextXAlignment.Left
+optLabel.ZIndex = 2
+local shadowLabel = optLabel:Clone()
+shadowLabel.Name = "ONameShadow"
+shadowLabel.ZIndex = 1
+shadowLabel.TextColor3 = Color3.new(0,0,0)
+shadowLabel.Position = UDim2.new(0,11,0,1)
+shadowLabel.Parent = optFrame
+local btn = Instance.new("TextButton", optFrame)
+btn.Text = ""
+btn.BackgroundTransparency = 1
+btn.Size = UDim2.fromScale(1,1)
+btn.ZIndex = 2
+table.insert(DropdownAPI.__DropdownOptions, { Title = setmetatable({}, { __newindex = function(, k, v) if k == "Text" then optLabel.Text = v shadowLabel.Text = v end end }) })
+local tweenInf = TweenInfo.new(0.1, Enum.EasingStyle.Linear)
+btn.MouseButton1Click:Connect(function()
+if selectedMap[opt] and not multi then return end
+selectedMap[opt] = not selectedMap[opt]
+if not multi then
+for k in pairs(selectedMap) do if k ~= opt then selectedMap[k] = false end end
+for _, child in pairs(list:GetChildren()) do
+if child.Name == "Option" then
+TweenService:Create(child, tweenInf, {BackgroundColor3 = Color3.fromRGB(100,100,100)}):Play()
+TweenService:Create(child.OName, tweenInf, {TextColor3 = Color3.fromRGB(199,199,199)}):Play()
+end
+end
+end
+TweenService:Create(optFrame, tweenInf, {BackgroundColor3 = selectedMap[opt] and Color3.fromRGB(245,159,39) or Color3.fromRGB(100,100,100)}):Play()
+TweenService:Create(optLabel, tweenInf, {TextColor3 = selectedMap[opt] and Color3.fromRGB(245,159,39) or Color3.fromRGB(199,199,199)}):Play()
+DropdownAPI:SetTitle(name)
+WindowAPI.Flags[flag] = {CurrentOption = ValuesToTable(selectedMap)}
+task.spawn(function() cb(ValuesToTable(selectedMap)) end)
+end)
+btn.InputBegan:Connect(function(inp)
+if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
+local pos = optFrame.AbsolutePosition
+createRipple(optFrame, inp.Position.X - pos.X, inp.Position.Y - pos.Y)
+end
+end)
+if selectedMap[opt] then
+optFrame.BackgroundColor3 = Color3.fromRGB(245,159,39)
+optLabel.TextColor3 = Color3.fromRGB(245,159,39)
+end
+end
+end
+RefreshDropdown(options)
+DropdownAPI.Refresh = RefreshDropdown
+return DropdownAPI
+end
+​function SectionAPI.CreateKeybind(_, cfg)
+local defaultKey, name, cb = cfg.CurrentKeybind, cfg.Name, cfg.Callback or function() end
+table.insert(tabData.Features, name)
+local frame = Instance.new("Frame", currentScroll)
+frame.Name = "Keybind"
+insertIntoSection(frame)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.45
+frame.Size = UDim2.new(1,-10,0,28)
+frame.ClipsDescendants = true
+local label = Instance.new("TextLabel", frame)
+label.BackgroundTransparency = 1
+label.Position = UDim2.new(0,10,0,0)
+label.Size = UDim2.new(0.5,0,0,32)
+label.Font = Enum.Font.ArialBold
+label.Text = name
+label.TextColor3 = Color3.fromRGB(199,199,199)
+label.TextSize = 13
+label.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,5)
+local keyFrame = Instance.new("Frame", frame)
+keyFrame.AnchorPoint = Vector2.new(1,0)
+keyFrame.BackgroundColor3 = Color3.fromRGB(53,53,53)
+keyFrame.BackgroundTransparency = 0.7
+keyFrame.Position = UDim2.new(1,-4,0,4)
+keyFrame.Size = UDim2.new(0,30,0,20)
+keyFrame.ClipsDescendants = true
+Instance.new("UICorner", keyFrame).CornerRadius = UDim.new(0,5)
+local keyBtn = Instance.new("TextButton", keyFrame)
+keyBtn.BackgroundTransparency = 1
+keyBtn.Size = UDim2.new(1,0,1,0)
+keyBtn.Font = Enum.Font.ArialBold
+keyBtn.Text = defaultKey or ""
+keyBtn.TextColor3 = Color3.new(1,1,1)
+keyBtn.TextSize = 14
+local icon = Instance.new("ImageLabel", keyFrame)
+icon.AnchorPoint = Vector2.new(0.5,0)
+icon.BackgroundTransparency = 1
+icon.Position = UDim2.new(0.5,0,0,2)
+icon.Size = UDim2.new(0,16,0,16)
+icon.Image = "rbxassetid://121142147574111"
+icon.Visible = defaultKey == nil
+​local bindData = {KeyCode = defaultKey, Callback = cb, Pressable = true}
+table.insert(WindowAPI.Keybinds, bindData)
+​local awaiting, busy = false, false
+local pulseThread
+local tweenFast = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local tweenBounce = TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+​local function SetAwaiting()
+if pulseThread then task.cancel(pulseThread) end
+TweenService:Create(keyFrame, tweenFast, {BackgroundColor3 = Color3.fromRGB(160,100,15), BackgroundTransparency = 0.3}):Play()
+TweenService:Create(keyBtn, tweenFast, {TextColor3 = Color3.fromRGB(245,159,39)}):Play()
+pulseThread = task.spawn(function()
+while awaiting do
+TweenService:Create(keyFrame, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.1}):Play()
+task.wait(0.5)
+TweenService:Create(keyFrame, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.4}):Play()
+task.wait(0.5)
+end
+end)
+end
+local function SetKeybind()
+if pulseThread then task.cancel(pulseThread) pulseThread = nil end
+TweenService:Create(keyFrame, tweenFast, {BackgroundColor3 = Color3.fromRGB(60,180,80), BackgroundTransparency = 0.2}):Play()
+TweenService:Create(keyBtn, tweenFast, {TextColor3 = Color3.new(1,1,1)}):Play()
+task.wait()
+local w = math.max(30, keyBtn.TextBounds.X + 16)
+TweenService:Create(keyFrame, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, w + 8, 0, 24)}):Play()
+task.delay(0.1, function() TweenService:Create(keyFrame, tweenBounce, {Size = UDim2.new(0, w, 0, 20)}):Play() end)
+task.delay(0.4, function() TweenService:Create(keyFrame, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {BackgroundColor3 = Color3.fromRGB(53,53,53), BackgroundTransparency = 0.7}):Play() end)
+end
+local function SetEmpty()
+if pulseThread then task.cancel(pulseThread) pulseThread = nil end
+TweenService:Create(keyFrame, tweenFast, {BackgroundColor3 = Color3.fromRGB(53,53,53), BackgroundTransparency = 0.7}):Play()
+TweenService:Create(keyBtn, tweenFast, {TextColor3 = Color3.new(1,1,1)}):Play()
+end
+​keyBtn.MouseButton1Click:Connect(function()
+if busy then return end
+busy = true
+bindData.Pressable = false
+icon.Visible = false
+keyBtn.Text = "..."
+awaiting = true
+SetAwaiting()
+task.wait(0.1)
+busy = false
+end)
+​UserInputService.InputBegan:Connect(function(input, processed)
+if isUnloaded or processed then return end
+if awaiting and input.KeyCode.Name ~= "Unknown" then
+local old = bindData.KeyCode
+bindData.KeyCode = input.KeyCode.Name
+awaiting = false
+if old == bindData.KeyCode then
+bindData.KeyCode = nil
+icon.Visible = true
+keyBtn.Text = ""
+SetEmpty()
+return
+end
+keyBtn.Text = bindData.KeyCode
+SetKeybind()
+end
+task.wait(0.1)
+bindData.Pressable = true
+end)
+​RunService.RenderStepped:Connect(function()
+local w = math.max(30, keyBtn.TextBounds.X + 16)
+TweenService:Create(keyFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, w, 0, 20)}):Play()
+end)
+end
+​function SectionAPI.CreateInput(_, cfg)
+local name, flag, default, placeholder, cb = cfg.Name, cfg.Flag, cfg.CurrentValue, cfg.PlaceholderText, cfg.Callback or function() end
+table.insert(tabData.Features, name)
+WindowAPI.Flags[flag] = {CurrentValue = default}
+local frame = Instance.new("Frame", currentScroll)
+frame.Name = "Input"
+insertIntoSection(frame)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.45
+frame.Size = UDim2.new(1,-10,0,28)
+frame.ClipsDescendants = true
+local label = Instance.new("TextLabel", frame)
+label.BackgroundTransparency = 1
+label.Position = UDim2.new(0,10,0,0)
+label.Size = UDim2.new(0.5,0,0,32)
+label.Font = Enum.Font.ArialBold
+label.Text = name
+label.TextColor3 = Color3.fromRGB(199,199,199)
+label.TextSize = 13
+label.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,5)
+local inputFrame = Instance.new("Frame", frame)
+inputFrame.AnchorPoint = Vector2.new(1,0)
+inputFrame.BackgroundColor3 = Color3.fromRGB(53,53,53)
+inputFrame.BackgroundTransparency = 0.7
+inputFrame.Position = UDim2.new(1,-4,0,4)
+inputFrame.Size = UDim2.new(0,0,0,20)
+inputFrame.ClipsDescendants = true
+Instance.new("UICorner", inputFrame).CornerRadius = UDim.new(0,5)
+local box = Instance.new("TextBox", inputFrame)
+box.BackgroundTransparency = 1
+box.Position = UDim2.new(0,7,0,0)
+box.Size = UDim2.new(1,-40,1,0)
+box.Font = Enum.Font.ArialBold
+box.PlaceholderColor3 = Color3.fromRGB(127,127,127)
+box.PlaceholderText = placeholder or "กรอกข้อความ"
+box.Text = default or ""
+box.TextColor3 = Color3.fromRGB(255,200,110)
+box.TextSize = 12
+box.TextXAlignment = Enum.TextXAlignment.Left
+box.ClearTextOnFocus = cfg.ClearTextOnFocus
+local icon = Instance.new("ImageLabel", inputFrame)
+icon.AnchorPoint = Vector2.new(1,0)
+icon.BackgroundTransparency = 1
+icon.Position = UDim2.new(1,-8,0,2)
+icon.Size = UDim2.new(0,16,0,16)
+icon.Image = "rbxassetid://76137750753739"
+icon.ImageColor3 = Color3.fromRGB(255,200,110)
+​box.FocusLost:Connect(function()
+local txt = box.Text
+WindowAPI.Flags[flag] = {CurrentValue = txt}
+if cfg.RemoveTextAfterFocusLost then box.Text = "" end
+task.spawn(function() cb(txt) end)
+end)
+if loadedSettings[flag] then
+WindowAPI.Flags[flag] = loadedSettings[flag]
+box.Text = loadedSettings[flag].CurrentValue
+task.spawn(function() cb(box.Text, true) end)
+end
+RunService.RenderStepped:Connect(function()
+local w = math.max(30, box.TextBounds.X + 50)
+TweenService:Create(inputFrame, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(0, math.clamp(w, 0, 160), 0, 20)}):Play()
+end)
+end
+​function SectionAPI.CreateColorPicker(_, cfg)
+local name, defaultColor, flag, cb = cfg.Name, cfg.Color, cfg.Flag, cfg.Callback or function() end
+WindowAPI.Flags[flag] = {Color = defaultColor}
+table.insert(tabData.Features, name)
+local frame = Instance.new("Frame", currentScroll)
+frame.Name = "Colorpicker"
+insertIntoSection(frame)
+frame.BackgroundColor3 = Color3.fromRGB(0,0,0)
+frame.BackgroundTransparency = 0.45
+frame.Size = UDim2.new(1,-10,0,140)
+frame.ClipsDescendants = true
+local label = Instance.new("TextLabel", frame)
+label.BackgroundTransparency = 1
+label.Position = UDim2.new(0,10,0,0)
+label.Size = UDim2.new(0.5,0,0,32)
+label.Font = Enum.Font.ArialBold
+label.Text = name
+label.TextColor3 = Color3.fromRGB(199,199,199)
+label.TextSize = 13
+label.TextXAlignment = Enum.TextXAlignment.Left
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0,5)
+​local indicatorBg = Instance.new("Frame", frame)
+indicatorBg.Name = "ColorIndicatorBackground"
+indicatorBg.AnchorPoint = Vector2.new(1,0.5)
+indicatorBg.BackgroundColor3 = defaultColor
+indicatorBg.BackgroundTransparency = 0.3
+indicatorBg.Position = UDim2.new(1,-4,0,16)
+indicatorBg.Size = UDim2.new(0,50,0,20)
+Instance.new("UICorner", indicatorBg).CornerRadius = UDim.new(0,5)
+​local indicator = Instance.new("Frame", frame)
+indicator.Name = "ColorIndicator"
+indicator.AnchorPoint = Vector2.new(1,0.5)
+indicator.BackgroundColor3 = defaultColor
+indicator.Position = UDim2.new(1,-6,0,16)
+indicator.Size = UDim2.new(0,46,0,16)
+Instance.new("UICorner", indicator).CornerRadius = UDim.new(0,4)
+​local hueSlider = Instance.new("Frame", frame)
+hueSlider.Name = "ColorSlider"
+hueSlider.BackgroundColor3 = Color3.new(1,1,1)
+hueSlider.Position = UDim2.new(0,10,0,120)
+hueSlider.Size = UDim2.new(0,173,0,12)
+hueSlider.ClipsDescendants = true
+local hueGrad = Instance.new("UIGradient", hueSlider)
+hueGrad.Color = ColorSequence.new{
+ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255,0,0)),
+ColorSequenceKeypoint.new(0.17, Color3.fromRGB(255,255,0)),
+ColorSequenceKeypoint.new(0.33, Color3.fromRGB(0,255,0)),
+ColorSequenceKeypoint.new(0.50, Color3.fromRGB(0,255,255)),
+ColorSequenceKeypoint.new(0.67, Color3.fromRGB(0,0,255)),
+ColorSequenceKeypoint.new(0.84, Color3.fromRGB(255,0,255)),
+ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255,0,0))
+}
+Instance.new("UICorner", hueSlider).CornerRadius = UDim.new(0,6)
+​local base = Instance.new("Frame", frame)
+base.Name = "Base"
+base.BackgroundColor3 = Color3.new(1,1,1)
+base.Position = UDim2.new(0,10,0,33)
+base.Size = UDim2.new(0,173,0,80)
+Instance.new("UICorner", base).CornerRadius = UDim.new(0,6)
+​local hueThumb = Instance.new("Frame", hueSlider)
+hueThumb.Name = "HueThumb"
+hueThumb.AnchorPoint = Vector2.new(0.5,0.5)
+hueThumb.BackgroundColor3 = Color3.new(1,1,1)
+hueThumb.Size = UDim2.new(0,6,0,6)
+hueThumb.ZIndex = 10
+Instance.new("UICorner", hueThumb).CornerRadius = UDim.new(1,0)
+Instance.new("UIStroke", hueThumb).Thickness = 1
+​local overlay = Instance.new("Frame", frame)
+overlay.Name = "Overlay"
+overlay.BackgroundColor3 = Color3.new(1,1,1)
+overlay.Position = UDim2.new(0,10,0,33)
+overlay.Size = UDim2.new(0,173,0,80)
+Instance.new("UICorner", overlay).CornerRadius = UDim.new(0,6)
+local blackGrad = Instance.new("UIGradient", overlay)
+blackGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.new(0,0,0)), ColorSequenceKeypoint.new(1, Color3.new(0,0,0))}
+blackGrad.Transparency = NumberSequence.new{NumberSequenceKeypoint.new(0,1), NumberSequenceKeypoint.new(1,0)}
+​local colorThumb = Instance.new("Frame", overlay)
+colorThumb.Name = "ColorThumb"
+colorThumb.AnchorPoint = Vector2.new(0.5,0.5)
+colorThumb.BackgroundColor3 = Color3.new(1,1,1)
+colorThumb.Size = UDim2.fromOffset(6,6)
+colorThumb.ZIndex = 10
+Instance.new("UICorner", colorThumb).CornerRadius = UDim.new(1,0)
+Instance.new("UIStroke", colorThumb).Thickness = 1
+​local whiteOverlay = Instance.new("Frame", base)
+whiteOverlay.Size = UDim2.new(1,0,1,0)
+whiteOverlay.BackgroundColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", whiteOverlay).CornerRadius = UDim.new(0,6)
+local whiteGrad = Instance.new("UIGradient", whiteOverlay)
+whiteGrad.Rotation = 270
+​local h,s,v = defaultColor:ToHSV()
+local currentHue = h
+colorThumb.Position = UDim2.fromScale(1 - v, 1 - s)
+hueThumb.Position = UDim2.fromScale(h, 0.5)
+whiteGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(1, Color3.fromHSV(h,1,1))}
+​local function updateAll(_, _, sat, val, silent)
+if not sat then
+end
+local newColor = Color3.fromHSV(currentHue, 1 - (val or 0), 1 - (sat or 0))
+indicatorBg.BackgroundColor3 = newColor
+indicator.BackgroundColor3 = newColor
+WindowAPI.Flags[flag] = {Color = newColor}
+if not silent then task.spawn(function() cb(newColor) end) end
+end
+​local toggleBtn = Instance.new("TextButton", frame)
+toggleBtn.Text = ""
+toggleBtn.BackgroundTransparency = 1
+toggleBtn.Size = UDim2.new(1,0,0,32)
+toggleBtn.ZIndex = 2
+local collapsed = true
+local function collapse()
+frame.Size = UDim2.new(1,-10,0,32)
+hueSlider.Visible = false
+overlay.Visible = false
+base.Visible = false
+end
+local function expand()
+frame.Size = UDim2.new(1,-10,0,140)
+hueSlider.Visible = true
+overlay.Visible = true
+base.Visible = true
+end
+collapse()
+toggleBtn.MouseButton1Click:Connect(function()
+collapsed = not collapsed
+if collapsed then collapse() else expand() end
+end)
+​local draggingHue, draggingColor
+hueSlider.InputBegan:Connect(function(inp)
+if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+draggingHue = true
+while draggingHue and task.wait() do
+local alpha = math.clamp((inp.Position.X - hueSlider.AbsolutePosition.X) / hueSlider.AbsoluteSize.X, 0, 1)
+currentHue = alpha
+TweenService:Create(hueThumb, TweenInfo.new(0.1), {Position = UDim2.fromScale(alpha, 0.5)}):Play()
+whiteGrad.Color = ColorSequence.new{ColorSequenceKeypoint.new(0, Color3.new(1,1,1)), ColorSequenceKeypoint.new(1, Color3.fromHSV(alpha,1,1))}
+updateAll(nil,nil,colorThumb.Position.X.Scale, colorThumb.Position.Y.Scale)
+end
+end
+end)
+hueSlider.InputChanged:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseMovement then inp = inp end end)
+hueSlider.InputEnded:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseButton1 then draggingHue = false end end)
+​overlay.InputBegan:Connect(function(inp)
+if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+draggingColor = true
+while draggingColor and task.wait() do
+local x = math.clamp((inp.Position.X - overlay.AbsolutePosition.X) / overlay.AbsoluteSize.X, 0, 1)
+local y = math.clamp((inp.Position.Y - overlay.AbsolutePosition.Y) / overlay.AbsoluteSize.Y, 0, 1)
+TweenService:Create(colorThumb, TweenInfo.new(0.1), {Position = UDim2.fromScale(x,y)}):Play()
+updateAll(nil,nil,x,y)
+end
+end
+end)
+overlay.InputEnded:Connect(function(inp) if inp.UserInputType == Enum.UserInputType.MouseButton1 then draggingColor = false end end)
+end
+​function SectionAPI.Divide(_)
+local sep = Instance.new("Frame", currentScroll)
+insertIntoSection(sep)
+sep.BackgroundTransparency = 1
+sep.Size = UDim2.new(1,0,0,18)
+local line = Instance.new("Frame", sep)
+line.BackgroundColor3 = Color3.fromRGB(70,70,70)
+line.BackgroundTransparency = 0.5
+line.AnchorPoint = Vector2.new(0.5,0.5)
+line.Position = UDim2.new(0.5,-2,0.5,0)
+line.Size = UDim2.new(1,-4,0,1)
+end
+​return SectionAPI
+end
+​WindowAPI.Keybinds = {}
+UserInputService.InputBegan:Connect(function(input, processed)
+if processed then return end
+for _, bind in pairs(WindowAPI.Keybinds) do
+if bind.Pressable and bind.KeyCode and input.KeyCode == Enum.KeyCode[bind.KeyCode] then
+bind.Callback()
+end
+end
+end)
+​function WindowAPI.SelectTab(_, idx)
+for i, tab in pairs(Tabs) do
+if i ~= idx then
+tab.IsSelected = false
+tab.Deselect()
+end
+end
+Tabs[idx].IsSelected = true
+Tabs[idx].Select()
+end
+​WindowAPI.Flags = {}
+Library.Window = mainFrame
+return WindowAPI
+end
+​function Library.Destroy(_)
+pcall(function() Library.Window.Parent:Destroy() end)
+end
+​local notified = {}
+function Library.Notify(_, data)
+if notified[data.Content] then return end
+if not data.NoQueue then notified[data.Content] = true end
+task.delay(data.Duration, function() notified[data.Content] = nil end)
+Fluent:Notify(data)
+end
+​return Library
+end)()
+​local UILibrary = CustomUILibraryFactory or loadstring(game:HttpGet('https://raw.githubusercontent.com/test1237423234-stack/MegaSaken/refs/heads/main/rayfield'))()
+​if not isfolder('AmberCore') then makefolder('AmberCore') end
+if not isfile('AmberCorewoman.png') then
+writefile("AmberCorewoman.png", game:HttpGet("https://github.com/test1237423234-stack/MegaSaken/raw/main/Megasaken%20Logo.png"))
+end
+​local introFinished = useLegacyUI
+local assetsPrepared = false
+local updateStatusText
+​if not useLegacyUI then
+task.spawn(function()
+local introDone = false
+task.spawn(function()
+Wait(1)
+local blur = Instance.new("BlurEffect", Lighting)
+blur.Size = 0
+local gui = Instance.new("ScreenGui", gethui())
+gui.ResetOnSpawn = false
+local container = Instance.new("Frame", gui)
+container.Size = UDim2.new(0,600,0,130)
+container.Position = UDim2.new(0.5,0,0.5,0)
+container.AnchorPoint = Vector2.new(0.5,0.5)
+container.BackgroundTransparency = 1
+​local status = Instance.new("TextLabel", container)
+status.Text = "กำลังเริ่มต้น..."
+status.Font = Enum.Font.LuckiestGuy
+status.Size = UDim2.new(0,600,0,25)
+status.Position = UDim2.new(0,0,0,105)
+status.TextSize = 18
+status.TextColor3 = Color3.new(1,1,1)
+status.TextXAlignment = Enum.TextXAlignment.Center
+status.BackgroundTransparency = 1
+​function updateStatusText(txt) status.Text = txt end
+​local logo = Instance.new("ImageLabel", container)
+logo.Size = UDim2.new(0,100,0,100)
+logo.Position = UDim2.new(0,250,0,0)
+logo.BackgroundTransparency = 1
+logo.Image = getcustomasset("AmberCorewoman.png")
+logo.ImageTransparency = 1
+​local title = Instance.new("TextLabel", container)
+title.Text = "AmberCore V9"
+title.Font = Enum.Font.LuckiestGuy
+title.Size = UDim2.new(0,0,0,100)
+title.Position = UDim2.new(0,350,0,0)
+title.TextSize = 40
+title.TextColor3 = Color3.new(0,0,0)
+title.TextXAlignment = Enum.TextXAlignment.Left
+title.BackgroundTransparency = 1
+title.ClipsDescendants = true
+​local orange = Color3.fromHex("F59F27")
+local black = Color3.new(0,0,0)
+local pulsing = false
+​local function startPulse()
+pulsing = true
+task.spawn(function()
+while pulsing do
+TweenService:Create(title, TweenInfo.new(0.5), {TextColor3 = orange}):Play()
+task.wait(0.5)
+if not pulsing then break end
+TweenService:Create(title, TweenInfo.new(0.5), {TextColor3 = black}):Play()
+task.wait(0.5)
+end
+end)
+end
+local function stopPulse()
+pulsing = false
+TweenService:Create(title, TweenInfo.new(0.5), {TextColor3 = orange}):Play()
+task.wait(0.5)
+end
+​TweenService:Create(logo, TweenInfo.new(1), {ImageTransparency = 0}):Play()
+TweenService:Create(blur, TweenInfo.new(1), {Size = 12}):Play()
+task.wait(1)
+​local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+TweenService:Create(logo, tweenInfo, {Position = UDim2.new(0,0,0,0)}):Play()
+TweenService:Create(title, tweenInfo, {Position = UDim2.new(0,100,0,0), Size = UDim2.new(0,500,0,100)}):Play()
+startPulse()
+repeat task.wait() until introDone
+stopPulse()
+task.wait(0.3)
+​local outInfo = TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+TweenService:Create(logo, outInfo, {Position = UDim2.new(0,250,0,0)}):Play()
+TweenService:Create(title, outInfo, {Position = UDim2.new(0,350,0,0), Size = UDim2.new(0,0,0,100)}):Play()
+task.spawn(function()
+TweenService:Create(status, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {TextSize = 22}):Play()
+task.wait(0.3)
+TweenService:Create(status, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {TextSize = 13, TextTransparency = 1, Position = UDim2.new(0,0,0,125)}):Play()
+end)
+task.wait(1.5)
+TweenService:Create(logo, TweenInfo.new(1), {ImageTransparency = 1}):Play()
+TweenService:Create(blur, TweenInfo.new(1), {Size = 0}):Play()
+task.wait(1)
+blur:Destroy()
+gui:Destroy()
+end)
+repeat task.wait() until assetsPrepared and updateStatusText
+local allDesc = _G.globaluilibrary:GetDescendants()
+local images = {}
+for i = 1, #allDesc do
+if allDesc[i]:IsA("ImageLabel") or allDesc[i]:IsA("ImageButton") then
+table.insert(images, allDesc[i])
+end
+end
+updateStatusText("กำลังเตรียม UI (0/" .. #images .. ")")
+local loaded = 0
+task.spawn(function()
+for i = 1, #images do
+local done = false
+task.spawn(function() pcall(ContentProvider.PreloadAsync, ContentProvider, {images[i]}) done = true end)
+local t = tick()
+repeat task.wait() until done or tick() - t > 2
+loaded += 1
+end
+end)
+while task.wait() do
+updateStatusText("กำลังเตรียม UI (" .. loaded .. "/" .. #images .. ")")
+if loaded == #images then break end
+end
+updateStatusText("พร้อมใช้งาน")
+task.wait(2)
+introDone = true
+updateStatusText("พร้อมใช้งาน")
+task.wait(2)
+introFinished = true
+end)
+end
+​-- AmberCore | 04 / Window setup
+​local Window = UILibrary:CreateWindow{
+Name = 'AmberCore v9',
+Icon = getcustomasset("AmberCorewoman.png"),
+LoadingTitle = 'AmberCore v9',
+LoadingSubtitle = 'V3',
+ShowText = 'AmberCore',
+Theme = 'Amber'
+}
