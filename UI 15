@@ -1,0 +1,814 @@
+--[[
+================================================================================
+  KiraUI Library  (standalone rebuild of the Kira Hub UI layer)
+--------------------------------------------------------------------------------
+  Extracted & cleaned from the "Kira Hub" script (game: Steal an Egg).
+  The original was heavily minified and tangled with game logic, so this is a
+  faithful, self-contained rebuild preserving Kira's design language:
+    - warm dark/light themes with gold accent
+    - left icon-rail navigation
+    - BuilderSans typography
+    - components: Section / Button / Toggle / Slider / Dropdown / Input
+                  / Keybind / Label / ColorPicker
+    - notifications, drag, open-keybind, config persistence, unload
+
+  Usage:
+    local KiraUI = loadstring(game:HttpGet("<raw-url-of-this-file>"))()
+    local Window = KiraUI:CreateWindow({
+        Title   = "My Hub",
+        Version = "1.0",
+        Product = "Game Name",
+        Discord = "https://discord.gg/...",   -- optional
+        Author  = "@you",
+        OpenBind = Enum.KeyCode.RightShift,
+        Theme   = "Dark",                     -- "Dark" | "Light"
+    })
+    local Tab = Window:CreateTab({ Name = "Main", Icon = "info" })
+    Tab:AddSection("Hello")
+    Tab:AddButton({ Name = "Click me", Callback = function() print("hi") end })
+    Tab:AddToggle({ Name = "Auto farm", Flag = "auto_farm", Default = false,
+                    Callback = function(v) print(v) end })
+    -- see Example.lua for the full component demo
+================================================================================
+]]
+
+local KiraUI = {}
+KiraUI.__index = KiraUI
+
+-- ---------------------------------------------------------------- services
+local Players            = game:GetService("Players")
+local UserInputService   = game:GetService("UserInputService")
+local TweenService       = game:GetService("TweenService")
+local RunService         = game:GetService("RunService")
+local HttpService        = game:GetService("HttpService")
+local LocalPlayer        = Players.LocalPlayer or Players:GetPropertyChangedSignal("LocalPlayer") and Players.LocalPlayer
+local PlayerGui          = LocalPlayer:WaitForChild("PlayerGui")
+
+-- ---------------------------------------------------------------- design tokens (exact Kira palette)
+local Themes = {
+    Dark = {
+        bg          = Color3.fromRGB(12, 11, 10),
+        rail        = Color3.fromRGB(16, 15, 14),
+        card        = Color3.fromRGB(32, 30, 27),
+        lift        = Color3.fromRGB(42, 39, 35),
+        fill        = Color3.fromRGB(48, 44, 39),
+        line        = Color3.fromRGB(58, 53, 46),
+        text        = Color3.fromRGB(246, 242, 234),
+        dim         = Color3.fromRGB(168, 158, 144),
+        mute        = Color3.fromRGB(110, 102, 92),
+        accent      = Color3.fromRGB(214, 168, 108),
+        accentDeep  = Color3.fromRGB(92, 68, 36),
+        accentHover = Color3.fromRGB(228, 186, 128),
+        ink         = Color3.fromRGB(22, 18, 14),
+        ok          = Color3.fromRGB(138, 166, 128),
+    },
+    Light = {
+        bg          = Color3.fromRGB(232, 226, 218),
+        rail        = Color3.fromRGB(232, 226, 218),
+        card        = Color3.fromRGB(252, 250, 246),
+        lift        = Color3.fromRGB(242, 236, 228),
+        fill        = Color3.fromRGB(224, 218, 208),
+        line        = Color3.fromRGB(204, 196, 184),
+        text        = Color3.fromRGB(28, 24, 20),
+        dim         = Color3.fromRGB(92, 84, 74),
+        mute        = Color3.fromRGB(128, 120, 108),
+        accent      = Color3.fromRGB(168, 114, 56),
+        accentDeep  = Color3.fromRGB(120, 80, 38),
+        accentHover = Color3.fromRGB(186, 132, 70),
+        ink         = Color3.fromRGB(252, 250, 246),
+        ok          = Color3.fromRGB(64, 118, 82),
+    },
+}
+
+local Fonts = {
+    title = Enum.Font.BuilderSansBold,
+    mid   = Enum.Font.BuilderSansMedium,
+    body  = Enum.Font.BuilderSans,
+    mono  = Enum.Font.RobotoMono,
+}
+
+-- icon glyphs (swap to rbxassetid:// ImageLabels if you prefer real icons)
+local Icons = {
+    info    = "i",
+    egg     = "●",
+    grid    = "▦",
+    rocket  = "▲",
+    layers  = "≡",
+    out     = "↗",
+    cog     = "⚙",
+    star    = "★",
+    user    = "●",
+    default = "◆",
+}
+
+local WIN_W, WIN_H, RAIL_W = 620, 430, 152
+
+-- ---------------------------------------------------------------- helpers
+local function new(class, props, parent)
+    local inst = Instance.new(class)
+    for k, v in pairs(props or {}) do
+        inst[k] = v
+    end
+    if parent then inst.Parent = parent end
+    return inst
+end
+
+local function corner(parent, radius)
+    return new("UICorner", { CornerRadius = UDim.new(0, radius or 8), Parent = parent })
+end
+
+local function stroke(parent, color, thickness)
+    return new("UIStroke", { Color = color or Color3.new(0,0,0), Thickness = thickness or 1,
+        Transparency = 0.4, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = parent })
+end
+
+local function padding(parent, l, r, t, b)
+    return new("UIPadding", {
+        PaddingLeft = UDim.new(0, l or 8), PaddingRight = UDim.new(0, r or 8),
+        PaddingTop = UDim.new(0, t or 8),  PaddingBottom = UDim.new(0, b or 8),
+        Parent = parent,
+    })
+end
+
+local function tween(inst, info, props)
+    local tw = TweenService:Create(inst, info, props)
+    tw:Play()
+    return tw
+end
+
+local TWEEN_FAST = TweenInfo.new(0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+-- ---------------------------------------------------------------- themed-element registry
+-- every element that should re-color on theme switch is registered as
+-- { inst, property, role }
+local WindowMeta = {}
+
+local function registerTheme(win, inst, property, role)
+    win._themed[#win._themed + 1] = { inst = inst, property = property, role = role }
+    inst[property] = win._theme[role]
+end
+
+local function applyTheme(win, name)
+    local th = Themes[name]
+    if not th then return end
+    win._themeName = name
+    win._theme = th
+    for _, e in ipairs(win._themed) do
+        if e.inst and e.inst.Parent ~= nil then
+            e.inst[e.property] = th[e.role]
+        end
+    end
+end
+
+-- ---------------------------------------------------------------- notifications
+local function makeNotifier(win, screenGui)
+    local holder = new("Frame", {
+        Name = "KiraNotifications", BackgroundTransparency = 1,
+        Position = UDim2.new(1, -20, 0, 20), AnchorPoint = Vector2.new(1, 0),
+        Size = UDim2.new(0, 300, 1, -40), Parent = screenGui,
+    })
+    new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,
+        HorizontalAlignment = Enum.HorizontalAlignment.Right, VerticalAlignment = Enum.VerticalAlignment.Top,
+        Parent = holder })
+
+    return function(opts)
+        opts = opts or {}
+        local card = new("Frame", {
+            BackgroundColor3 = win._theme.card, Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = Enum.AutomaticSize.Y, Parent = holder,
+        })
+        corner(card, 10); stroke(card, win._theme.line, 1)
+        registerTheme(win, card, "BackgroundColor3", "card")
+        padding(card, 14, 14, 10, 10)
+        new("Frame", { BackgroundColor3 = win._theme.accent, Size = UDim2.new(0, 3, 1, -12),
+            Position = UDim2.new(0, 0, 0, 6), Parent = card })
+        local title = new("TextLabel", { BackgroundTransparency = 1, Size = UDim2.new(1, -8, 0, 18),
+            Font = Fonts.title, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left,
+            TextColor3 = win._theme.text, Text = opts.Title or "Notification", Parent = card })
+        registerTheme(win, title, "TextColor3", "text")
+        local body = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 20),
+            Size = UDim2.new(1, -8, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
+            Font = Fonts.body, TextSize = 13, TextWrapped = true,
+            TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top,
+            TextColor3 = win._theme.dim, Text = opts.Content or "", Parent = card })
+        registerTheme(win, body, "TextColor3", "dim")
+        card.GroupTransparency = 1
+        tween(card, TWEEN_FAST, { GroupTransparency = 0 })
+        task.delay(opts.Duration or 4, function()
+            tween(card, TWEEN_FAST, { GroupTransparency = 1 })
+            task.wait(0.25); card:Destroy()
+        end)
+    end
+end
+
+-- ---------------------------------------------------------------- config persistence
+local function cfgPath(win)
+    local safe = tostring(win._title):gsub("[<>:\"/\\|?*]", "_"):gsub("%s+", "_")
+    return "KiraUI/" .. safe .. "-config.json"
+end
+
+local function saveConfig(win)
+    pcall(function()
+        if not isfolder("KiraUI") then makefolder("KiraUI") end
+        writefile(cfgPath(win), HttpService:JSONEncode(win._flags))
+    end)
+end
+
+local function loadConfig(win)
+    local ok, data = pcall(function()
+        return readfile(cfgPath(win))
+    end)
+    if ok and data then
+        local ok2, tbl = pcall(function() return HttpService:JSONDecode(data) end)
+        if ok2 and type(tbl) == "table" then
+            for k, v in pairs(tbl) do win._flags[k] = v end
+        end
+    end
+end
+
+-- ================================================================================
+--  WINDOW
+-- ================================================================================
+function KiraUI:CreateWindow(opts)
+    opts = opts or {}
+    local win = setmetatable({}, KiraUI)
+    win._title   = opts.Title or "KiraUI"
+    win._version = opts.Version or "1.0"
+    win._product = opts.Product or ""
+    win._discord = opts.Discord or ""
+    win._author  = opts.Author or ""
+    win._openKey = opts.OpenBind or Enum.KeyCode.RightShift
+    win._themeName = opts.Theme or "Dark"
+    win._theme   = Themes[win._themeName] or Themes.Dark
+    win._themed  = {}
+    win._flags   = {}
+    win._tabs    = {}
+    win._tabButtons = {}
+    win._open    = true
+
+    loadConfig(win)
+
+    -- ScreenGui
+    local gui = new("ScreenGui", {
+        Name = "KiraUI_" .. win._title, ResetOnSpawn = false,
+        IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+        Parent = PlayerGui,
+    })
+    win._gui = gui
+
+    -- main window frame
+    local frame = new("Frame", {
+        Name = "Window", BackgroundColor3 = win._theme.bg,
+        Size = UDim2.new(0, WIN_W, 0, WIN_H),
+        Position = UDim2.new(0.5, -WIN_W/2, 0.5, -WIN_H/2),
+        ClipsDescendants = true, Parent = gui,
+    })
+    win._frame = frame
+    corner(frame, 14)
+    local frameStroke = stroke(frame, win._theme.line, 1)
+    registerTheme(win, frame, "BackgroundColor3", "bg")
+    registerTheme(win, frameStroke, "Color", "line")
+
+    -- shadow
+    local shadow = new("ImageLabel", { BackgroundTransparency = 1,
+        Image = "rbxassetid://6014261993", ImageColor3 = Color3.new(0,0,0),
+        ImageTransparency = 0.5, ScaleType = Enum.ScaleType.Slice,
+        SliceCenter = Rect.new(49,49,450,450), Size = UDim2.new(1, 40, 1, 40),
+        Position = UDim2.new(0, -20, 0, -20), ZIndex = -1, Parent = frame })
+
+    -- title bar
+    local titleBar = new("Frame", { BackgroundColor3 = win._theme.rail,
+        Size = UDim2.new(1, 0, 0, 44), Parent = frame })
+    registerTheme(win, titleBar, "BackgroundColor3", "rail")
+    padding(titleBar, 14, 10, 0, 0)
+    local titleLbl = new("TextLabel", { BackgroundTransparency = 1,
+        Size = UDim2.new(0.6, 0, 1, 0), Font = Fonts.title, TextSize = 16,
+        TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = win._theme.text,
+        Text = win._title .. "  <font color='#" .. win._theme.accent:ToHex() .. "'>v" .. win._version .. "</font>",
+        RichText = true, Parent = titleBar })
+    registerTheme(win, titleLbl, "TextColor3", "text")
+    local prodLbl = new("TextLabel", { BackgroundTransparency = 1,
+        Position = UDim2.new(0.6, 0, 0, 0), Size = UDim2.new(0.25, 0, 1, 0),
+        Font = Fonts.mono, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Right,
+        TextColor3 = win._theme.mute, Text = win._product, Parent = titleBar })
+    registerTheme(win, prodLbl, "TextColor3", "mute")
+
+    -- close + minimize buttons
+    local function makeTitleBtn(char, xOff, cb)
+        local b = new("TextButton", { BackgroundColor3 = win._theme.fill,
+            Size = UDim2.new(0, 26, 0, 26), Position = UDim2.new(1, xOff, 0.5, -13),
+            Font = Fonts.mid, TextSize = 14, TextColor3 = win._theme.dim,
+            Text = char, AutoButtonColor = false, Parent = titleBar })
+        corner(b, 7); registerTheme(win, b, "BackgroundColor3", "fill")
+        registerTheme(win, b, "TextColor3", "dim")
+        b.MouseButton1Click:Connect(cb)
+        b.MouseEnter:Connect(function() tween(b, TWEEN_FAST, { BackgroundColor3 = win._theme.lift }) end)
+        b.MouseLeave:Connect(function() tween(b, TWEEN_FAST, { BackgroundColor3 = win._theme.fill }) end)
+        return b
+    end
+    makeTitleBtn("—", -64, function() win:SetOpen(not win._open) end)
+    makeTitleBtn("✕", -30, function() win:Unload() end)
+
+    -- left rail
+    local rail = new("Frame", { BackgroundColor3 = win._theme.rail,
+        Position = UDim2.new(0, 0, 0, 44), Size = UDim2.new(0, RAIL_W, 1, -44),
+        Parent = frame })
+    registerTheme(win, rail, "BackgroundColor3", "rail")
+    padding(rail, 10, 10, 12, 12)
+    local railList = new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder, Parent = rail })
+
+    -- content area
+    local content = new("Frame", { BackgroundTransparency = 1,
+        Position = UDim2.new(0, RAIL_W, 0, 44), Size = UDim2.new(1, -RAIL_W, 1, -44),
+        ClipsDescendants = true, Parent = frame })
+    win._content = content
+
+    -- dragging (title bar)
+    local dragging, dragStart, startPos
+    titleBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X,
+                                       startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    -- open/close keybind
+    UserInputService.InputBegan:Connect(function(input, gpe)
+        if gpe then return end
+        if input.KeyCode == win._openKey then win:SetOpen(not win._open) end
+    end)
+
+    -- notifier
+    win.Notify = makeNotifier(win, gui)
+
+    -- ---------------------------------------------------------------- tab switching
+    function win:_selectTab(tab)
+        for _, t in ipairs(win._tabs) do t._page.Visible = (t == tab) end
+        for _, btn in ipairs(win._tabButtons) do
+            local active = btn._tab == tab
+            btn.BackgroundColor3 = active and win._theme.fill or win._theme.rail
+            btn._icon.TextColor3 = active and win._theme.accent or win._theme.mute
+            btn._label.TextColor3 = active and win._theme.text or win._theme.dim
+        end
+        win._activeTab = tab
+    end
+
+    -- ============================================================================
+    --  TAB
+    -- ============================================================================
+    function win:CreateTab(tabOpts)
+        tabOpts = tabOpts or {}
+        local tab = { _name = tabOpts.Name or "Tab", _win = win }
+        table.insert(win._tabs, tab)
+
+        -- rail button
+        local btn = new("TextButton", { BackgroundTransparency = 0,
+            BackgroundColor3 = win._theme.rail, Size = UDim2.new(1, 0, 0, 34),
+            Text = "", AutoButtonColor = false, Parent = rail, LayoutOrder = #win._tabs })
+        corner(btn, 8)
+        btn._tab = tab
+        local iconGlyph = Icons[tabOpts.Icon or "default"] or Icons.default
+        local icon = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0, 10, 0, 0),
+            Size = UDim2.new(0, 22, 1, 0), Font = Fonts.title, TextSize = 15,
+            TextColor3 = win._theme.mute, Text = iconGlyph, Parent = btn })
+        local label = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0, 36, 0, 0),
+            Size = UDim2.new(1, -42, 1, 0), Font = Fonts.mid, TextSize = 13,
+            TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = win._theme.dim,
+            Text = tab._name, Parent = btn })
+        btn._icon = icon; btn._label = label
+        tab._btn = btn
+        table.insert(win._tabButtons, btn)
+        btn.MouseButton1Click:Connect(function() win:_selectTab(tab) end)
+        btn.MouseEnter:Connect(function()
+            if btn ~= (win._activeTab and win._activeTab._btn) then
+                tween(btn, TWEEN_FAST, { BackgroundColor3 = win._theme.lift })
+            end
+        end)
+        btn.MouseLeave:Connect(function()
+            if btn ~= (win._activeTab and win._activeTab._btn) then
+                tween(btn, TWEEN_FAST, { BackgroundColor3 = win._theme.rail })
+            end
+        end)
+
+        -- page (scrolling)
+        local page = new("ScrollingFrame", { BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0), CanvasSize = UDim2.new(0,0,0,0),
+            AutomaticCanvasSize = Enum.AutomaticSize.Y, ScrollBarThickness = 3,
+            ScrollBarImageColor3 = win._theme.mute, ScrollingDirection = Enum.ScrollingDirection.Y,
+            BorderSizePixel = 0, Visible = false, Parent = content })
+        padding(page, 14, 18, 12, 12)
+        local list = new("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = page })
+        tab._page = page
+        tab._list = list
+        tab._order = 0
+        function tab:_nextOrder() tab._order = tab._order + 1; return tab._order end
+
+        -- ---- row shell (label + control on right)
+        local function rowShell(name, controlHeight)
+            local row = new("Frame", { BackgroundColor3 = win._theme.card,
+                Size = UDim2.new(1, 0, 0, controlHeight or 36), AutomaticSize = Enum.AutomaticSize.None,
+                Parent = page, LayoutOrder = tab:_nextOrder() })
+            corner(row, 8); stroke(row, win._theme.line, 1)
+            registerTheme(win, row, "BackgroundColor3", "card")
+            local lbl = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, 0),
+                Size = UDim2.new(0.55, -12, 1, 0), Font = Fonts.mid, TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = win._theme.text,
+                Text = name or "", Parent = row })
+            registerTheme(win, lbl, "TextColor3", "text")
+            return row, lbl
+        end
+
+        -- ---- Section header
+        function tab:AddSection(name)
+            local s = new("TextLabel", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 24),
+                Font = Fonts.title, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
+                TextColor3 = win._theme.accent, Text = string.upper(name or ""),
+                Parent = page, LayoutOrder = tab:_nextOrder() })
+            registerTheme(win, s, "TextColor3", "accent")
+            return s
+        end
+
+        -- ---- Label / paragraph
+        function tab:AddLabel(text)
+            local l = new("TextLabel", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y, Font = Fonts.body, TextSize = 12,
+                TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left,
+                TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = win._theme.dim,
+                Text = text or "", Parent = page, LayoutOrder = tab:_nextOrder() })
+            registerTheme(win, l, "TextColor3", "dim")
+            return l
+        end
+
+        -- ---- Button
+        function tab:AddButton(o)
+            o = o or {}
+            local row = new("TextButton", { BackgroundColor3 = win._theme.card,
+                Size = UDim2.new(1, 0, 0, 36), Text = "", AutoButtonColor = false,
+                Parent = page, LayoutOrder = tab:_nextOrder() })
+            corner(row, 8); stroke(row, win._theme.line, 1)
+            registerTheme(win, row, "BackgroundColor3", "card")
+            local lbl = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0, 12, 0, 0),
+                Size = UDim2.new(1, -24, 1, 0), Font = Fonts.mid, TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = win._theme.text,
+                Text = o.Name or "Button", Parent = row })
+            registerTheme(win, lbl, "TextColor3", "text")
+            local arrow = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(1, -26, 0, 0),
+                Size = UDim2.new(0, 18, 1, 0), Font = Fonts.title, TextSize = 14,
+                TextColor3 = win._theme.accent, Text = "›", Parent = row })
+            registerTheme(win, arrow, "TextColor3", "accent")
+            row.MouseButton1Click:Connect(function() if o.Callback then pcall(o.Callback) end end)
+            row.MouseEnter:Connect(function() tween(row, TWEEN_FAST, { BackgroundColor3 = win._theme.lift }) end)
+            row.MouseLeave:Connect(function() tween(row, TWEEN_FAST, { BackgroundColor3 = win._theme.card }) end)
+            return row
+        end
+
+        -- ---- Toggle
+        function tab:AddToggle(o)
+            o = o or {}
+            local row, _ = rowShell(o.Name, 36)
+            local state = (win._flags[o.Flag] ~= nil) and win._flags[o.Flag] or (o.Default == true)
+            if o.Flag then win._flags[o.Flag] = state end
+            local box = new("Frame", { BackgroundColor3 = state and win._theme.accent or win._theme.fill,
+                Position = UDim2.new(1, -58, 0.5, -12), Size = UDim2.new(0, 44, 0, 24), Parent = row })
+            corner(box, 12)
+            registerTheme(win, box, "BackgroundColor3", state and "accent" or "fill")
+            local knob = new("Frame", { BackgroundColor3 = Color3.fromRGB(246,242,234),
+                Position = state and UDim2.new(1, -22, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
+                Size = UDim2.new(0, 18, 0, 18), Parent = box })
+            corner(knob, 9)
+            local api = {}
+            function api:Set(v)
+                state = v and true or false
+                if o.Flag then win._flags[o.Flag] = state; saveConfig(win) end
+                tween(box, TWEEN_FAST, { BackgroundColor3 = state and win._theme.accent or win._theme.fill })
+                tween(knob, TWEEN_FAST, { Position = state and UDim2.new(1, -22, 0.5, -9) or UDim2.new(0, 3, 0.5, -9) })
+                if o.Callback then pcall(o.Callback, state) end
+            end
+            function api:Get() return state end
+            row.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then api:Set(not state) end
+            end)
+            return api
+        end
+
+        -- ---- Slider
+        function tab:AddSlider(o)
+            o = o or {}
+            local min, max = o.Min or 0, o.Max or 100
+            local inc = o.Increment or 1
+            local row, _ = rowShell(o.Name, 48)
+            row.Size = UDim2.new(1, 0, 0, 48)
+            local valLbl = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(1, -70, 0, 0),
+                Size = UDim2.new(0, 58, 0, 36), Font = Fonts.mono, TextSize = 13,
+                TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = win._theme.accent,
+                Text = tostring(o.Default or min), Parent = row })
+            registerTheme(win, valLbl, "TextColor3", "accent")
+            local track = new("Frame", { BackgroundColor3 = win._theme.fill,
+                Position = UDim2.new(0, 12, 0, 32), Size = UDim2.new(1, -24, 0, 6), Parent = row })
+            corner(track, 3); registerTheme(win, track, "BackgroundColor3", "fill")
+            local fill = new("Frame", { BackgroundColor3 = win._theme.accent, Size = UDim2.new(0, 0, 1, 0), Parent = track })
+            corner(fill, 3); registerTheme(win, fill, "BackgroundColor3", "accent")
+            local knob = new("Frame", { BackgroundColor3 = Color3.fromRGB(246,242,234),
+                Position = UDim2.new(0, -6, 0.5, -6), Size = UDim2.new(0, 12, 0, 12), Parent = track })
+            corner(knob, 6)
+            local value = (win._flags[o.Flag] ~= nil) and win._flags[o.Flag] or (o.Default or min)
+            value = math.clamp(value, min, max)
+            local draggingSlider = false
+            local function set(v)
+                v = math.clamp(math.floor((v / inc) + 0.5) * inc, min, max)
+                value = v
+                local pct = (v - min) / (max - min)
+                fill.Size = UDim2.new(pct, 0, 1, 0)
+                knob.Position = UDim2.new(pct, -6, 0.5, -6)
+                valLbl.Text = o.Suffix and (tostring(v) .. o.Suffix) or tostring(v)
+                if o.Flag then win._flags[o.Flag] = v; saveConfig(win) end
+                if o.Callback then pcall(o.Callback, v) end
+            end
+            set(value)
+            local function updateFromInput(input)
+                local rel = (input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X
+                set(min + rel * (max - min))
+            end
+            track.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    draggingSlider = true; updateFromInput(input)
+                    input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then draggingSlider = false end end)
+                end
+            end)
+            UserInputService.InputChanged:Connect(function(input)
+                if draggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then updateFromInput(input) end
+            end)
+            return { Set = set, Get = function() return value end }
+        end
+
+        -- ---- Dropdown (single + multi)
+        function tab:AddDropdown(o)
+            o = o or {}
+            local multi = o.Multi == true
+            local options = o.Options or {}
+            local selected = {}
+            if multi then
+                local def = win._flags[o.Flag] or o.Default or {}
+                if type(def) == "table" then for _, v in ipairs(def) do selected[v] = true end end
+            else
+                selected[1] = win._flags[o.Flag] or o.Default or options[1]
+            end
+            local row, _ = rowShell(o.Name, 36)
+            local btn = new("TextButton", { BackgroundColor3 = win._theme.fill, Text = "",
+                Position = UDim2.new(1, -170, 0.5, -13), Size = UDim2.new(0, 158, 0, 26),
+                AutoButtonColor = false, Parent = row })
+            corner(btn, 6); registerTheme(win, btn, "BackgroundColor3", "fill")
+            local display = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0, 8, 0, 0),
+                Size = UDim2.new(1, -26, 1, 0), Font = Fonts.body, TextSize = 12,
+                TextTruncate = Enum.TextTruncate.AtEnd, TextXAlignment = Enum.TextXAlignment.Left,
+                TextColor3 = win._theme.text, Parent = btn })
+            registerTheme(win, display, "TextColor3", "text")
+            local chev = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(1, -20, 0, 0),
+                Size = UDim2.new(0, 16, 1, 0), Font = Fonts.title, TextSize = 12,
+                TextColor3 = win._theme.mute, Text = "▾", Parent = btn })
+            registerTheme(win, chev, "TextColor3", "mute")
+            local listFrame = new("Frame", { BackgroundColor3 = win._theme.lift,
+                Position = UDim2.new(0, 0, 1, 4), Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = Enum.AutomaticSize.Y, Visible = false, ClipsDescendants = true,
+                Parent = btn, ZIndex = 10 })
+            corner(listFrame, 6); stroke(listFrame, win._theme.line, 1)
+            registerTheme(win, listFrame, "BackgroundColor3", "lift")
+            new("UIListLayout", { Padding = UDim.new(0, 2), SortOrder = Enum.SortOrder.LayoutOrder, Parent = listFrame })
+            padding(listFrame, 4, 4, 4, 4)
+
+            local function refreshDisplay()
+                if multi then
+                    local names = {}
+                    for k, _ in pairs(selected) do names[#names+1] = k end
+                    display.Text = #names > 0 and table.concat(names, ", ") or "Select..."
+                else
+                    display.Text = tostring(selected[1] or "Select...")
+                end
+            end
+            refreshDisplay()
+
+            local function buildOptions()
+                for _, c in ipairs(listFrame:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
+                for i, opt in ipairs(options) do
+                    local isSel = multi and (selected[opt] == true) or (selected[1] == opt)
+                    local ob = new("TextButton", { BackgroundColor3 = isSel and win._theme.accentDeep or win._theme.fill,
+                        Size = UDim2.new(1, 0, 0, 24), Text = "", AutoButtonColor = false,
+                        Parent = listFrame, LayoutOrder = i, ZIndex = 11 })
+                    corner(ob, 4)
+                    local ol = new("TextLabel", { BackgroundTransparency = 1, Position = UDim2.new(0, 8, 0, 0),
+                        Size = UDim2.new(1, -16, 1, 0), Font = Fonts.body, TextSize = 12,
+                        TextXAlignment = Enum.TextXAlignment.Left, TextColor3 = isSel and win._theme.accent or win._theme.text,
+                        Text = tostring(opt), Parent = ob, ZIndex = 12 })
+                    ob.MouseButton1Click:Connect(function()
+                        if multi then
+                            selected[opt] = not selected[opt] or nil
+                            if o.Flag then
+                                local arr = {}; for k,_ in pairs(selected) do arr[#arr+1]=k end
+                                win._flags[o.Flag] = arr; saveConfig(win)
+                            end
+                        else
+                            selected[1] = opt
+                            if o.Flag then win._flags[o.Flag] = opt; saveConfig(win) end
+                        end
+                        refreshDisplay(); buildOptions()
+                        if o.Callback then pcall(o.Callback, multi and (function() local a={}; for k,_ in pairs(selected) do a[#a+1]=k end; return a end)() or opt) end
+                    end)
+                end
+            end
+            buildOptions()
+
+            btn.MouseButton1Click:Connect(function()
+                listFrame.Visible = not listFrame.Visible
+                chev.Text = listFrame.Visible and "▴" or "▾"
+            end)
+
+            return {
+                Set = function(v)
+                    if multi then selected = {}; if type(v)=="table" then for _,x in ipairs(v) do selected[x]=true end end
+                    else selected[1] = v end
+                    refreshDisplay(); buildOptions()
+                end,
+                Get = function()
+                    if multi then local a={}; for k,_ in pairs(selected) do a[#a+1]=k end; return a end
+                    return selected[1]
+                end,
+                Refresh = function(newOpts) options = newOpts or options; buildOptions(); refreshDisplay() end,
+            }
+        end
+
+        -- ---- Input (text box)
+        function tab:AddInput(o)
+            o = o or {}
+            local row, _ = rowShell(o.Name, 36)
+            local box = new("TextBox", { BackgroundColor3 = win._theme.fill,
+                Position = UDim2.new(1, -170, 0.5, -13), Size = UDim2.new(0, 158, 0, 26),
+                Font = Fonts.body, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left,
+                TextColor3 = win._theme.text, ClearTextOnFocus = false,
+                PlaceholderText = o.Placeholder or "", PlaceholderColor3 = win._theme.mute,
+                Text = o.Default and tostring(o.Default) or "", Parent = row })
+            corner(box, 6); padding(box, 8, 8, 0, 0)
+            registerTheme(win, box, "BackgroundColor3", "fill")
+            registerTheme(win, box, "TextColor3", "text")
+            box.FocusLost:Connect(function(enter)
+                local v = box.Text
+                if o.Numeric then v = tonumber(v) or 0 end
+                if o.Flag then win._flags[o.Flag] = v; saveConfig(win) end
+                if o.Callback then pcall(o.Callback, v, enter) end
+            end)
+            return { Set = function(v) box.Text = tostring(v) end, Get = function() return box.Text end }
+        end
+
+        -- ---- Keybind
+        function tab:AddKeybind(o)
+            o = o or {}
+            local row, _ = rowShell(o.Name, 36)
+            local cur = win._flags[o.Flag] or o.Default or Enum.KeyCode.Unknown
+            if typeof(cur) == "string" then cur = Enum.KeyCode[cur] or Enum.KeyCode.Unknown end
+            local btn = new("TextButton", { BackgroundColor3 = win._theme.fill,
+                Position = UDim2.new(1, -90, 0.5, -13), Size = UDim2.new(0, 78, 0, 26),
+                Font = Fonts.mono, TextSize = 12, TextColor3 = win._theme.accent,
+                Text = cur.Name, AutoButtonColor = false, Parent = row })
+            corner(btn, 6); registerTheme(win, btn, "BackgroundColor3", "fill")
+            registerTheme(win, btn, "TextColor3", "accent")
+            local listening = false
+            local conn
+            btn.MouseButton1Click:Connect(function()
+                if listening then return end
+                listening = true; btn.Text = "..."
+                conn = UserInputService.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Keyboard then
+                        if input.KeyCode == Enum.KeyCode.Escape then
+                            btn.Text = cur.Name; listening = false; conn:Disconnect(); return
+                        end
+                        cur = input.KeyCode
+                        btn.Text = cur.Name
+                        if o.Flag then win._flags[o.Flag] = cur.Name; saveConfig(win) end
+                        if o.Callback then pcall(o.Callback, cur) end
+                        listening = false; conn:Disconnect()
+                    end
+                end)
+            end)
+            UserInputService.InputBegan:Connect(function(input, gpe)
+                if gpe or listening then return end
+                if input.KeyCode == cur and cur ~= Enum.KeyCode.Unknown then
+                    if o.PressedCallback then pcall(o.PressedCallback) end
+                end
+            end)
+            return { Set = function(k) cur = k; btn.Text = k.Name end, Get = function() return cur end }
+        end
+
+        -- ---- Color picker (simple RGB sliders popup)
+        function tab:AddColorPicker(o)
+            o = o or {}
+            local row, _ = rowShell(o.Name, 36)
+            local cur = win._flags[o.Flag] or o.Default or Color3.fromRGB(214,168,108)
+            local swatch = new("Frame", { BackgroundColor3 = cur,
+                Position = UDim2.new(1, -50, 0.5, -12), Size = UDim2.new(0, 38, 0, 24), Parent = row })
+            corner(swatch, 6); stroke(swatch, win._theme.line, 1)
+            local open = false
+            local pop
+            swatch.InputBegan:Connect(function(input)
+                if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+                open = not open
+                if open and not pop then
+                    pop = new("Frame", { BackgroundColor3 = win._theme.lift,
+                        Position = UDim2.new(1, -180, 1, 4), Size = UDim2.new(0, 180, 0, 110),
+                        ZIndex = 20, Parent = row })
+                    corner(pop, 8); stroke(pop, win._theme.line, 1)
+                    registerTheme(win, pop, "BackgroundColor3", "lift")
+                    padding(pop, 10, 10, 8, 8)
+                    new("UIListLayout", { Padding = UDim.new(0, 6), Parent = pop })
+                    local function channel(name, get, set)
+                        local l = new("TextLabel", { BackgroundTransparency = 1, Size = UDim2.new(1,0,0,14),
+                            Font = Fonts.mono, TextSize = 11, TextColor3 = win._theme.dim,
+                            Text = name .. ": " .. math.floor(get()*255), Parent = pop, ZIndex = 21 })
+                        registerTheme(win, l, "TextColor3", "dim")
+                        local tr = new("Frame", { BackgroundColor3 = win._theme.fill, Size = UDim2.new(1,0,0,6), Parent = pop, ZIndex = 21 })
+                        corner(tr, 3)
+                        local fi = new("Frame", { BackgroundColor3 = win._theme.accent, Size = UDim2.new(get(),0,1,0), Parent = tr, ZIndex = 22 })
+                        corner(fi, 3)
+                        local drag = false
+                        local function upd(input)
+                            local p = math.clamp((input.Position.X - tr.AbsolutePosition.X)/tr.AbsoluteSize.X, 0, 1)
+                            set(p); fi.Size = UDim2.new(p,0,1,0)
+                            local r,g,b = cur.R, cur.G, cur.B
+                            swatch.BackgroundColor3 = cur
+                            l.Text = name .. ": " .. math.floor(get()*255)
+                            if o.Flag then win._flags[o.Flag] = {r=cur.R,g=cur.G,b=cur.B}; saveConfig(win) end
+                            if o.Callback then pcall(o.Callback, cur) end
+                        end
+                        tr.InputBegan:Connect(function(iii)
+                            if iii.UserInputType == Enum.UserInputType.MouseButton1 then
+                                drag = true; upd(iii)
+                                iii.Changed:Connect(function() if iii.UserInputState==Enum.UserInputState.End then drag=false end end)
+                            end
+                        end)
+                        UserInputService.InputChanged:Connect(function(iii)
+                            if drag and iii.UserInputType==Enum.UserInputType.MouseMovement then upd(iii) end
+                        end)
+                    end
+                    channel("R", function() return cur.R end, function(v) cur = Color3.new(v, cur.G, cur.B) end)
+                    channel("G", function() return cur.G end, function(v) cur = Color3.new(cur.R, v, cur.B) end)
+                    channel("B", function() return cur.B end, function(v) cur = Color3.new(cur.R, cur.G, v) end)
+                elseif pop then
+                    pop.Visible = open
+                end
+            end)
+            return { Set = function(c) cur = c; swatch.BackgroundColor3 = c end, Get = function() return cur end }
+        end
+
+        if #win._tabs == 1 then win:_selectTab(tab) end
+        return tab
+    end
+
+    -- ---------------------------------------------------------------- window methods
+    function win:SetOpen(v)
+        win._open = v and true or false
+        tween(win._frame, TWEEN_FAST, { GroupTransparency = win._open and 0 or 1 })
+        win._frame.Visible = true
+        if not win._open then task.delay(0.25, function() if not win._open then win._frame.Visible = false end end) end
+    end
+
+    function win:SetTheme(name)
+        applyTheme(win, name)
+        saveConfig(win)
+    end
+
+    function win:SaveConfig() saveConfig(win) end
+    function win:LoadConfig() loadConfig(win) end
+    function win:GetFlag(f) return win._flags[f] end
+    function win:SetFlag(f, v) win._flags[f] = v; saveConfig(win) end
+
+    function win:Unload()
+        pcall(function() win._gui:Destroy() end)
+        win._unloaded = true
+    end
+
+    -- built-in Settings tab (theme + unload) if user wants it
+    function win:AddSettingsTab()
+        local st = win:CreateTab({ Name = "Settings", Icon = "cog" })
+        st:AddSection("Appearance")
+        st:AddDropdown({ Name = "Theme", Options = {"Dark","Light"}, Default = win._themeName,
+            Callback = function(v) win:SetTheme(v) end })
+        st:AddKeybind({ Name = "Toggle UI", Default = win._openKey,
+            Callback = function(k) win._openKey = k end })
+        st:AddSection("Danger")
+        st:AddButton({ Name = "Unload UI", Callback = function() win:Unload() end })
+        return st
+    end
+
+    return win
+end
+
+return KiraUI
